@@ -94,3 +94,7 @@ def init_db():
 
 # In a serverless environment, we might call init_db on application startup or rely on an explicit migration step.
 # For simplicity, we can call it when the module is imported if needed, but it's better to manage explicitly.
+try:
+    init_db()
+except Exception:
+    pass
