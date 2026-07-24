@@ -240,7 +240,6 @@ export default function ProcessPage() {
           )}
           <div ref={logsEndRef} />
         </div>
-        </div>
       </div>
         </>
       )}
