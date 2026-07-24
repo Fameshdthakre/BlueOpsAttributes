@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Joyride, CallBackProps, STATUS, Step, EVENTS } from 'react-joyride';
+import { Joyride, EventData, STATUS, Step, EVENTS } from 'react-joyride';
 
 interface TourContextType {
   startTour: () => void;
@@ -81,7 +81,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, [stepIndex, run, pathname, router]);
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = (data: EventData) => {
     const { status, type, index, action } = data;
     
     // Finished or skipped
