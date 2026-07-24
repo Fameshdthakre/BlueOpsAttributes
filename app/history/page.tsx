@@ -213,6 +213,9 @@ export default function HistoryPage() {
               <thead className="bg-bg-dark sticky top-0 shadow-sm text-text-muted uppercase text-xs">
                 <tr>
                   <th className="p-4 font-semibold border-b border-bg-input">ASIN</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Brand</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Title</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Product Type</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Attribute</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Status</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Final Value</th>
@@ -235,6 +238,9 @@ export default function HistoryPage() {
                   return (
                   <tr key={i} className="hover:bg-bg-input/50 transition-colors">
                     <td className="p-4 font-mono text-xs">{r.asin}</td>
+                    <td className="p-4 text-xs text-text-muted">{r.brand}</td>
+                    <td className="p-4 text-xs text-text-muted truncate max-w-[200px]" title={r.title}>{r.title}</td>
+                    <td className="p-4 text-xs text-text-muted">{r.product_type}</td>
                     <td className="p-4 font-medium">{r.attribute_id}</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold border ${STATUS_COLORS[r.match_status] || STATUS_COLORS["Unresolved"]}`}>
