@@ -8,7 +8,6 @@ const navItems = [
   { name: 'Input', href: '/input', icon: '📂' },
   { name: 'Process', href: '/process', icon: '▶️' },
   { name: 'History', href: '/history', icon: '🕒' },
-  { name: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
 export default function Sidebar() {
@@ -40,6 +39,20 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      
+      <div className="px-4 pb-4">
+        <Link
+          href="/settings"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            pathname.startsWith('/settings') 
+              ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+              : 'text-text-muted hover:bg-bg-input hover:text-text-main'
+          }`}
+        >
+          <span className="text-lg">⚙️</span>
+          <span className="font-medium">Settings</span>
+        </Link>
+      </div>
       
       <div className="p-4 border-t border-bg-input flex flex-col items-center justify-center gap-1">
         <div className="text-xs text-text-muted text-center">

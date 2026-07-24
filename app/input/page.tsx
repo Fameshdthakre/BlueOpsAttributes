@@ -141,43 +141,62 @@ export default function InputPage() {
           {asinHeaders.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Column Mapping</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">ASIN Col *</label>
-                  <select value={asinCol} onChange={e => setAsinCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Attribute Col *</label>
-                  <select value={attrCol} onChange={e => setAttrCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Product Type</label>
-                  <select value={ptypeCol} onChange={e => setPtypeCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Brand</label>
-                  <select value={brandCol} onChange={e => setBrandCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Title</label>
-                  <select value={titleCol} onChange={e => setTitleCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
+              <div className="bg-bg-dark rounded-lg overflow-hidden border border-bg-input">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-bg-input/50 text-text-muted">
+                    <tr>
+                      <th className="p-3 font-semibold w-1/3">Data Field</th>
+                      <th className="p-3 font-semibold">Excel Column</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-bg-input">
+                    <tr>
+                      <td className="p-3 text-text-main font-medium flex items-center gap-2">ASIN <span className="text-status-error text-xs">*</span></td>
+                      <td className="p-2">
+                        <select value={asinCol} onChange={e => setAsinCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                          <option value="">-- Select --</option>
+                          {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-main font-medium flex items-center gap-2">Attribute <span className="text-status-error text-xs">*</span></td>
+                      <td className="p-2">
+                        <select value={attrCol} onChange={e => setAttrCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                          <option value="">-- Select --</option>
+                          {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-muted">Product Type</td>
+                      <td className="p-2">
+                        <select value={ptypeCol} onChange={e => setPtypeCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                          <option value="">-- Select --</option>
+                          {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-muted">Brand</td>
+                      <td className="p-2">
+                        <select value={brandCol} onChange={e => setBrandCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                          <option value="">-- Select --</option>
+                          {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-muted">Title</td>
+                      <td className="p-2">
+                        <select value={titleCol} onChange={e => setTitleCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                          <option value="">-- Select --</option>
+                          {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -205,29 +224,44 @@ export default function InputPage() {
           {validationHeaders.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Column Mapping</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Attribute Col *</label>
-                  <select value={valAttrCol} onChange={e => setValAttrCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Dropdown Col *</label>
-                  <select value={valDdCol} onChange={e => setValDdCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm mb-1 text-text-main">Product Type</label>
-                  <select value={valPtypeCol} onChange={e => setValPtypeCol(e.target.value)} className="w-full bg-bg-input border-none rounded p-2 text-text-main">
-                    <option value="">-- Select --</option>
-                    {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
+              <div className="bg-bg-dark rounded-lg overflow-hidden border border-bg-input">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-bg-input/50 text-text-muted">
+                    <tr>
+                      <th className="p-3 font-semibold w-1/3">Data Field</th>
+                      <th className="p-3 font-semibold">Excel Column</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-bg-input">
+                    <tr>
+                      <td className="p-3 text-text-main font-medium flex items-center gap-2">Attribute <span className="text-status-error text-xs">*</span></td>
+                      <td className="p-2">
+                        <select value={valAttrCol} onChange={e => setValAttrCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                          <option value="">-- Select --</option>
+                          {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-main font-medium flex items-center gap-2">Dropdown <span className="text-status-error text-xs">*</span></td>
+                      <td className="p-2">
+                        <select value={valDdCol} onChange={e => setValDdCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                          <option value="">-- Select --</option>
+                          {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-text-muted">Product Type</td>
+                      <td className="p-2">
+                        <select value={valPtypeCol} onChange={e => setValPtypeCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                          <option value="">-- Select --</option>
+                          {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

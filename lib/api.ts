@@ -68,6 +68,16 @@ export const api = {
     return res.json();
   },
 
+  deleteSessions: async (sessionIds?: string[], clearAll: boolean = false) => {
+    const res = await fetch('/api/history', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_ids: sessionIds, clear_all: clearAll })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   getSessionDetails: async (sessionId: string): Promise<DetailedSessionResult> => {
     const res = await fetch(`/api/history?session_id=${sessionId}`);
     if (!res.ok) throw new Error(await res.text());

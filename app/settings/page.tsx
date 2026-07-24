@@ -11,6 +11,16 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{provider: string, ok: boolean, msg: string} | null>(null);
 
   useEffect(() => {
+  useEffect(() => {
+    const draft = localStorage.getItem('blueops_settings_draft');
+    if (draft) {
+      try {
+        setConfig(JSON.parse(draft));
+        setLoading(false);
+        return;
+      } catch(e) {}
+    }
+
     api.getSettings().then(cfg => {
       // Ensure default values exist for advanced config
       PROVIDERS.forEach(p => {
@@ -28,10 +38,17 @@ export default function SettingsPage() {
     });
   }, []);
 
+  // Save to draft on change
+  const updateConfig = (newCfg: any) => {
+    setConfig(newCfg);
+    localStorage.setItem('blueops_settings_draft', JSON.stringify(newCfg));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       await api.saveSettings(config);
+      localStorage.removeItem('blueops_settings_draft');
       alert("Settings saved securely!");
     } catch (e: any) {
       alert("Error saving: " + e.message);
@@ -63,7 +80,7 @@ export default function SettingsPage() {
   // Ensure primary provider is in available
   useEffect(() => {
     if (config && availableProviders.length > 0 && !availableProviders.includes(config.primary_provider)) {
-      setConfig({ ...config, primary_provider: availableProviders[0] });
+      updateConfig({ ...config, primary_provider: availableProviders[0] });
     }
   }, [availableProviders, config]);
 
@@ -73,31 +90,31 @@ export default function SettingsPage() {
       const val = custom.trim();
       const currentCustom = config.custom_models[provider] || [];
       if (!currentCustom.includes(val)) {
-        setConfig((prev: any) => ({
-          ...prev,
+        updateConfig({
+          ...config,
           custom_models: {
-            ...prev.custom_models,
+            ...config.custom_models,
             [provider]: [...currentCustom, val]
           },
           providers: {
-            ...prev.providers,
+            ...config.providers,
             [provider]: {
-              ...prev.providers[provider],
+              ...config.providers[provider],
               model: val
             }
           }
-        }));
+        });
       } else {
-        setConfig((prev: any) => ({
-          ...prev,
+        updateConfig({
+          ...config,
           providers: {
-            ...prev.providers,
+            ...config.providers,
             [provider]: {
-              ...prev.providers[provider],
+              ...config.providers[provider],
               model: val
             }
           }
-        }));
+        });
       }
     }
   };
@@ -117,7 +134,7 @@ export default function SettingsPage() {
   const updateFallback = (idx: number, val: string) => {
     const newFb = [...config.fallback_order];
     newFb[idx] = val;
-    setConfig({...config, fallback_order: newFb.filter(x => x !== "")});
+    updateConfig({...config, fallback_order: newFb.filter(x => x !== "")});
   };
 
   return (
@@ -147,7 +164,7 @@ export default function SettingsPage() {
             <label className="block text-sm text-text-muted mb-2">Primary</label>
             <select 
               value={primary}
-              onChange={e => setConfig({...config, primary_provider: e.target.value})}
+              onChange={e => updateConfig({...config, primary_provider: e.target.value})}
               className="w-full bg-bg-input border-none rounded p-3 text-text-main"
             >
               {availableProviders.length === 0 ? <option value="">—</option> : null}
@@ -201,7 +218,7 @@ export default function SettingsPage() {
                     <input 
                       type="checkbox"
                       checked={pCfg.enabled}
-                      onChange={e => setConfig({
+                      onChange={e => updateConfig({
                         ...config, 
                         providers: {...config.providers, [provider]: {...pCfg, enabled: e.target.checked}}
                       })}
@@ -225,7 +242,7 @@ export default function SettingsPage() {
                     type="password"
                     placeholder="Enter API Key..."
                     value={pCfg.api_key}
-                    onChange={e => setConfig({
+                    onChange={e => updateConfig({
                       ...config, 
                       providers: {...config.providers, [provider]: {...pCfg, api_key: e.target.value}}
                     })}
@@ -238,7 +255,7 @@ export default function SettingsPage() {
                   <div className="flex gap-2">
                     <select 
                       value={pCfg.model}
-                      onChange={e => setConfig({
+                      onChange={e => updateConfig({
                         ...config, 
                         providers: {...config.providers, [provider]: {...pCfg, model: e.target.value}}
                       })}
@@ -262,7 +279,7 @@ export default function SettingsPage() {
                   <input 
                     type="checkbox" 
                     checked={pCfg.enable_web_search}
-                    onChange={e => setConfig({
+                    onChange={e => updateConfig({
                       ...config, 
                       providers: {...config.providers, [provider]: {...pCfg, enable_web_search: e.target.checked}}
                     })}
@@ -281,7 +298,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="1" max="10"
                       value={pCfg.max_retries}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, max_retries: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, max_retries: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>
@@ -290,7 +307,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="10" max="300"
                       value={pCfg.timeout}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, timeout: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, timeout: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>
@@ -299,7 +316,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="1" max="500"
                       value={pCfg.rpm_limit}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, rpm_limit: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, rpm_limit: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>
@@ -308,7 +325,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="0" max="2" step="0.1"
                       value={pCfg.temperature}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, temperature: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, temperature: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>
@@ -317,7 +334,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="1" max="100"
                       value={pCfg.top_k}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, top_k: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, top_k: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>
@@ -326,7 +343,7 @@ export default function SettingsPage() {
                     <input 
                       type="number" min="0" max="1" step="0.05"
                       value={pCfg.top_p}
-                      onChange={e => setConfig({...config, providers: {...config.providers, [provider]: {...pCfg, top_p: Number(e.target.value)}}})}
+                      onChange={e => updateConfig({...config, providers: {...config.providers, [provider]: {...pCfg, top_p: Number(e.target.value)}}})}
                       className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
                     />
                   </div>

@@ -94,6 +94,13 @@ def process_single_asin(
         
         try:
             result = provider.query(job, validation_map)
+            
+            logger.info(
+                f"[{provider_name}] Sent Prompt for ASIN {job.asin}:\n{result.prompt_sent}\n"
+                f"[{provider_name}] Received Response for ASIN {job.asin}:\n{result.raw_json}\n"
+                f"{'-'*60}"
+            )
+            
             parsed_json = _parse_json(result.raw_json)
             
             if not job.title and "_extracted_title" in parsed_json:

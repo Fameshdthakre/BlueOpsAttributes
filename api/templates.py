@@ -11,11 +11,11 @@ def download_templates():
     try:
         # 1. ASIN Template
         asin_df = pd.DataFrame({
-            "ASIN": ["#Test_ASIN_1", "#Test_ASIN_2"],
-            "Attribute ID": ["battery_type", "color"],
-            "Product Type": ["Electronics", "Electronics"],
-            "Brand": ["#Test Brand", "#Test Brand"],
-            "Title": ["#Test Wireless Earbuds", "#Test Power Bank"],
+            "ASIN": ["#Test_ASIN_1"],
+            "Attribute ID": ["battery_type|color"],
+            "Product Type": ["Electronics"],
+            "Brand": ["#Test Brand"],
+            "Title": ["#Test Wireless Earbuds"],
         })
         asin_io = io.BytesIO()
         asin_df.to_excel(asin_io, index=False)

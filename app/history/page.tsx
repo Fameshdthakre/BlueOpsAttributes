@@ -14,6 +14,8 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   
   const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -58,12 +60,51 @@ export default function HistoryPage() {
     window.location.href = api.exportSessionUrl(selectedSessionId);
   };
 
+  const handleDelete = async (clearAll: boolean) => {
+    if (!confirm(clearAll ? 'Are you sure you want to delete ALL sessions?' : 'Are you sure you want to delete the selected sessions?')) return;
+    
+    setIsDeleting(true);
+    try {
+      await api.deleteSessions(clearAll ? undefined : Array.from(selectedForDeletion), clearAll);
+      setSelectedForDeletion(new Set());
+      await loadSessions();
+      if (clearAll || selectedForDeletion.has(selectedSessionId)) {
+        setSelectedSessionId("");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleSelection = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const next = new Set(selectedForDeletion);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedForDeletion(next);
+  };
+
   const filteredResults = sessionDetails?.results.filter(r => 
     statusFilter === "All" || r.match_status === statusFilter
   ) || [];
 
+  // Extract dynamic extra columns
+  const extraColumns = new Set<string>();
+  filteredResults.forEach(r => {
+    if (r.extra_data) {
+      try {
+        // Handle postgres stringified json or raw object
+        const extra = typeof r.extra_data === 'string' ? JSON.parse(r.extra_data) : r.extra_data;
+        Object.keys(extra).forEach(k => extraColumns.add(k));
+      } catch (e) {}
+    }
+  });
+  const extraColsArray = Array.from(extraColumns);
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in">
+    <div className="p-8 w-full mx-auto space-y-8 animate-in fade-in">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-text-main">History & Export</h1>
@@ -88,28 +129,45 @@ export default function HistoryPage() {
         
         {/* Sidebar: Session List */}
         <div className="bg-bg-card border border-bg-input rounded-xl overflow-hidden flex flex-col h-[700px]">
-          <div className="p-4 bg-bg-dark border-b border-bg-input font-semibold text-text-main">
-            Sessions
+          <div className="p-4 bg-bg-dark border-b border-bg-input font-semibold text-text-main flex justify-between items-center">
+            <span>Sessions</span>
+            <div className="flex gap-2">
+              {selectedForDeletion.size > 0 && (
+                <button onClick={() => handleDelete(false)} disabled={isDeleting} className="text-xs bg-status-error/20 hover:bg-status-error/40 text-status-error px-2 py-1 rounded transition-colors">
+                  Delete ({selectedForDeletion.size})
+                </button>
+              )}
+              {sessions.length > 0 && (
+                <button onClick={() => handleDelete(true)} disabled={isDeleting} className="text-xs bg-status-error/10 hover:bg-status-error/30 text-status-error px-2 py-1 rounded transition-colors">
+                  Clear All
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-y-auto flex-1 p-2 space-y-2">
             {sessions.map(s => (
               <div 
                 key={s.session_id}
                 onClick={() => setSelectedSessionId(s.session_id)}
-                className={`p-3 rounded-lg cursor-pointer border transition-colors ${
+                className={`p-3 rounded-lg cursor-pointer border transition-colors flex gap-3 ${
                   selectedSessionId === s.session_id 
                     ? 'bg-primary/10 border-primary text-primary' 
                     : 'border-transparent text-text-muted hover:bg-bg-input hover:text-text-main'
                 }`}
               >
-                <div className="text-sm font-medium mb-1">
-                  {new Date(s.timestamp).toLocaleString()}
+                <div onClick={(e) => toggleSelection(e, s.session_id)} className="flex items-center justify-center pt-1 cursor-pointer">
+                  <input type="checkbox" checked={selectedForDeletion.has(s.session_id)} readOnly className="cursor-pointer" />
                 </div>
-                <div className="text-xs opacity-80 flex justify-between">
-                  <span>{s.asins_processed} ASINs</span>
-                  <span className={s.status === 'Complete' ? 'text-status-success' : 'text-status-warning'}>
-                    {s.status}
-                  </span>
+                <div className="flex-1">
+                  <div className="text-sm font-medium mb-1">
+                    {new Date(s.timestamp).toLocaleString()}
+                  </div>
+                  <div className="text-xs opacity-80 flex justify-between">
+                    <span>{s.asins_processed} ASINs</span>
+                    <span className={s.status === 'Complete' ? 'text-status-success' : 'text-status-warning'}>
+                      {s.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -160,10 +218,21 @@ export default function HistoryPage() {
                   <th className="p-4 font-semibold border-b border-bg-input">Final Value</th>
                   <th className="p-4 font-semibold border-b border-bg-input">AI Value</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Provider</th>
+                  {extraColsArray.map(c => (
+                    <th key={c} className="p-4 font-semibold border-b border-bg-input text-primary/70">{c}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-bg-input">
-                {filteredResults.map((r, i) => (
+                {filteredResults.map((r, i) => {
+                  let parsedExtra: any = {};
+                  if (r.extra_data) {
+                    try {
+                      parsedExtra = typeof r.extra_data === 'string' ? JSON.parse(r.extra_data) : r.extra_data;
+                    } catch (e) {}
+                  }
+                  
+                  return (
                   <tr key={i} className="hover:bg-bg-input/50 transition-colors">
                     <td className="p-4 font-mono text-xs">{r.asin}</td>
                     <td className="p-4 font-medium">{r.attribute_id}</td>
@@ -175,8 +244,11 @@ export default function HistoryPage() {
                     <td className="p-4 font-semibold text-primary">{r.final_value}</td>
                     <td className="p-4 text-text-muted text-xs truncate max-w-xs">{r.raw_ai_value}</td>
                     <td className="p-4 text-xs opacity-70">{r.provider_used}</td>
+                    {extraColsArray.map(c => (
+                      <td key={c} className="p-4 text-xs text-text-muted">{parsedExtra[c] || ""}</td>
+                    ))}
                   </tr>
-                ))}
+                )})}
                 {filteredResults.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-text-muted">

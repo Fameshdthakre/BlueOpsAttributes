@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from psycopg2.extras import RealDictCursor
 from backend.database import get_connection
+import json
 
 app = FastAPI()
 
@@ -49,3 +50,34 @@ def get_history(session_id: str = Query(None)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
+
+@app.delete("/api/history")
+async def delete_sessions(request: Request):
+    """Delete specific sessions or all sessions."""
+    try:
+        body = await request.json()
+        session_ids = body.get("session_ids")
+        clear_all = body.get("clear_all", False)
+        
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                if clear_all:
+                    cur.execute("DELETE FROM job_results")
+                    cur.execute("DELETE FROM sessions")
+                elif session_ids and isinstance(session_ids, list):
+                    format_strings = ','.join(['%s'] * len(session_ids))
+                    cur.execute(f"DELETE FROM job_results WHERE session_id IN ({format_strings})", tuple(session_ids))
+                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings})", tuple(session_ids))
+                else:
+                    raise HTTPException(status_code=400, detail="Must provide session_ids list or clear_all=True")
+                
+            conn.commit()
+            return {"status": "success"}
+        finally:
+            conn.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
