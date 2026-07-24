@@ -11,7 +11,6 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<{provider: string, ok: boolean, msg: string} | null>(null);
 
   useEffect(() => {
-  useEffect(() => {
     const draft = localStorage.getItem('blueops_settings_draft');
     if (draft) {
       try {
