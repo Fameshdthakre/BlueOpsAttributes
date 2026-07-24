@@ -20,8 +20,8 @@ def _fernet() -> Fernet:
     key_str = os.environ.get("ENCRYPTION_KEY")
     if not key_str:
         # Fallback for local development if not set, but not recommended for prod.
-        logger.warning("ENCRYPTION_KEY not found in environment, generating a volatile one.")
-        key_str = Fernet.generate_key().decode("utf-8")
+        logger.warning("ENCRYPTION_KEY not found in environment, using a static fallback. THIS IS INSECURE FOR PRODUCTION.")
+        key_str = "rV83P6G0Q8a5Kj3Y5r-F6F6d9wY-6_4nS4JtU8QpPj8=" # Static valid Fernet key
         os.environ["ENCRYPTION_KEY"] = key_str
     return Fernet(key_str.encode("utf-8"))
 
@@ -157,6 +157,7 @@ def save_config(cfg: dict[str, Any]) -> None:
         if conn:
             conn.rollback()
         logger.error(f"Failed to save configuration to DB: {exc}")
+        raise exc
     finally:
         if conn:
             conn.close()

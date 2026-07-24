@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { useApp } from '@/lib/AppContext';
 
 const navItems = [
   { name: 'Input', href: '/input', icon: '📂' },
@@ -12,6 +13,13 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  
+  const { running, paused, jobs, processedCount, limit } = useApp();
+  const targetLimit = limit > 0 ? limit : jobs.length;
+  const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
+  
+  // Show progress indicator if jobs exist and we are actively processing or just finished
+  const showProgress = jobs.length > 0 && (running || paused || processedCount > 0);
 
   return (
     <div className="w-64 h-screen bg-bg-card border-r border-bg-input flex flex-col">
@@ -39,6 +47,23 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      
+      {showProgress && (
+        <div className="px-4 py-2 mx-4 mb-4 bg-bg-dark rounded-lg border border-bg-input">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              {running ? "Processing" : paused ? "Paused" : "Completed"}
+            </span>
+            <span className="text-xs font-bold text-accent">{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-surface-2 rounded-full h-1.5 overflow-hidden">
+            <div 
+              className={`h-full transition-all duration-300 ${running ? "bg-accent animate-pulse" : paused ? "bg-status-warning" : "bg-status-success"}`} 
+              style={{ width: `${progressPercent}%` }} 
+            />
+          </div>
+        </div>
+      )}
       
       <div className="px-4 pb-4">
         <Link

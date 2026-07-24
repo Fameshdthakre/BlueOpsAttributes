@@ -3,29 +3,30 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useApp } from '@/lib/AppContext';
+
+const findHeader = (headersLower: string[], ...keywords: string[]) => {
+  return headersLower.find(h => keywords.some(k => h.includes(k)));
+};
 
 export default function InputPage() {
   const router = useRouter();
   
   const [asinFile, setAsinFile] = useState<File | null>(null);
   const [validationFile, setValidationFile] = useState<File | null>(null);
-  
-  const [asinHeaders, setAsinHeaders] = useState<string[]>([]);
-  const [validationHeaders, setValidationHeaders] = useState<string[]>([]);
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Mappings
-  const [asinCol, setAsinCol] = useState("");
-  const [attrCol, setAttrCol] = useState("");
-  const [ptypeCol, setPtypeCol] = useState("");
-  const [brandCol, setBrandCol] = useState("");
-  const [titleCol, setTitleCol] = useState("");
   
-  const [valAttrCol, setValAttrCol] = useState("");
-  const [valPtypeCol, setValPtypeCol] = useState("");
-  const [valDdCol, setValDdCol] = useState("");
+  const {
+    asinHeaders, setAsinHeaders,
+    validationHeaders, setValidationHeaders,
+    mappings, setMappings,
+    valMappings, setValMappings,
+    setJobsAndMap
+  } = useApp();
+  
+  const { asinCol, attrCol, ptypeCol, brandCol, titleCol } = mappings;
+  const { valAttrCol, valPtypeCol, valDdCol } = valMappings;
 
   const handleAsinUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
@@ -37,11 +38,20 @@ export default function InputPage() {
       
       // Auto-detect mappings
       const h_lower = res.headers.map((h: string) => h.toLowerCase());
-      if (h_lower.includes("asin")) setAsinCol(res.headers[h_lower.indexOf("asin")]);
-      if (h_lower.includes("attributeid")) setAttrCol(res.headers[h_lower.indexOf("attributeid")]);
-      if (h_lower.includes("product type")) setPtypeCol(res.headers[h_lower.indexOf("product type")]);
-      if (h_lower.includes("brand")) setBrandCol(res.headers[h_lower.indexOf("brand")]);
-      if (h_lower.includes("title")) setTitleCol(res.headers[h_lower.indexOf("title")]);
+      
+      const asinMatch = findHeader(h_lower, "asin");
+      const attrMatch = findHeader(h_lower, "attribute");
+      const ptypeMatch = findHeader(h_lower, "product type", "producttype");
+      const brandMatch = findHeader(h_lower, "brand");
+      const titleMatch = findHeader(h_lower, "title", "name");
+      
+      setMappings({
+        asinCol: asinMatch ? res.headers[h_lower.indexOf(asinMatch)] : "",
+        attrCol: attrMatch ? res.headers[h_lower.indexOf(attrMatch)] : "",
+        ptypeCol: ptypeMatch ? res.headers[h_lower.indexOf(ptypeMatch)] : "",
+        brandCol: brandMatch ? res.headers[h_lower.indexOf(brandMatch)] : "",
+        titleCol: titleMatch ? res.headers[h_lower.indexOf(titleMatch)] : ""
+      });
       
       // Store raw data in session storage for the process page
       sessionStorage.setItem("blueops_jobs_raw", JSON.stringify(res.data));
@@ -59,9 +69,16 @@ export default function InputPage() {
       setValidationHeaders(res.headers);
       
       const h_lower = res.headers.map((h: string) => h.toLowerCase());
-      if (h_lower.includes("attributeid")) setValAttrCol(res.headers[h_lower.indexOf("attributeid")]);
-      if (h_lower.includes("product type")) setValPtypeCol(res.headers[h_lower.indexOf("product type")]);
-      if (h_lower.includes("allowed values")) setValDdCol(res.headers[h_lower.indexOf("allowed values")]);
+      
+      const valAttrMatch = findHeader(h_lower, "attribute");
+      const valPtypeMatch = findHeader(h_lower, "product type", "producttype");
+      const valDdMatch = findHeader(h_lower, "allowed values", "dropdown");
+      
+      setValMappings({
+        valAttrCol: valAttrMatch ? res.headers[h_lower.indexOf(valAttrMatch)] : "",
+        valPtypeCol: valPtypeMatch ? res.headers[h_lower.indexOf(valPtypeMatch)] : "",
+        valDdCol: valDdMatch ? res.headers[h_lower.indexOf(valDdMatch)] : ""
+      });
     } catch (err: any) {
       setError(err.message);
     }
@@ -76,18 +93,43 @@ export default function InputPage() {
     setLoading(true);
     setError(null);
     try {
+      let validationMapToUse = {};
+      
       // Parse validation if provided
       if (validationFile && valAttrCol && valDdCol) {
         const valRes = await api.parseValidation(validationFile, valAttrCol, valPtypeCol, valDdCol);
-        sessionStorage.setItem("blueops_validation_map", JSON.stringify(valRes.validation_map));
-      } else {
-        sessionStorage.setItem("blueops_validation_map", JSON.stringify({}));
+        validationMapToUse = valRes.validation_map;
       }
       
-      // Save mappings
-      sessionStorage.setItem("blueops_mappings", JSON.stringify({
-        asinCol, attrCol, ptypeCol, brandCol, titleCol
-      }));
+      // Generate Jobs locally
+      const rawData = JSON.parse(sessionStorage.getItem("blueops_jobs_raw") || "[]");
+      const jobMap: Record<string, any> = {};
+      
+      rawData.forEach((row: any) => {
+        const asin = row[asinCol];
+        const attr = row[attrCol];
+        if (!asin || !attr) return;
+        
+        if (!jobMap[asin]) {
+          jobMap[asin] = {
+            asin,
+            attributes: [],
+            product_type: ptypeCol ? row[ptypeCol] : "",
+            brand: brandCol ? row[brandCol] : "",
+            title: titleCol ? row[titleCol] : "",
+            extra_data: row
+          };
+        }
+        const attrs = attr.split("|").map((a: string) => a.trim()).filter(Boolean);
+        
+        attrs.forEach((a: string) => {
+          if (!jobMap[asin].attributes.includes(a)) {
+            jobMap[asin].attributes.push(a);
+          }
+        });
+      });
+      
+      setJobsAndMap(Object.values(jobMap), validationMapToUse);
       
       // Navigate to process page
       router.push('/process');
@@ -153,7 +195,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-main font-medium flex items-center gap-2">ASIN <span className="text-status-error text-xs">*</span></td>
                       <td className="p-2">
-                        <select value={asinCol} onChange={e => setAsinCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                        <select value={asinCol} onChange={e => setMappings({...mappings, asinCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
                           <option value="">-- Select --</option>
                           {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -162,7 +204,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-main font-medium flex items-center gap-2">Attribute <span className="text-status-error text-xs">*</span></td>
                       <td className="p-2">
-                        <select value={attrCol} onChange={e => setAttrCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                        <select value={attrCol} onChange={e => setMappings({...mappings, attrCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
                           <option value="">-- Select --</option>
                           {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -171,7 +213,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-muted">Product Type</td>
                       <td className="p-2">
-                        <select value={ptypeCol} onChange={e => setPtypeCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                        <select value={ptypeCol} onChange={e => setMappings({...mappings, ptypeCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
                           <option value="">-- Select --</option>
                           {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -180,7 +222,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-muted">Brand</td>
                       <td className="p-2">
-                        <select value={brandCol} onChange={e => setBrandCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                        <select value={brandCol} onChange={e => setMappings({...mappings, brandCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
                           <option value="">-- Select --</option>
                           {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -189,7 +231,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-muted">Title</td>
                       <td className="p-2">
-                        <select value={titleCol} onChange={e => setTitleCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
+                        <select value={titleCol} onChange={e => setMappings({...mappings, titleCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all">
                           <option value="">-- Select --</option>
                           {asinHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -236,7 +278,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-main font-medium flex items-center gap-2">Attribute <span className="text-status-error text-xs">*</span></td>
                       <td className="p-2">
-                        <select value={valAttrCol} onChange={e => setValAttrCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                        <select value={valAttrCol} onChange={e => setValMappings({...valMappings, valAttrCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
                           <option value="">-- Select --</option>
                           {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -245,7 +287,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-main font-medium flex items-center gap-2">Dropdown <span className="text-status-error text-xs">*</span></td>
                       <td className="p-2">
-                        <select value={valDdCol} onChange={e => setValDdCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                        <select value={valDdCol} onChange={e => setValMappings({...valMappings, valDdCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
                           <option value="">-- Select --</option>
                           {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -254,7 +296,7 @@ export default function InputPage() {
                     <tr>
                       <td className="p-3 text-text-muted">Product Type</td>
                       <td className="p-2">
-                        <select value={valPtypeCol} onChange={e => setValPtypeCol(e.target.value)} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
+                        <select value={valPtypeCol} onChange={e => setValMappings({...valMappings, valPtypeCol: e.target.value})} className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-accent transition-all">
                           <option value="">-- Select --</option>
                           {validationHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -271,7 +313,7 @@ export default function InputPage() {
       <div className="flex justify-end pt-4">
         <button 
           onClick={handleContinue}
-          disabled={loading || !asinFile || !asinCol || !attrCol}
+          disabled={loading || asinHeaders.length === 0 || !asinCol || !attrCol}
           className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
         >
           {loading ? "Processing..." : "Next: Configure Processing"}

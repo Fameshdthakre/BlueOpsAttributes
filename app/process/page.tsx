@@ -1,222 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { Job } from '@/lib/types';
+import { useApp } from '@/lib/AppContext';
 import { STATUS_COLORS } from '@/lib/constants';
-
-interface LogEntry {
-  time: string;
-  level: string;
-  message: string;
-}
 
 export default function ProcessPage() {
   const router = useRouter();
   
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [validationMap, setValidationMap] = useState<any>({});
-  
-  const [limit, setLimit] = useState(0); // 0 = all
-  const [concurrency, setConcurrency] = useState(3);
-  
-  const [running, setRunning] = useState(false);
-  const [paused, setPaused] = useState(false);
-  
-  // Progress state
-  const [processedCount, setProcessedCount] = useState(0);
-  const [validatedCount, setValidatedCount] = useState(0);
-  const [unresolvedCount, setUnresolvedCount] = useState(0);
-  const [failedCount, setFailedCount] = useState(0);
-  
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const {
+    jobs,
+    limit, setLimit,
+    concurrency, setConcurrency,
+    running, paused,
+    processedCount, validatedCount, unresolvedCount, failedCount,
+    logs,
+    startProcessing, pauseProcessing, resumeProcessing, cancelProcessing
+  } = useApp();
+
   const logsEndRef = useRef<HTMLDivElement>(null);
-  
-  // Mutex / Queue state refs to control fan-out across renders
-  const queueRef = useRef<Job[]>([]);
-  const runningCountRef = useRef(0);
-  const runningRef = useRef(false);
-  const pausedRef = useRef(false);
-  const sessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Load state from sessionStorage on mount
-    const rawData = sessionStorage.getItem("blueops_jobs_raw");
-    const mappingsStr = sessionStorage.getItem("blueops_mappings");
-    const valMapStr = sessionStorage.getItem("blueops_validation_map");
-    
-    if (!rawData || !mappingsStr) {
+    // If jobs are completely empty and we're not running, we shouldn't be here
+    if (jobs.length === 0 && !running && logs.length === 0) {
       router.push("/input");
-      return;
     }
-    
-    const rows = JSON.parse(rawData);
-    const mappings = JSON.parse(mappingsStr);
-    const valMap = valMapStr ? JSON.parse(valMapStr) : {};
-    
-    // Group rows into Jobs by ASIN
-    const jobMap: Record<string, Job> = {};
-    
-    rows.forEach((row: any) => {
-      const asin = row[mappings.asinCol];
-      const attr = row[mappings.attrCol];
-      if (!asin || !attr) return;
-      
-      if (!jobMap[asin]) {
-        jobMap[asin] = {
-          asin,
-          attributes: [],
-          product_type: mappings.ptypeCol ? row[mappings.ptypeCol] : "",
-          brand: mappings.brandCol ? row[mappings.brandCol] : "",
-          title: mappings.titleCol ? row[mappings.titleCol] : "",
-          extra_data: row
-        };
-      }
-      const attrs = attr.split("|").map((a: string) => a.trim()).filter(Boolean);
-      
-      attrs.forEach((a: string) => {
-        if (!jobMap[asin].attributes.includes(a)) {
-          jobMap[asin].attributes.push(a);
-        }
-      });
-    });
-    
-    setJobs(Object.values(jobMap));
-    setValidationMap(valMap);
-    setLimit(Object.values(jobMap).length);
-  }, [router]);
+  }, [jobs, running, router, logs.length]);
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  const addLog = (level: string, message: string) => {
-    const time = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { time, level, message }]);
-  };
 
-  const processNext = async () => {
-    if (!runningRef.current || pausedRef.current || queueRef.current.length === 0) {
-      return;
-    }
-    
-    // If we've reached max concurrency, don't spawn more
-    if (runningCountRef.current >= concurrency) {
-      return;
-    }
-    
-    const job = queueRef.current.shift();
-    if (!job) return;
-    
-    runningCountRef.current++;
-    addLog('INFO', `Starting job for ASIN: ${job.asin} (${job.attributes.length} attrs)`);
-    
-    try {
-      const result = await api.processAsin(sessionIdRef.current!, job, validationMap);
-      
-      setProcessedCount(prev => prev + 1);
-      
-      let v = 0; let u = 0; let f = 0;
-      result.results.forEach(r => {
-        if (r.status === "Validated" || r.status === "Free Text") v++;
-        else if (r.status === "Unresolved") u++;
-        else f++;
-      });
-      
-      setValidatedCount(prev => prev + v);
-      setUnresolvedCount(prev => prev + u);
-      setFailedCount(prev => prev + f);
-      
-      addLog('SUCCESS', `Completed ASIN ${job.asin} via ${result.provider_used}: ${result.status}`);
-    } catch (err: any) {
-      addLog('ERROR', `Failed ASIN ${job.asin}: ${err.message}`);
-      setFailedCount(prev => prev + job.attributes.length);
-      setProcessedCount(prev => prev + 1);
-    } finally {
-      runningCountRef.current--;
-      
-      // If queue is empty and nothing is running, we are done
-      if (queueRef.current.length === 0 && runningCountRef.current === 0) {
-        finishSession();
-      } else {
-        // Otherwise, spawn the next job
-        processNext();
-      }
-    }
-  };
-
-  const startProcessing = async () => {
-    setRunning(true);
-    setPaused(false);
-    runningRef.current = true;
-    pausedRef.current = false;
-    
-    setProcessedCount(0);
-    setValidatedCount(0);
-    setUnresolvedCount(0);
-    setFailedCount(0);
-    setLogs([]);
-    
-    const jobsToRun = limit > 0 ? jobs.slice(0, limit) : jobs;
-    queueRef.current = [...jobsToRun];
-    
-    addLog('INFO', `Creating session for ${jobsToRun.length} jobs...`);
-    
-    try {
-      const res = await api.createSession("WebUpload");
-      sessionIdRef.current = res.session_id;
-      
-      addLog('INFO', `Session created: ${res.session_id}. Starting fan-out with concurrency ${concurrency}...`);
-      
-      // Spawn initial workers
-      for (let i = 0; i < concurrency; i++) {
-        processNext();
-      }
-      
-    } catch (err: any) {
-      addLog('ERROR', `Failed to create session: ${err.message}`);
-      setRunning(false);
-      runningRef.current = false;
-    }
-  };
-
-  const pauseProcessing = () => {
-    setPaused(true);
-    pausedRef.current = true;
-    addLog('WARNING', 'Processing paused. Waiting for active jobs to finish...');
-  };
-
-  const resumeProcessing = () => {
-    setPaused(false);
-    pausedRef.current = false;
-    addLog('INFO', 'Processing resumed.');
-    // Respawn workers up to concurrency
-    for (let i = runningCountRef.current; i < concurrency; i++) {
-      processNext();
-    }
-  };
-
-  const cancelProcessing = async () => {
-    setRunning(false);
-    runningRef.current = false;
-    queueRef.current = [];
-    addLog('ERROR', 'Processing cancelled. Active jobs will finish, but no new jobs will start.');
-    if (sessionIdRef.current) {
-      await api.updateSession(sessionIdRef.current, "Cancelled");
-    }
-  };
-
-  const finishSession = async () => {
-    setRunning(false);
-    runningRef.current = false;
-    addLog('SUCCESS', 'All jobs completed!');
-    if (sessionIdRef.current) {
-      await api.updateSession(sessionIdRef.current, "Complete");
-    }
-    // Optional: auto redirect to history
-    // setTimeout(() => router.push(`/history?session=${sessionIdRef.current}`), 2000);
-  };
 
   const targetLimit = limit > 0 ? limit : jobs.length;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
