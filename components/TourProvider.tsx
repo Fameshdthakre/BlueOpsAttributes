@@ -20,7 +20,7 @@ const TOUR_STEPS: CustomStep[] = [
     target: '#tour-api-keys',
     content: 'Welcome to BlueOps! To power the AI extraction, you must first paste in at least one API key here.',
     route: '/settings',
-    disableBeacon: true,
+    skipBeacon: true,
     placement: 'bottom',
   },
   {
@@ -114,24 +114,23 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           run={run}
           stepIndex={stepIndex}
           continuous={true}
-          showSkipButton={true}
-          showProgress={true}
-          hideCloseButton={true}
-          callback={handleJoyrideCallback}
+          onEvent={handleJoyrideCallback}
           styles={{
-            options: {
-              primaryColor: '#0066FF',
-              backgroundColor: '#1E293B',
-              textColor: '#F8FAFC',
-              arrowColor: '#1E293B',
-              zIndex: 10000,
-            },
-            buttonNext: {
+            buttonPrimary: {
               backgroundColor: '#0066FF',
             },
             buttonBack: {
               color: '#94A3B8',
             }
+          }}
+          options={{
+            primaryColor: '#0066FF',
+            backgroundColor: '#1E293B',
+            textColor: '#F8FAFC',
+            arrowColor: '#1E293B',
+            zIndex: 10000,
+            showProgress: true,
+            buttons: ['back', 'primary', 'skip'] as Array<'back' | 'primary' | 'skip' | 'close'>,
           }}
         />
       )}
