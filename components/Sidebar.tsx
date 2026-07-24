@@ -43,7 +43,7 @@ export default function Sidebar() {
       
       <div className="p-4 border-t border-bg-input flex flex-col items-center justify-center gap-1">
         <div className="text-xs text-text-muted text-center">
-          BlueOps v2.0 &bull; Vercel Edition
+          BlueOps v1.0
         </div>
         <div className="text-[10px] text-text-muted">
           Created by{" "}

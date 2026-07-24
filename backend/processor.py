@@ -71,6 +71,10 @@ def process_single_asin(
             continue
             
         p_cfg = config.get("providers", {}).get(provider_name, {})
+        if not p_cfg.get("enabled", True):
+            logger.info(f"Skipping {provider_name} (disabled).")
+            continue
+            
         api_key = p_cfg.get("api_key")
         
         if not api_key:
