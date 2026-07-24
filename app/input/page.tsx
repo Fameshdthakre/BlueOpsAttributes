@@ -168,6 +168,7 @@ export default function InputPage() {
         </div>
         <a 
           href={api.downloadTemplatesUrl()}
+          id="tour-templates"
           className="bg-bg-input hover:bg-surface-2 text-accent px-4 py-2 rounded-lg font-medium border border-accent/20 hover:border-accent/50 transition-colors flex items-center gap-2"
         >
           <span>📥</span> Download Templates
@@ -197,7 +198,7 @@ export default function InputPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* ASIN Card */}
-        <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+        <div className="bg-bg-card p-6 rounded-xl border border-bg-input" id="tour-asin-upload">
           <h2 className="text-xl font-semibold mb-4 text-text-main flex items-center gap-2">
             <span className="text-primary">1</span> ASIN Job File
           </h2>
@@ -280,7 +281,7 @@ export default function InputPage() {
         </div>
 
         {/* Validation Card */}
-        <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+        <div className="bg-bg-card p-6 rounded-xl border border-bg-input" id="tour-validation-upload">
           <h2 className="text-xl font-semibold mb-4 text-text-main flex items-center gap-2">
             <span className="text-accent">2</span> Validation Reference
           </h2>

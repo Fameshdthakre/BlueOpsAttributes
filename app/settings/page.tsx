@@ -226,7 +226,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Provider Cards */}
-      <div className="space-y-6">
+      <div className="space-y-6" id="tour-api-keys">
         {PROVIDERS.map(provider => {
           const pCfg = config.providers[provider];
           const customModels = config.custom_models[provider] || [];

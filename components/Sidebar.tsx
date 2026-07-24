@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/lib/AppContext';
+import { useTour } from '@/components/TourProvider';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { startTour } = useTour();
   
   // Close sidebar on navigation on mobile
   useEffect(() => {
@@ -114,6 +116,19 @@ export default function Sidebar() {
           <span className="text-lg">⚙️</span>
           <span className="font-medium">Settings</span>
         </Link>
+      </div>
+      
+      <div className="px-4 pb-4">
+        <button
+          onClick={() => {
+            setIsOpen(false);
+            startTour();
+          }}
+          className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg text-text-muted hover:bg-bg-input hover:text-text-main transition-colors"
+        >
+          <span className="text-lg">🧭</span>
+          <span className="font-medium text-sm">Replay Tour</span>
+        </button>
       </div>
       
       <div className="p-4 border-t border-bg-input flex flex-col items-center justify-center gap-1">

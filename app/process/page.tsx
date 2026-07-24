@@ -99,7 +99,7 @@ export default function ProcessPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Controls */}
-        <div className="bg-bg-card p-6 rounded-xl border border-bg-input space-y-4">
+        <div className="bg-bg-card p-6 rounded-xl border border-bg-input space-y-4" id="tour-start-process">
           <h3 className="font-semibold text-text-main mb-4">Configuration</h3>
           
           <div>

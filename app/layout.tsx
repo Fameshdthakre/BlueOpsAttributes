@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AppProvider } from '@/lib/AppContext';
+import { TourProvider } from '@/components/TourProvider';
 import Sidebar from "@/components/Sidebar";
 import { Providers } from "@/components/Providers";
 
@@ -20,10 +22,12 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-bg-dark text-text-main flex flex-col md:flex-row h-[100dvh] overflow-hidden`}>
         <Providers>
-          <Sidebar />
-          <main className="flex-1 h-full overflow-y-auto overflow-x-hidden relative pt-16 md:pt-0">
-            {children}
-          </main>
+          <TourProvider>
+            <Sidebar />
+            <main className="flex-1 h-full overflow-y-auto overflow-x-hidden relative pt-16 md:pt-0">
+              {children}
+            </main>
+          </TourProvider>
         </Providers>
       </body>
     </html>
