@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useApp } from '@/lib/AppContext';
 import { STATUS_COLORS } from '@/lib/constants';
 
@@ -42,17 +43,31 @@ export default function ProcessPage() {
   };
 
   useEffect(() => {
-    // If jobs are completely empty and we're not running, we shouldn't be here
-    if (totalJobsCount === 0 && !running && logs.length === 0) {
-      router.push("/input");
-    }
-  }, [totalJobsCount, running, router, logs.length]);
+    // Intentionally removed the redirect.
+    // If jobs are completely empty, we will render a beautiful Empty State instead.
+  }, [totalJobsCount, running, logs.length]);
 
   const targetLimit = limit > 0 ? limit : totalJobsCount;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in">
+      {totalJobsCount === 0 && !running && logs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-32 bg-bg-card border border-bg-input rounded-xl shadow-sm mt-8">
+          <div className="text-6xl mb-6">🚀</div>
+          <h2 className="text-2xl font-bold text-text-main mb-2">Ready to process data?</h2>
+          <p className="text-text-muted mb-8 text-center max-w-md">
+            You haven't loaded any ASINs into memory yet. Head over to the Input page to map your columns and queue up a batch.
+          </p>
+          <Link 
+            href="/input" 
+            className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/20 transition-all transform hover:scale-105 flex items-center gap-2"
+          >
+            <span>📂</span> Upload Data on Input Page
+          </Link>
+        </div>
+      ) : (
+        <>
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-text-main">Process Jobs</h1>
@@ -225,7 +240,10 @@ export default function ProcessPage() {
           )}
           <div ref={logsEndRef} />
         </div>
+        </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

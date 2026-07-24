@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useApp } from '@/lib/AppContext';
@@ -16,6 +17,24 @@ export default function InputPage() {
   const [validationFile, setValidationFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkSettings = async () => {
+      try {
+        const conf = await api.getSettings();
+        if (!conf.openai_api_key && !conf.gemini_api_key) {
+          setHasApiKeys(false);
+        } else {
+          setHasApiKeys(true);
+        }
+      } catch (err) {
+        // If settings fail to load, default to true to not block the user unexpectedly
+        setHasApiKeys(true);
+      }
+    };
+    checkSettings();
+  }, []);
   
   const {
     asinHeaders, setAsinHeaders,
@@ -158,6 +177,21 @@ export default function InputPage() {
       {error && (
         <div className="p-4 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg">
           {error}
+        </div>
+      )}
+
+      {hasApiKeys === false && (
+        <div className="p-4 bg-status-warning/10 border border-status-warning/20 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-status-warning">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <h3 className="font-bold">Missing AI Provider API Key</h3>
+              <p className="text-sm opacity-90">You must add at least one API Key (OpenAI or Gemini) before you can process ASINs.</p>
+            </div>
+          </div>
+          <Link href="/settings" className="bg-status-warning hover:bg-status-warning/80 text-bg-dark px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap text-center">
+            Go to Settings ⚙️
+          </Link>
         </div>
       )}
 
@@ -325,7 +359,7 @@ export default function InputPage() {
         
         <button 
           onClick={handleContinue}
-          disabled={loading || asinHeaders.length === 0 || !asinCol || !attrCol}
+          disabled={loading || asinHeaders.length === 0 || !asinCol || !attrCol || hasApiKeys === false}
           className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
         >
           {loading ? "Processing..." : "Next: Configure Processing"}

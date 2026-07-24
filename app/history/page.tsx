@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { SessionResult, DetailedSessionResult, AttributeResult } from '@/lib/types';
 import { STATUS_COLORS } from '@/lib/constants';
@@ -125,9 +126,24 @@ export default function HistoryPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-        
-        {/* Sidebar: Session List */}
+      {sessions.length === 0 && !loading && !error ? (
+        <div className="flex flex-col items-center justify-center py-24 bg-bg-card border border-bg-input rounded-xl shadow-sm">
+          <div className="text-6xl mb-6">👻</div>
+          <h2 className="text-2xl font-bold text-text-main mb-2">No extraction jobs found!</h2>
+          <p className="text-text-muted mb-8 text-center max-w-md">
+            Your database is completely fresh. Head over to the Input page to upload your first batch of ASINs and start extracting attributes.
+          </p>
+          <Link 
+            href="/input" 
+            className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/20 transition-all transform hover:scale-105 flex items-center gap-2"
+          >
+            <span>🚀</span> Go to Input
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          
+          {/* Sidebar: Session List */}
         <div className="bg-bg-card border border-bg-input rounded-xl overflow-hidden flex flex-col h-[700px]">
           <div className="p-4 bg-bg-dark border-b border-bg-input font-semibold text-text-main flex justify-between items-center">
             <span>Sessions</span>
@@ -277,6 +293,7 @@ export default function HistoryPage() {
         </div>
 
       </div>
+      )}
     </div>
   );
 }
