@@ -114,7 +114,7 @@ export default function SettingsPage() {
   let fb2 = config.fallback_order[1] || "";
   if (fb2 && !fb2Options.includes(fb2)) fb2 = "";
 
-  const updateFallback = (idx: parseInt, val: string) => {
+  const updateFallback = (idx: number, val: string) => {
     const newFb = [...config.fallback_order];
     newFb[idx] = val;
     setConfig({...config, fallback_order: newFb.filter(x => x !== "")});
