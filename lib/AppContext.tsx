@@ -106,7 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addLog = (level: string, message: string) => {
     if (!enableLogsRef.current) return;
     const time = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { time, level, message }]);
+    setLogs(prev => [...prev.slice(-499), { time, level, message }]);
   };
 
   const setJobsAndMap = (newJobs: Job[], newMap: any) => {

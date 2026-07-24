@@ -87,6 +87,9 @@ def process_single_asin(
             timeout=p_cfg.get("timeout", 60),
             max_retries=p_cfg.get("max_retries", 3),
             enable_web_search=p_cfg.get("enable_web_search", True),
+            temperature=p_cfg.get("temperature", 0.1),
+            top_k=p_cfg.get("top_k", 40),
+            top_p=p_cfg.get("top_p", 0.95),
         )
         
         # (Note: Throttling is managed on the frontend via p-limit, 

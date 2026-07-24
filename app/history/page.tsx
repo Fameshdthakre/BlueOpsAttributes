@@ -276,14 +276,14 @@ export default function HistoryPage() {
                 )})}
                 {filteredResults.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-text-muted">
+                    <td colSpan={100} className="p-8 text-center text-text-muted">
                       No results match this filter.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-text-muted">
+                    <td colSpan={100} className="p-8 text-center text-text-muted">
                       Loading...
                     </td>
                   </tr>

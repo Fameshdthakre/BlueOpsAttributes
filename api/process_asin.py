@@ -1,3 +1,4 @@
+import json
 import traceback
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
@@ -69,7 +70,7 @@ def process_asin(req: ProcessRequest, x_device_id: Optional[str] = Header(defaul
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
-                        ar.raw_ai_value, str(job.extra_data), ar.validated_product_type, ar.validated_allowed_options
+                        ar.raw_ai_value, json.dumps(job.extra_data), ar.validated_product_type, ar.validated_allowed_options
                     ))
             conn.commit()
         finally:

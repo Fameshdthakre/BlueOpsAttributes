@@ -3,11 +3,10 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from backend.database import get_connection
-import ast
+import json
 
 _GREY = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
 _BOLD = Font(bold=True)
-from backend.database import get_connection
 
 def generate_excel_from_session(session_id: str) -> bytes:
     conn = get_connection()
@@ -49,7 +48,7 @@ def generate_excel_from_session(session_id: str) -> bytes:
         extra = row_data["extra_data"]
         if extra and isinstance(extra, str) and extra.startswith("{"):
             try:
-                extra_dict = ast.literal_eval(extra)
+                extra_dict = json.loads(extra)
                 for k, v in extra_dict.items():
                     if k not in row:
                         row[k] = v

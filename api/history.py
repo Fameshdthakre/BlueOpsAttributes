@@ -13,10 +13,13 @@ def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Head
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             if session_id:
-                # Get results for specific session
+                # Get results for specific session (filtered by device ownership)
                 cur.execute(
-                    "SELECT * FROM job_results WHERE session_id = %s ORDER BY id ASC", 
-                    (session_id,)
+                    """SELECT jr.* FROM job_results jr
+                       JOIN sessions s ON jr.session_id = s.session_id
+                       WHERE jr.session_id = %s AND s.device_id = %s
+                       ORDER BY jr.id ASC""", 
+                    (session_id, x_device_id)
                 )
                 results = cur.fetchall()
                 

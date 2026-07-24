@@ -23,11 +23,11 @@ export default function InputPage() {
     const checkSettings = async () => {
       try {
         const conf = await api.getSettings();
-        if (!conf.openai_api_key && !conf.gemini_api_key) {
-          setHasApiKeys(false);
-        } else {
-          setHasApiKeys(true);
-        }
+        const hasKey = 
+          (conf.providers?.OpenAI?.api_key) || 
+          (conf.providers?.Gemini?.api_key) || 
+          (conf.providers?.Claude?.api_key);
+        setHasApiKeys(!!hasKey);
       } catch (err) {
         // If settings fail to load, default to true to not block the user unexpectedly
         setHasApiKeys(true);
