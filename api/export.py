@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
-from backend.result_writer import stream_csv_from_session
+from fastapi.responses import Response
+from backend.result_writer import generate_excel_from_session
 from backend.database import get_connection
 import datetime
 
@@ -9,7 +9,7 @@ app = FastAPI()
 @app.get("/api/export")
 def export_session(session_id: str, device_id: str = "global"):
     """
-    Generate a CSV file for the given session ID and stream it as a download.
+    Generate an Excel file for the given session ID and return it as a download.
     """
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id is required")
@@ -39,17 +39,19 @@ def export_session(session_id: str, device_id: str = "global"):
         # Actually to match the example exactly: 7-24-2026_9-59
         date_str = f"{ts.month}-{ts.day}-{ts.year}_{ts.hour}-{ts.minute:02d}"
         
-        filename = f'blueops_export_{asin_count}-ASINs_{date_str}.csv'
+        filename = f'blueops_export_{asin_count}-ASINs_{date_str}.xlsx'
+        
+        excel_bytes = generate_excel_from_session(session_id)
         
         headers = {
             'Content-Disposition': f'attachment; filename="{filename}"',
             'Access-Control-Expose-Headers': 'Content-Disposition'
         }
         
-        return StreamingResponse(
-            stream_csv_from_session(session_id),
-            media_type="text/csv",
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers=headers
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate CSV: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate Excel: {str(e)}")
