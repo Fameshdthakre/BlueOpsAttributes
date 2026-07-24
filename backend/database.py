@@ -25,32 +25,68 @@ def get_connection():
 def init_db():
     """Initialize the database schema if it doesn't exist."""
     schema = """
-    -- Settings (key-value store)
+    -- Settings (key-value store per device)
     CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT
+        device_id TEXT DEFAULT 'global',
+        key TEXT,
+        value TEXT,
+        PRIMARY KEY (device_id, key)
     );
 
-    -- Encrypted API keys
+    -- Encrypted API keys per device
     CREATE TABLE IF NOT EXISTS api_keys (
-        provider TEXT PRIMARY KEY,
-        encrypted_key BYTEA
+        device_id TEXT DEFAULT 'global',
+        provider TEXT,
+        encrypted_key BYTEA,
+        PRIMARY KEY (device_id, provider)
     );
 
-    -- Custom model names per provider
+    -- Custom model names per device
     CREATE TABLE IF NOT EXISTS custom_models (
+        device_id TEXT DEFAULT 'global',
         provider TEXT,
         model_name TEXT,
-        PRIMARY KEY (provider, model_name)
+        PRIMARY KEY (device_id, provider, model_name)
     );
 
-    -- Batch processing sessions
+    -- Batch processing sessions per device
     CREATE TABLE IF NOT EXISTS sessions (
         session_id TEXT PRIMARY KEY,
+        device_id TEXT DEFAULT 'global',
         timestamp TIMESTAMPTZ DEFAULT NOW(),
         input_file TEXT,
         status TEXT DEFAULT 'Running'
     );
+    
+    -- MIGRATIONS for existing tables
+    DO $$ 
+    BEGIN 
+        -- settings
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='device_id') THEN
+            ALTER TABLE settings ADD COLUMN device_id TEXT DEFAULT 'global';
+            ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_pkey;
+            ALTER TABLE settings ADD PRIMARY KEY (device_id, key);
+        END IF;
+        
+        -- api_keys
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='api_keys' AND column_name='device_id') THEN
+            ALTER TABLE api_keys ADD COLUMN device_id TEXT DEFAULT 'global';
+            ALTER TABLE api_keys DROP CONSTRAINT IF EXISTS api_keys_pkey;
+            ALTER TABLE api_keys ADD PRIMARY KEY (device_id, provider);
+        END IF;
+
+        -- custom_models
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='custom_models' AND column_name='device_id') THEN
+            ALTER TABLE custom_models ADD COLUMN device_id TEXT DEFAULT 'global';
+            ALTER TABLE custom_models DROP CONSTRAINT IF EXISTS custom_models_pkey;
+            ALTER TABLE custom_models ADD PRIMARY KEY (device_id, provider, model_name);
+        END IF;
+
+        -- sessions
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='device_id') THEN
+            ALTER TABLE sessions ADD COLUMN device_id TEXT DEFAULT 'global';
+        END IF;
+    END $$;
 
     -- Individual attribute results
     CREATE TABLE IF NOT EXISTS job_results (

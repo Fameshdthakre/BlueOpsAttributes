@@ -183,8 +183,8 @@ export default function InputPage() {
           {asinHeaders.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Column Mapping</h3>
-              <div className="bg-bg-dark rounded-lg overflow-hidden border border-bg-input">
-                <table className="w-full text-left text-sm">
+              <div className="bg-bg-dark rounded-lg overflow-x-auto w-full border border-bg-input">
+                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-bg-input/50 text-text-muted">
                     <tr>
                       <th className="p-3 font-semibold w-1/3">Data Field</th>
@@ -247,7 +247,7 @@ export default function InputPage() {
         {/* Validation Card */}
         <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
           <h2 className="text-xl font-semibold mb-4 text-text-main flex items-center gap-2">
-            <span className="text-accent">2</span> Validation Reference (Optional)
+            <span className="text-accent">2</span> Validation Reference
           </h2>
           
           <input 
@@ -266,8 +266,8 @@ export default function InputPage() {
           {validationHeaders.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider">Column Mapping</h3>
-              <div className="bg-bg-dark rounded-lg overflow-hidden border border-bg-input">
-                <table className="w-full text-left text-sm">
+              <div className="bg-bg-dark rounded-lg overflow-x-auto w-full border border-bg-input">
+                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-bg-input/50 text-text-muted">
                     <tr>
                       <th className="p-3 font-semibold w-1/3">Data Field</th>

@@ -1,5 +1,5 @@
 import traceback
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 
@@ -21,7 +21,7 @@ class ProcessRequest(BaseModel):
     validation_map: Dict[str, Any] = {}
 
 @app.post("/api/process_asin")
-def process_asin(req: ProcessRequest):
+def process_asin(req: ProcessRequest, x_device_id: Optional[str] = Header(default="global")):
     """
     Process a single ASIN and store the result in Postgres.
     Called concurrently by the Next.js frontend (Fan-out model).
@@ -50,7 +50,7 @@ def process_asin(req: ProcessRequest):
                     tooltip=v.get("tooltip", "")
                 ))
 
-        config = load_config()
+        config = load_config(x_device_id)
         
         # Execute AI processing
         result = process_single_asin(job, val_map, config)

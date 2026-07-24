@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/lib/AppContext';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { name: 'Input', href: '/input', icon: '📂' },
@@ -13,6 +14,12 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Close sidebar on navigation on mobile
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
   
   const { running, paused, jobs, processedCount, limit } = useApp();
   const targetLimit = limit > 0 ? limit : jobs.length;
@@ -22,11 +29,41 @@ export default function Sidebar() {
   const showProgress = jobs.length > 0 && (running || paused || processedCount > 0);
 
   return (
-    <div className="w-64 h-screen bg-bg-card border-r border-bg-input flex flex-col">
-      <div className="p-6 flex items-center gap-3 border-b border-bg-input">
-        <Image src="/logo.png" alt="BlueOps Logo" width={32} height={32} className="rounded" />
-        <h1 className="text-xl font-bold text-text-main tracking-tight">BlueOps</h1>
+    <>
+      {/* Mobile Top Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-bg-card border-b border-bg-input flex items-center justify-between px-4 z-40">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="BlueOps Logo" width={24} height={24} className="rounded" />
+          <span className="font-bold text-text-main tracking-tight">BlueOps</span>
+        </div>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-text-muted hover:text-text-main p-2"
+        >
+          {isOpen ? '✕' : '☰'}
+        </button>
       </div>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/60 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Actual Sidebar */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-50 w-64 h-[100dvh] bg-bg-card border-r border-bg-input flex flex-col transform transition-transform duration-300
+        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
+        <div className="p-6 flex justify-between items-center border-b border-bg-input">
+          <div className="flex items-center gap-3">
+            <Image src="/logo.png" alt="BlueOps Logo" width={32} height={32} className="rounded" />
+            <h1 className="text-xl font-bold text-text-main tracking-tight">BlueOps</h1>
+          </div>
+          <button className="md:hidden text-text-muted" onClick={() => setIsOpen(false)}>✕</button>
+        </div>
       
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => {
@@ -96,5 +133,6 @@ export default function Sidebar() {
         </div>
       </div>
     </div>
+    </>
   );
 }

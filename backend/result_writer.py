@@ -22,7 +22,7 @@ def generate_excel_from_session(session_id: str) -> bytes:
             SELECT 
                 asin, attribute_id, product_type, brand, title,
                 final_value, match_status, provider_used, confidence,
-                raw_ai_value, extra_data
+                raw_ai_value, extra_data, validated_product_type, validated_allowed_options
             FROM job_results
             WHERE session_id = %s
             ORDER BY id ASC
@@ -42,6 +42,8 @@ def generate_excel_from_session(session_id: str) -> bytes:
             "Product Type": row_data["product_type"] or "",
             "Brand": row_data["brand"] or "",
             "Title": row_data["title"] or "",
+            "Ref. Product Type": row_data["validated_product_type"] or "",
+            "Ref. Allowed Options": row_data["validated_allowed_options"] or "",
             "Final Value": row_data["final_value"],
             "Match Status": row_data["match_status"],
             "Provider Used": row_data["provider_used"],

@@ -181,8 +181,8 @@ export default function HistoryPage() {
         <div className="md:col-span-3 bg-bg-card border border-bg-input rounded-xl flex flex-col h-[700px]">
           
           {/* Header & Filters */}
-          <div className="p-4 border-b border-bg-input flex justify-between items-center bg-bg-dark rounded-t-xl">
-            <div className="flex gap-4">
+          <div className="p-4 border-b border-bg-input flex flex-col md:flex-row gap-4 justify-between items-center bg-bg-dark rounded-t-xl">
+            <div className="flex flex-wrap gap-2">
               {['All', 'Validated', 'Free Text', 'Unresolved', 'Failed'].map(f => (
                 <button
                   key={f}
@@ -208,9 +208,9 @@ export default function HistoryPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-auto flex-1">
-            <table className="w-full text-left text-sm text-text-main border-collapse">
-              <thead className="bg-bg-dark sticky top-0 shadow-sm text-text-muted uppercase text-xs">
+          <div className="overflow-x-auto flex-1 w-full relative">
+            <table className="w-full text-left text-sm text-text-main border-collapse whitespace-nowrap">
+              <thead className="bg-bg-dark sticky top-0 z-10 shadow-sm text-text-muted uppercase text-xs">
                 <tr>
                   <th className="p-4 font-semibold border-b border-bg-input">ASIN</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Brand</th>

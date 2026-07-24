@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
+from typing import Optional
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.openai_provider import OpenAIProvider
 from backend.providers.claude_provider import ClaudeProvider
+from backend.config import load_config
 
 app = FastAPI()
 
@@ -18,8 +20,9 @@ PROVIDERS = {
 }
 
 @app.post("/api/test_connection")
-def test_connection(req: TestConnectionRequest):
+def test_connection(req: TestConnectionRequest, x_device_id: Optional[str] = Header(default="global")):
     """Test AI provider connection."""
+    config = load_config(x_device_id)
     provider_cls = PROVIDERS.get(req.provider_name)
     if not provider_cls:
         raise HTTPException(status_code=400, detail="Unknown provider")

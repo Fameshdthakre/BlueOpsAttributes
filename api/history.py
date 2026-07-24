@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Header
+from typing import Optional
 from psycopg2.extras import RealDictCursor
 from backend.database import get_connection
 import json
@@ -6,7 +7,7 @@ import json
 app = FastAPI()
 
 @app.get("/api/history")
-def get_history(session_id: str = Query(None)):
+def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Header(default="global")):
     """Fetch session history or details of a specific session."""
     conn = get_connection()
     try:
@@ -41,9 +42,10 @@ def get_history(session_id: str = Query(None)):
                            COUNT(DISTINCT j.asin) as asins_processed
                     FROM sessions s
                     LEFT JOIN job_results j ON s.session_id = j.session_id
+                    WHERE s.device_id = %s
                     GROUP BY s.session_id
                     ORDER BY s.timestamp DESC
-                """)
+                """, (x_device_id,))
                 sessions = cur.fetchall()
                 return {"sessions": [dict(s) for s in sessions]}
     except Exception as e:
@@ -52,7 +54,7 @@ def get_history(session_id: str = Query(None)):
         conn.close()
 
 @app.delete("/api/history")
-async def delete_sessions(request: Request):
+async def delete_sessions(request: Request, x_device_id: Optional[str] = Header(default="global")):
     """Delete specific sessions or all sessions."""
     try:
         body = await request.json()
@@ -63,12 +65,14 @@ async def delete_sessions(request: Request):
         try:
             with conn.cursor() as cur:
                 if clear_all:
-                    cur.execute("DELETE FROM job_results")
-                    cur.execute("DELETE FROM sessions")
+                    cur.execute("DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE device_id = %s)", (x_device_id,))
+                    cur.execute("DELETE FROM sessions WHERE device_id = %s", (x_device_id,))
                 elif session_ids and isinstance(session_ids, list):
                     format_strings = ','.join(['%s'] * len(session_ids))
-                    cur.execute(f"DELETE FROM job_results WHERE session_id IN ({format_strings})", tuple(session_ids))
-                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings})", tuple(session_ids))
+                    
+                    # Ensure we only delete sessions owned by this device
+                    cur.execute(f"DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE session_id IN ({format_strings}) AND device_id = %s)", tuple(session_ids) + (x_device_id,))
+                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings}) AND device_id = %s", tuple(session_ids) + (x_device_id,))
                 else:
                     raise HTTPException(status_code=400, detail="Must provide session_ids list or clear_all=True")
                 

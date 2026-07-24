@@ -74,14 +74,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
 }
 
-def load_config() -> dict[str, Any]:
+def load_config(device_id: str = "global") -> dict[str, Any]:
     cfg = _deep_copy(DEFAULT_CONFIG)
     conn = None
     try:
         conn = get_connection()
         with conn.cursor() as cur:
             # 1. Load global settings JSON
-            cur.execute("SELECT value FROM settings WHERE key = 'global_config'")
+            cur.execute("SELECT value FROM settings WHERE key = 'global_config' AND device_id = %s", (device_id,))
             row = cur.fetchone()
             if row:
                 db_cfg = json.loads(row["value"])
@@ -89,7 +89,7 @@ def load_config() -> dict[str, Any]:
             
             # 2. Load API keys
             f = _fernet()
-            cur.execute("SELECT provider, encrypted_key FROM api_keys")
+            cur.execute("SELECT provider, encrypted_key FROM api_keys WHERE device_id = %s", (device_id,))
             for p_row in cur.fetchall():
                 provider = p_row["provider"]
                 if provider in cfg["providers"] and p_row["encrypted_key"]:
@@ -100,7 +100,7 @@ def load_config() -> dict[str, Any]:
                         logger.error(f"Failed to decrypt API key for {provider}: {e}")
 
             # 3. Load Custom Models
-            cur.execute("SELECT provider, model_name FROM custom_models")
+            cur.execute("SELECT provider, model_name FROM custom_models WHERE device_id = %s", (device_id,))
             for cm_row in cur.fetchall():
                 provider = cm_row["provider"]
                 model = cm_row["model_name"]
@@ -116,7 +116,7 @@ def load_config() -> dict[str, Any]:
         if conn:
             conn.close()
 
-def save_config(cfg: dict[str, Any]) -> None:
+def save_config(cfg: dict[str, Any], device_id: str = "global") -> None:
     conn = None
     try:
         conn = get_connection()
@@ -129,27 +129,27 @@ def save_config(cfg: dict[str, Any]) -> None:
                 if api_key:
                     encrypted_key = f.encrypt(api_key.encode('utf-8'))
                     cur.execute(
-                        "INSERT INTO api_keys (provider, encrypted_key) VALUES (%s, %s) ON CONFLICT (provider) DO UPDATE SET encrypted_key = EXCLUDED.encrypted_key", 
-                        (provider, encrypted_key)
+                        "INSERT INTO api_keys (device_id, provider, encrypted_key) VALUES (%s, %s, %s) ON CONFLICT (device_id, provider) DO UPDATE SET encrypted_key = EXCLUDED.encrypted_key", 
+                        (device_id, provider, encrypted_key)
                     )
                 else:
-                    cur.execute("DELETE FROM api_keys WHERE provider = %s", (provider,))
+                    cur.execute("DELETE FROM api_keys WHERE provider = %s AND device_id = %s", (provider, device_id))
 
             # 2. Save Custom Models
             custom_models = cfg_copy.pop("custom_models", {})
-            cur.execute("TRUNCATE TABLE custom_models")
+            cur.execute("DELETE FROM custom_models WHERE device_id = %s", (device_id,))
             for provider, models in custom_models.items():
                 for m in models:
                     cur.execute(
-                        "INSERT INTO custom_models (provider, model_name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                        (provider, m)
+                        "INSERT INTO custom_models (device_id, provider, model_name) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                        (device_id, provider, m)
                     )
             
             # 3. Save global config
             config_json = json.dumps(cfg_copy)
             cur.execute(
-                "INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", 
-                ("global_config", config_json)
+                "INSERT INTO settings (device_id, key, value) VALUES (%s, %s, %s) ON CONFLICT (device_id, key) DO UPDATE SET value = EXCLUDED.value", 
+                (device_id, "global_config", config_json)
             )
 
         conn.commit()
