@@ -87,15 +87,12 @@ class BaseProvider(ABC):
 
             elif entry and entry.is_free_text:
                 guidance = entry.tooltip if entry.tooltip else f"Provide the {label} for this product."
-                example_text = f"\n  Examples: {entry.example}" if entry.example else ""
                 lines.append(
                     f"\n[{attr_id}]\n"
                     f"  Type: FREE TEXT\n"
-                    f"  Instruction: {guidance}{example_text}\n"
-                    f"  Constraint: Respond strictly with a concise value. Do NOT write full sentences or explanations."
+                    f"  Instruction: {guidance}\n"
+                    f"  Respond with a concise value — one short phrase or sentence maximum."
                 )
-                if entry.example:
-                    lines.append(f"  Format: Must match the style/format shown in the Examples.")
                 schema[attr_id] = "<free text value>"
 
             else:

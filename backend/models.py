@@ -32,7 +32,6 @@ class ValidationEntry:
     allowed_values: list[str]   # empty list → free_text type
     is_free_text: bool = False  # True when cell starts with "Tooltip:" or "Example:"
     tooltip: str = ""           # full tooltip string for AI guidance
-    example: str = ""           # extracted example string for AI guidance
 
     @property
     def is_validation_list(self) -> bool:
