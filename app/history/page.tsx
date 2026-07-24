@@ -215,12 +215,13 @@ export default function HistoryPage() {
                   <th className="p-4 font-semibold border-b border-bg-input">ASIN</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Brand</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Title</th>
-                  <th className="p-4 font-semibold border-b border-bg-input">Product Type</th>
-                  <th className="p-4 font-semibold border-b border-bg-input">Attribute</th>
-                  <th className="p-4 font-semibold border-b border-bg-input">Status</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Attribute ID</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Ref. Product Type</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Ref. Allowed Options</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Final Value</th>
-                  <th className="p-4 font-semibold border-b border-bg-input">AI Value</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Status</th>
                   <th className="p-4 font-semibold border-b border-bg-input">Provider</th>
+                  <th className="p-4 font-semibold border-b border-bg-input">Confidence</th>
                   {extraColsArray.map(c => (
                     <th key={c} className="p-4 font-semibold border-b border-bg-input text-primary/70">{c}</th>
                   ))}
@@ -239,17 +240,18 @@ export default function HistoryPage() {
                   <tr key={i} className="hover:bg-bg-input/50 transition-colors">
                     <td className="p-4 font-mono text-xs">{r.asin}</td>
                     <td className="p-4 text-xs text-text-muted">{r.brand}</td>
-                    <td className="p-4 text-xs text-text-muted truncate max-w-[200px]" title={r.title}>{r.title}</td>
-                    <td className="p-4 text-xs text-text-muted">{r.product_type}</td>
+                    <td className="p-4 text-xs text-text-muted truncate max-w-[150px]" title={r.title}>{r.title}</td>
                     <td className="p-4 font-medium">{r.attribute_id}</td>
+                    <td className="p-4 text-xs text-text-muted truncate max-w-[130px]">{r.validated_product_type}</td>
+                    <td className="p-4 text-xs text-text-muted truncate max-w-[150px]">{r.validated_allowed_options}</td>
+                    <td className="p-4 font-semibold text-primary max-w-[200px] truncate" title={r.final_value}>{r.final_value}</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold border ${STATUS_COLORS[r.match_status] || STATUS_COLORS["Unresolved"]}`}>
                         {r.match_status}
                       </span>
                     </td>
-                    <td className="p-4 font-semibold text-primary">{r.final_value}</td>
-                    <td className="p-4 text-text-muted text-xs truncate max-w-xs">{r.raw_ai_value}</td>
                     <td className="p-4 text-xs opacity-70">{r.provider_used}</td>
+                    <td className="p-4 text-xs opacity-70">{r.confidence != null ? `${(r.confidence * 100).toFixed(1)}%` : ""}</td>
                     {extraColsArray.map(c => (
                       <td key={c} className="p-4 text-xs text-text-muted">{parsedExtra[c] || ""}</td>
                     ))}
