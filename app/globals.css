@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563EB; /* Blue 600 */
+  --color-primary-hover: #1D4ED8; /* Blue 700 */
+  --color-accent: #6366F1; /* Indigo 500 */
+  
+  --color-bg-dark: #0F172A; /* Slate 900 */
+  --color-bg-card: #1E293B; /* Slate 800 */
+  --color-bg-input: #334155; /* Slate 700 */
+  
+  --color-text-main: #F8FAFC; /* Slate 50 */
+  --color-text-muted: #94A3B8; /* Slate 400 */
+  
+  --color-status-success: #22C55E; /* Green 500 */
+  --color-status-warning: #F59E0B; /* Amber 500 */
+  --color-status-error: #EF4444; /* Red 500 */
+}
+
+/* Base resets for a dark theme app */
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-main);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-input);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
