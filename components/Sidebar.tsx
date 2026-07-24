@@ -21,12 +21,12 @@ export default function Sidebar() {
     setIsOpen(false);
   }, [pathname]);
   
-  const { running, paused, jobs, processedCount, limit } = useApp();
-  const targetLimit = limit > 0 ? limit : jobs.length;
+  const { running, paused, totalJobsCount, processedCount, limit } = useApp();
+  const targetLimit = limit > 0 ? limit : totalJobsCount;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
   
   // Show progress indicator if jobs exist and we are actively processing or just finished
-  const showProgress = jobs.length > 0 && (running || paused || processedCount > 0);
+  const showProgress = totalJobsCount > 0 && (running || paused || processedCount > 0);
 
   return (
     <>
