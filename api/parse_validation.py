@@ -3,6 +3,7 @@ import pandas as pd
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 import json
+import re
 
 app = FastAPI()
 
@@ -42,12 +43,28 @@ async def parse_validation(
             # Check for tooltip/free text
             is_free_text = False
             tooltip = ""
+            example_str = ""
             allowed = []
             
             dd_lower = dd_val.lower()
             if dd_lower.startswith("tooltip:") or dd_lower.startswith("example:"):
                 is_free_text = True
-                tooltip = dd_val
+                
+                # Remove prefix
+                clean_val = dd_val
+                if dd_lower.startswith("tooltip:"):
+                    clean_val = clean_val[8:].strip()
+                elif dd_lower.startswith("example:"):
+                    clean_val = clean_val[8:].strip()
+                    
+                # Look for "| example:" separator
+                parts = re.split(r'(?i)\s*\|\s*examples?:?\s*', clean_val)
+                if len(parts) > 1:
+                    tooltip = parts[0].strip()
+                    example_str = parts[1].strip()
+                else:
+                    tooltip = clean_val
+                    
             elif dd_val:
                 allowed = [x.strip() for x in dd_val.split("|") if x.strip()]
                 
@@ -56,7 +73,8 @@ async def parse_validation(
                 "product_type": ptype,
                 "allowed_values": allowed,
                 "is_free_text": is_free_text,
-                "tooltip": tooltip
+                "tooltip": tooltip,
+                "example": example_str
             }
 
             key = attr_id.lower()
