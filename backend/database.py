@@ -4,23 +4,63 @@ PostgreSQL database adapter for Vercel Postgres using psycopg2.
 """
 import os
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import DictCursor
 from loguru import logger
 from dotenv import load_dotenv
 
 load_dotenv()
 
+POOL = None
+
+def init_pool():
+    global POOL
+    if POOL is None:
+        db_url = os.environ.get("POSTGRES_URL")
+        if not db_url:
+            logger.error("POSTGRES_URL environment variable is missing!")
+            raise RuntimeError("POSTGRES_URL environment variable is missing!")
+        # Adjust maxconn depending on expected concurrency and tier limits
+        POOL = ThreadedConnectionPool(1, 20, dsn=db_url)
+
+class PooledConnection:
+    """Wrapper to intercept .close() and return connection to the pool."""
+    def __init__(self, pool, conn):
+        self._pool = pool
+        self._conn = conn
+        
+    def cursor(self, *args, **kwargs):
+        return self._conn.cursor(*args, **kwargs)
+        
+    def commit(self):
+        self._conn.commit()
+        
+    def rollback(self):
+        self._conn.rollback()
+        
+    def close(self):
+        self._pool.putconn(self._conn)
+
 def get_connection():
     """
-    Get a connection to the PostgreSQL database.
-    Expects POSTGRES_URL environment variable (standard Vercel Postgres env).
+    Get a pooled connection to the PostgreSQL database.
     """
-    db_url = os.environ.get("POSTGRES_URL")
-    if not db_url:
-        logger.error("POSTGRES_URL environment variable is missing!")
-        raise RuntimeError("POSTGRES_URL environment variable is missing!")
+    init_pool()
+    conn = POOL.getconn()
     
-    return psycopg2.connect(db_url, cursor_factory=DictCursor)
+    # We still want DictCursor factory for legacy support
+    # Since pool.getconn() doesn't accept cursor_factory, we set it here or rely on cursor() args
+    # Unfortunately setting connection.cursor_factory directly isn't standard, 
+    # but we can pass it during cursor creation. Let's just override cursor in PooledConnection.
+    
+    # Actually, we can just intercept the cursor call to inject DictCursor
+    class DictCursorPooledConnection(PooledConnection):
+        def cursor(self, *args, **kwargs):
+            if 'cursor_factory' not in kwargs:
+                kwargs['cursor_factory'] = DictCursor
+            return self._conn.cursor(*args, **kwargs)
+            
+    return DictCursorPooledConnection(POOL, conn)
 
 def init_db():
     """Initialize the database schema if it doesn't exist."""

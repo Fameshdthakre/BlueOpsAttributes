@@ -9,7 +9,7 @@ export default function ProcessPage() {
   const router = useRouter();
   
   const {
-    jobs,
+    jobs, totalJobsCount,
     limit, setLimit,
     concurrency, setConcurrency,
     running, paused,
@@ -43,12 +43,12 @@ export default function ProcessPage() {
 
   useEffect(() => {
     // If jobs are completely empty and we're not running, we shouldn't be here
-    if (jobs.length === 0 && !running && logs.length === 0) {
+    if (totalJobsCount === 0 && !running && logs.length === 0) {
       router.push("/input");
     }
-  }, [jobs, running, router, logs.length]);
+  }, [totalJobsCount, running, router, logs.length]);
 
-  const targetLimit = limit > 0 ? limit : jobs.length;
+  const targetLimit = limit > 0 ? limit : totalJobsCount;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
   return (
@@ -56,7 +56,7 @@ export default function ProcessPage() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-text-main">Process Jobs</h1>
-          <p className="text-text-muted mt-2">Loaded {jobs.length} unique ASINs.</p>
+          <p className="text-text-muted mt-2">Loaded {totalJobsCount} unique ASINs.</p>
         </div>
         <div className="flex gap-4">
           {!running ? (

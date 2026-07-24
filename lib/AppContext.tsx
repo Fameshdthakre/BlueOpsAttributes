@@ -23,6 +23,7 @@ interface AppContextType {
   
   // Job State
   jobs: Job[];
+  totalJobsCount: number;
   validationMap: any;
   setJobsAndMap: (jobs: Job[], map: any) => void;
   
@@ -69,6 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   // Process Data
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [totalJobsCount, setTotalJobsCount] = useState(0);
   const [validationMap, setValidationMap] = useState<any>({});
   
   const [limit, setLimit] = useState(0);
@@ -109,6 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setJobsAndMap = (newJobs: Job[], newMap: any) => {
     setJobs(newJobs);
+    setTotalJobsCount(newJobs.length);
     setValidationMap(newMap);
     setLimit(newJobs.length);
   };
@@ -177,7 +180,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLogs([]);
     
     const jobsToRun = limit > 0 ? jobs.slice(0, limit) : jobs;
+    setTotalJobsCount(jobsToRun.length);
     queueRef.current = [...jobsToRun];
+    
+    // Memory Optimization: Clear the large array from React State
+    setJobs([]);
     
     addLog('INFO', `Creating session for ${jobsToRun.length} jobs...`);
     
@@ -237,7 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       validationHeaders, setValidationHeaders,
       mappings, setMappings,
       valMappings, setValMappings,
-      jobs, validationMap, setJobsAndMap,
+      jobs, totalJobsCount, validationMap, setJobsAndMap,
       limit, setLimit,
       concurrency, setConcurrency,
       running, paused,
