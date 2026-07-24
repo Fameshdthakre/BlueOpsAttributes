@@ -150,7 +150,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (result.provider_used === "None") {
         addLog('ERROR', `Failed ASIN ${job.asin}: ${result.error || "All providers failed or missing API keys."}`);
       } else {
-        addLog('SUCCESS', `Completed ASIN ${job.asin} via ${result.provider_used}: ${result.status}`);
+        const parts = [];
+        if (v > 0) parts.push(`${v} Resolved`);
+        if (u > 0) parts.push(`${u} Unresolved`);
+        if (f > 0) parts.push(`${f} Failed`);
+        const countsStr = parts.length > 0 ? parts.join(', ') : result.status;
+        addLog('SUCCESS', `Completed ASIN ${job.asin} via ${result.provider_used}: ${countsStr}`);
       }
     } catch (err: any) {
       addLog('ERROR', `Failed ASIN ${job.asin}: ${err.message}`);
