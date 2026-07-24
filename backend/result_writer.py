@@ -5,10 +5,8 @@ from openpyxl.styles import PatternFill, Font
 from backend.database import get_connection
 import ast
 
-_RED    = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
-_ORANGE = PatternFill(start_color="FFE0B2", end_color="FFE0B2", fill_type="solid")
-_GREEN  = PatternFill(start_color="C8E6C9", end_color="C8E6C9", fill_type="solid")
-_BOLD   = Font(bold=True)
+_GREY = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+_BOLD = Font(bold=True)
 from backend.database import get_connection
 
 def generate_excel_from_session(session_id: str) -> bytes:
@@ -71,24 +69,10 @@ def generate_excel_from_session(session_id: str) -> bytes:
     wb = load_workbook(output)
     ws = wb.active
 
-    # Bold header
+    # Bold header with light grey background
     for cell in ws[1]:
         cell.font = _BOLD
-
-    # Format rows
-    for i, data in enumerate(rows, start=2):
-        status = data.get("Match Status", "")
-        fill = None
-        if status == "Unresolved":
-            fill = _RED
-        elif status == "Failed":
-            fill = _ORANGE
-        elif status in ("Validated", "Free Text"):
-            fill = _GREEN
-
-        if fill:
-            for cell in ws[i]:
-                cell.fill = fill
+        cell.fill = _GREY
 
     for col in ws.columns:
         max_len = max((len(str(cell.value or "")) for cell in col), default=0)
