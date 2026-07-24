@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Joyride, { CallBackProps, STATUS, Step, EVENTS } from 'react-joyride';
+import { Joyride, CallBackProps, STATUS, Step, EVENTS } from 'react-joyride';
 
 interface TourContextType {
   startTour: () => void;
