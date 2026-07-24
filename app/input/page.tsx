@@ -22,7 +22,8 @@ export default function InputPage() {
     validationHeaders, setValidationHeaders,
     mappings, setMappings,
     valMappings, setValMappings,
-    setJobsAndMap
+    setJobsAndMap,
+    enableLogs, setEnableLogs
   } = useApp();
   
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol } = mappings;
@@ -310,7 +311,18 @@ export default function InputPage() {
         </div>
       </div>
       
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-between items-center pt-4 border-t border-bg-input">
+        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-main">
+          <input 
+            type="checkbox" 
+            checked={enableLogs}
+            onChange={(e) => setEnableLogs(e.target.checked)}
+            className="w-4 h-4 accent-primary rounded border-bg-input bg-bg-dark"
+          />
+          Enable Live UI Logs
+          <span className="text-xs text-text-muted font-normal ml-2">(Disable to save memory during massive batches)</span>
+        </label>
+        
         <button 
           onClick={handleContinue}
           disabled={loading || asinHeaders.length === 0 || !asinCol || !attrCol}

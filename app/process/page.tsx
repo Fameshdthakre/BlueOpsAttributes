@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/AppContext';
 import { STATUS_COLORS } from '@/lib/constants';
@@ -14,11 +14,32 @@ export default function ProcessPage() {
     concurrency, setConcurrency,
     running, paused,
     processedCount, validatedCount, unresolvedCount, failedCount,
-    logs,
+    logs, enableLogs,
     startProcessing, pauseProcessing, resumeProcessing, cancelProcessing
   } = useApp();
 
   const logsEndRef = useRef<HTMLDivElement>(null);
+  
+  const [logFilter, setLogFilter] = useState("All");
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  // Auto-scroll logic
+  useEffect(() => {
+    if (autoScroll) {
+      logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs, autoScroll]);
+
+  const handleDownloadLogs = () => {
+    const text = logs.map(l => `[${l.time}] [${l.level}] ${l.message}`).join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `blueops_logs_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     // If jobs are completely empty and we're not running, we shouldn't be here
@@ -26,12 +47,6 @@ export default function ProcessPage() {
       router.push("/input");
     }
   }, [jobs, running, router, logs.length]);
-
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
-
-
 
   const targetLimit = limit > 0 ? limit : jobs.length;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
@@ -133,21 +148,83 @@ export default function ProcessPage() {
       </div>
 
       {/* Live Log */}
-      <div className="bg-[#090C10] p-4 rounded-xl border border-bg-input font-mono text-sm h-96 overflow-y-auto shadow-inner">
-        {logs.map((log, i) => (
-          <div key={i} className="mb-1 leading-relaxed">
-            <span className="text-slate-500 mr-3">{log.time}</span>
-            <span className={`mr-3 font-semibold ${
-              log.level === 'INFO' ? 'text-blue-400' :
-              log.level === 'SUCCESS' ? 'text-status-success' :
-              log.level === 'WARNING' ? 'text-status-warning' :
-              'text-status-error'
-            }`}>{log.level}</span>
-            <span className="text-slate-300">{log.message}</span>
+      <div className="bg-[#090C10] rounded-xl border border-bg-input shadow-inner flex flex-col h-[500px]">
+        {/* Log Header / Toolbar */}
+        <div className="p-3 border-b border-bg-input flex flex-col md:flex-row justify-between items-center gap-4 bg-bg-dark rounded-t-xl">
+          <div className="flex gap-2">
+            {['All', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'].map(f => (
+              <button
+                key={f}
+                onClick={() => setLogFilter(f)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                  logFilter === f 
+                    ? 'bg-primary text-white border-primary' 
+                    : 'bg-transparent text-text-muted border-bg-input hover:border-text-muted'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
           </div>
-        ))}
-        {logs.length === 0 && <div className="text-slate-500 italic">Waiting to start...</div>}
-        <div ref={logsEndRef} />
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-text-muted hover:text-text-main transition-colors">
+              <input 
+                type="checkbox" 
+                checked={autoScroll}
+                onChange={e => setAutoScroll(e.target.checked)}
+                className="accent-primary"
+              />
+              Follow Tail
+            </label>
+            <button 
+              onClick={handleDownloadLogs}
+              disabled={logs.length === 0}
+              className="text-xs bg-bg-card hover:bg-bg-input border border-bg-input px-3 py-1 rounded text-text-main transition-colors disabled:opacity-50"
+            >
+              📥 Download Logs
+            </button>
+          </div>
+        </div>
+
+        {/* Log Body */}
+        <div className="p-4 font-mono text-sm overflow-y-auto flex-1">
+          {!enableLogs && (
+            <div className="text-status-warning italic mb-4 p-2 bg-status-warning/10 rounded">
+              ⚠️ Live UI Logs are disabled. Logs are still collected in memory for downloading.
+            </div>
+          )}
+          
+          {logs
+            .filter(l => logFilter === "All" || l.level === logFilter)
+            .slice(-100)
+            .map((log, i) => {
+              // Regex to find ASINs (10 uppercase alphanumeric chars starting with B typically, but standard 10 alphanumeric is safe for Amazon)
+              const messageElements = log.message.split(/(B[0-9A-Z]{9}|[0-9]{9}[0-9X])/g).map((part, idx) => {
+                if (/(B[0-9A-Z]{9}|[0-9]{9}[0-9X])/.test(part)) {
+                  return <span key={idx} className="text-accent bg-accent/10 px-1 rounded">{part}</span>;
+                }
+                return part;
+              });
+
+              return (
+                <div key={i} className="mb-2 leading-relaxed flex items-start">
+                  <span className="text-slate-500 mr-3 shrink-0 mt-0.5">{log.time}</span>
+                  <span className={`mr-3 shrink-0 text-[10px] font-bold px-2 py-0.5 rounded mt-0.5 ${
+                    log.level === 'INFO' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                    log.level === 'SUCCESS' ? 'bg-status-success/20 text-status-success border border-status-success/30' :
+                    log.level === 'WARNING' ? 'bg-status-warning/20 text-status-warning border border-status-warning/30' :
+                    'bg-status-error/20 text-status-error border border-status-error/30'
+                  }`}>{log.level}</span>
+                  <span className="text-slate-300 break-all">{messageElements}</span>
+                </div>
+              );
+            })}
+          {logs.length === 0 && <div className="text-slate-500 italic">Waiting to start...</div>}
+          {logs.length > 0 && logFilter !== "All" && logs.filter(l => l.level === logFilter).length === 0 && (
+            <div className="text-slate-500 italic">No {logFilter} logs found.</div>
+          )}
+          <div ref={logsEndRef} />
+        </div>
       </div>
     </div>
   );

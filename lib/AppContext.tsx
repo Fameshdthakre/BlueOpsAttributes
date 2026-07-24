@@ -38,6 +38,8 @@ interface AppContextType {
   unresolvedCount: number;
   failedCount: number;
   logs: LogEntry[];
+  enableLogs: boolean;
+  setEnableLogs: (enable: boolean) => void;
   
   // Actions
   startProcessing: () => Promise<void>;
@@ -79,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unresolvedCount, setUnresolvedCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [enableLogs, setEnableLogs] = useState(true);
   
   // Internal Refs for Orchestration
   const queueRef = useRef<Job[]>([]);
@@ -87,13 +90,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pausedRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
   const concurrencyRef = useRef(1);
+  const enableLogsRef = useRef(true);
 
-  // Sync concurrency ref
+  // Sync refs
   useEffect(() => {
     concurrencyRef.current = concurrency;
   }, [concurrency]);
+  
+  useEffect(() => {
+    enableLogsRef.current = enableLogs;
+  }, [enableLogs]);
 
   const addLog = (level: string, message: string) => {
+    if (!enableLogsRef.current) return;
     const time = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, { time, level, message }]);
   };
@@ -233,7 +242,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       concurrency, setConcurrency,
       running, paused,
       processedCount, validatedCount, unresolvedCount, failedCount,
-      logs,
+      logs, enableLogs, setEnableLogs,
       startProcessing, pauseProcessing, resumeProcessing, cancelProcessing
     }}>
       {children}
