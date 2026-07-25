@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { api } from '@/lib/api';
-import { PROVIDERS, DEFAULT_MODELS } from '@/lib/constants';
+import { api } from '@/app/lib/api';
+import { PROVIDERS, DEFAULT_MODELS } from '@/app/lib/constants';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<any>(null);

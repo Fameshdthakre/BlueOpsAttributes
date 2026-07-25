@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { api } from '@/lib/api';
-import { SessionResult, DetailedSessionResult, AttributeResult } from '@/lib/types';
-import { STATUS_COLORS } from '@/lib/constants';
+import { api } from '@/app/lib/api';
+import { SessionResult, DetailedSessionResult, AttributeResult } from '@/app/lib/types';
+import { STATUS_COLORS } from '@/app/lib/constants';
 
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<SessionResult[]>([]);

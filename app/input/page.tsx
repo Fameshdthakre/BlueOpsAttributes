@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { useApp } from '@/lib/AppContext';
+import { api } from '@/app/lib/api';
+import { useApp } from '@/app/lib/AppContext';
 
 const findHeader = (headersLower: string[], ...keywords: string[]) => {
   return headersLower.find(h => keywords.some(k => h.includes(k)));

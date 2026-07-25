@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BlueOps | ASIN Attributes Master
 
-## Getting Started
+An AI-powered orchestration tool designed to automatically extract and validate Amazon Standard Identification Number (ASIN) attributes. By leveraging cutting-edge LLMs (OpenAI, Gemini, Claude), this application can parse product pages or raw data, extract specific attributes, and validate them against predefined taxonomy rules.
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Multi-Model Support**: Dynamically route queries through OpenAI, Google Gemini, or Anthropic Claude.
+- **Fallback Logic**: Automatically fallback to secondary AI providers if the primary one fails or rate-limits.
+- **Batch Processing**: Upload Excel/CSV files containing thousands of ASINs and process them concurrently.
+- **Smart Validation**: Uses fuzzy matching (`rapidfuzz`) to validate extracted values against allowed dropdown options for specific product types.
+- **Real-time Tracking**: Monitor progress, view session history, and inspect detailed extraction confidence scores.
+- **Export Ready**: Download the final validated data for immediate use.
+
+## 🛠️ Tech Stack
+
+**Frontend**
+- Next.js (App Router)
+- React 19 + TypeScript
+- Tailwind CSS v4
+
+**Backend (Serverless)**
+- Python 3
+- FastAPI 
+- PostgreSQL (`psycopg2-binary`) for session tracking
+- `google-genai`, `openai`, `anthropic` SDKs
+
+## ⚙️ Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+- **Node.js** (v20 or higher)
+- **Python** (v3.10 or higher)
+- **PostgreSQL Database** (Local or cloud-hosted like Supabase/Neon)
+- **API Keys** for at least one AI provider (OpenAI, Gemini, or Anthropic)
+
+## 🔑 Environment Variables
+
+Create a `.env.local` file in the root directory and add the following variables. (Ensure your PostgreSQL database is running and accessible).
+
+```env
+# Database Connection
+DATABASE_URL=postgresql://user:password@localhost:5432/blueops_db
+
+# (Optional) You can also configure API keys via the Settings UI in the app.
+OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Install Frontend Dependencies
+```bash
+npm install
+# or
+yarn install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Install Backend Dependencies
+The backend relies on Python. It is highly recommended to use a virtual environment:
+```bash
+python -m venv venv
+# Activate on Windows:
+venv\Scripts\activate
+# Activate on Mac/Linux:
+source venv/bin/activate
 
-## Learn More
+pip install -r requirements.txt
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run the Development Server
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📁 Project Structure
 
-## Deploy on Vercel
+```text
+├── app/                  # Next.js Frontend (Pages, Components, Lib, Layouts)
+│   ├── components/       # Reusable React components (Sidebar, Providers, etc.)
+│   ├── lib/              # Frontend utilities and API wrappers
+│   └── ...               # Route pages (Input, Process, History, Settings)
+├── api/                  # Python Serverless API Endpoints (Vercel compatible)
+├── backend/              # Core Python logic (Validation, Models, Processors, LLM integrations)
+├── public/               # Static assets (Logos)
+├── requirements.txt      # Python dependencies
+└── vercel.json           # Vercel deployment configuration
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ☁️ Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is optimized for deployment on **Vercel**. 
+
+1. Push your code to a Git repository (GitHub/GitLab).
+2. Import the project into Vercel.
+3. Ensure you add your `DATABASE_URL` to Vercel's Environment Variables.
+4. Vercel will automatically detect the Next.js frontend and build the Python backend located in the `/api` folder using its zero-config serverless environment.
+
+> **Note**: For production deployments, the `api/` folder MUST remain at the root of the project to ensure Vercel routes the Python serverless functions correctly.

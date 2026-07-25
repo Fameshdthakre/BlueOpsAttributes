@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppProvider } from '@/lib/AppContext';
-import { TourProvider } from '@/components/TourProvider';
-import Sidebar from "@/components/Sidebar";
-import { Providers } from "@/components/Providers";
+import { AppProvider } from '@/app/lib/AppContext';
+import { TourProvider } from '@/app/components/TourProvider';
+import Sidebar from "@/app/components/Sidebar";
+import { Providers } from "@/app/components/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "BlueOps | ASIN Attributes",
   description: "AI-Powered ASIN Attribute Extraction",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { useApp } from '@/lib/AppContext';
-import { useTour } from '@/components/TourProvider';
+import { useApp } from '@/app/lib/AppContext';
+import { useTour } from '@/app/components/TourProvider';
 import { useState, useEffect } from 'react';
 
 const navItems = [

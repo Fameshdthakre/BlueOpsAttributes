@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
-import { api } from '@/lib/api';
-import { Job } from '@/lib/types';
+import { api } from '@/app/lib/api';
+import { Job } from '@/app/lib/types';
 
 export interface LogEntry {
   time: string;

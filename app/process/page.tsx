@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useApp } from '@/lib/AppContext';
-import { STATUS_COLORS } from '@/lib/constants';
+import { useApp } from '@/app/lib/AppContext';
+import { STATUS_COLORS } from '@/app/lib/constants';
 
 export default function ProcessPage() {
   const router = useRouter();
