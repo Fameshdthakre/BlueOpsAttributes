@@ -38,7 +38,11 @@ Create a `.env.local` file in the root directory and add the following variables
 
 ```env
 # Database Connection
-DATABASE_URL=postgresql://user:password@localhost:5432/blueops_db
+POSTGRES_URL="postgres://user:password@localhost:5432/blueops_db"
+
+# Security (Required for encrypting API keys in the database)
+# You can generate a fernet key using python: `from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())`
+ENCRYPTION_KEY="your-base64-fernet-key="
 
 # (Optional) You can also configure API keys via the Settings UI in the app.
 OPENAI_API_KEY=your_openai_api_key
