@@ -98,7 +98,7 @@ This project is optimized for deployment on **Vercel**.
 
 1. Push your code to a Git repository (GitHub/GitLab).
 2. Import the project into Vercel.
-3. Ensure you add your `DATABASE_URL` to Vercel's Environment Variables.
+3. Ensure you add your `POSTGRES_URL` and `ENCRYPTION_KEY` to Vercel's Environment Variables.
 4. Vercel will automatically detect the Next.js frontend and build the Python backend located in the `/api` folder using its zero-config serverless environment.
 
 > **Note**: For production deployments, the `api/` folder MUST remain at the root of the project to ensure Vercel routes the Python serverless functions correctly.
