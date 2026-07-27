@@ -80,7 +80,7 @@ export default function Sidebar() {
               }`}
             >
               <span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-              <span className={`font-medium whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
+              <span className={`font-medium text-white whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
                 {item.name}
               </span>
             </Link>
