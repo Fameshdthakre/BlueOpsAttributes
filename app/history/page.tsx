@@ -118,7 +118,10 @@ export default function HistoryPage() {
           id="tour-export"
           className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors text-sm"
         >
-          ⬇️ Export to Excel
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export to Excel
         </button>
       </PageHeader>
       
@@ -132,7 +135,11 @@ export default function HistoryPage() {
 
       {sessions.length === 0 && !loading && !error ? (
         <div className="flex flex-col items-center justify-center py-24 bg-bg-card border border-bg-input rounded-xl shadow-sm">
-          <div className="text-6xl mb-6">👻</div>
+          <div className="mb-6 flex justify-center text-primary">
+            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
           <h2 className="text-2xl font-bold text-text-main mb-2">No extraction jobs found!</h2>
           <p className="text-text-muted mb-8 text-center max-w-md">
             Your database is completely fresh. Head over to the Input page to upload your first batch of ASINs and start extracting attributes.
@@ -141,7 +148,10 @@ export default function HistoryPage() {
             href="/input" 
             className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/20 transition-all transform hover:scale-105 flex items-center gap-2"
           >
-            <span>🚀</span> Go to Input
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Go to Input
           </Link>
         </div>
       ) : (

@@ -7,9 +7,15 @@ import { useSidebar } from '@/app/lib/SidebarContext';
 import { useEffect } from 'react';
 
 const navItems = [
-  { name: 'Input', href: '/input', icon: '📂' },
-  { name: 'Process', href: '/process', icon: '▶️' },
-  { name: 'History', href: '/history', icon: '🕒' },
+  { name: 'Input', href: '/input', icon: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+  ) },
+  { name: 'Process', href: '/process', icon: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  ) },
+  { name: 'History', href: '/history', icon: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  ) },
 ];
 
 export default function Sidebar() {
@@ -73,7 +79,7 @@ export default function Sidebar() {
                   : 'text-text-muted hover:bg-bg-input hover:text-text-main border-l-4 border-transparent'
               }`}
             >
-              <span className="text-xl shrink-0">{item.icon}</span>
+              <span className="shrink-0 flex items-center justify-center">{item.icon}</span>
               <span className={`font-medium whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
                 {item.name}
               </span>

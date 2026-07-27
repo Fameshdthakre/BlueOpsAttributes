@@ -193,7 +193,8 @@ export default function SettingsPage() {
       {/* Priority & Fallback Card */}
       <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
         <h2 className="text-xl font-semibold mb-2 text-text-main flex items-center gap-2">
-          <span>🎯</span> Provider Priority
+          <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          Provider Priority
         </h2>
         <p className="text-sm text-text-muted mb-6">The primary provider is queried first. Fallbacks are used on failure or unresolved results.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -302,9 +303,10 @@ export default function SettingsPage() {
                     </select>
                     <button 
                       onClick={() => handleCustomModel(provider)}
-                      className="bg-bg-dark border border-bg-input hover:bg-primary hover:border-primary px-4 rounded text-sm transition-colors"
+                      className="bg-bg-dark border border-bg-input hover:bg-primary hover:border-primary px-4 rounded text-sm transition-colors flex items-center gap-1"
                     >
-                      ➕ Custom
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Custom
                     </button>
                   </div>
                 </div>
@@ -322,7 +324,10 @@ export default function SettingsPage() {
                     })}
                     className="w-5 h-5 accent-primary rounded cursor-pointer"
                   />
-                  <span className="text-sm text-text-main">🌐 Enable Web Search Grounding</span>
+                  <span className="text-sm text-text-main flex items-center gap-2">
+                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                    Enable Web Search Grounding
+                  </span>
                 </label>
               </div>
 

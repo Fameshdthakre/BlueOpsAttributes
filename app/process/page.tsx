@@ -61,21 +61,25 @@ export default function ProcessPage() {
         <div className="flex gap-2">
           {totalJobsCount > 0 && !running ? (
             <button onClick={startProcessing} className="text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
-              ▶ Start
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+              Start
             </button>
           ) : totalJobsCount > 0 ? (
             <>
               {paused ? (
                 <button onClick={resumeProcessing} className="text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
-                  ▶ Resume
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                  Resume
                 </button>
               ) : (
                 <button onClick={pauseProcessing} className="text-sm bg-status-warning hover:bg-status-warning/80 text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
-                  ⏸ Pause
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  Pause
                 </button>
               )}
               <button onClick={cancelProcessing} className="text-sm bg-status-error hover:bg-status-error/80 text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
-                ⏹ Cancel
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" /></svg>
+                Cancel
               </button>
             </>
           ) : null}
@@ -85,7 +89,9 @@ export default function ProcessPage() {
       <div className="p-8 max-w-6xl mx-auto space-y-8 w-full overflow-y-auto flex-1">
       {totalJobsCount === 0 && !running && logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 bg-bg-card border border-bg-input rounded-xl shadow-sm mt-8">
-          <div className="text-6xl mb-6">🚀</div>
+          <div className="mb-6 flex justify-center text-primary">
+            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          </div>
           <h2 className="text-2xl font-bold text-text-main mb-2">Ready to process data?</h2>
           <p className="text-text-muted mb-8 text-center max-w-md">
             You haven't loaded any ASINs into memory yet. Head over to the Input page to map your columns and queue up a batch.
@@ -94,7 +100,8 @@ export default function ProcessPage() {
             href="/input" 
             className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary/20 transition-all transform hover:scale-105 flex items-center gap-2"
           >
-            <span>📂</span> Upload Data on Input Page
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+            Upload Data on Input Page
           </Link>
         </div>
       ) : (
