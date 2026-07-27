@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppProvider } from '@/app/lib/AppContext';
-import { TourProvider } from '@/app/components/TourProvider';
+import { AppProvider } from "@/app/lib/AppContext";
+import { TourProvider } from "@/app/components/TourProvider";
 import Sidebar from "@/app/components/Sidebar";
 import Topbar from "@/app/components/Topbar";
 import { Providers } from "@/app/components/Providers";
@@ -25,13 +25,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-bg-dark text-text-main flex flex-col h-[100dvh] overflow-hidden`}>
+      <body
+        className={`${inter.className} bg-bg-dark text-text-main flex flex-col h-[100dvh] overflow-hidden`}
+      >
         <Providers>
           <TourProvider>
             <SidebarProvider>
               {/* GCP Style Topbar */}
               <Topbar />
-              
+
               {/* Main App Container */}
               <div className="flex flex-1 overflow-hidden bg-bg-card">
                 <Sidebar />

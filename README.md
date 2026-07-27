@@ -14,19 +14,22 @@ An AI-powered orchestration tool designed to automatically extract and validate 
 ## 🛠️ Tech Stack
 
 **Frontend**
+
 - Next.js (App Router)
 - React 19 + TypeScript
 - Tailwind CSS v4
 
 **Backend (Serverless)**
+
 - Python 3
-- FastAPI 
+- FastAPI
 - PostgreSQL (`psycopg2-binary`) for session tracking
 - `google-genai`, `openai`, `anthropic` SDKs
 
 ## ⚙️ Prerequisites
 
 Before you begin, ensure you have met the following requirements:
+
 - **Node.js** (v20 or higher)
 - **Python** (v3.10 or higher)
 - **PostgreSQL Database** (Local or cloud-hosted like Supabase/Neon)
@@ -53,6 +56,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 ## 🚀 Getting Started
 
 ### 1. Install Frontend Dependencies
+
 ```bash
 npm install
 # or
@@ -60,7 +64,9 @@ yarn install
 ```
 
 ### 2. Install Backend Dependencies
+
 The backend relies on Python. It is highly recommended to use a virtual environment:
+
 ```bash
 python -m venv venv
 # Activate on Windows:
@@ -72,6 +78,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Run the Development Server
+
 ```bash
 npm run dev
 ```
@@ -94,7 +101,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## ☁️ Deployment
 
-This project is optimized for deployment on **Vercel**. 
+This project is optimized for deployment on **Vercel**.
 
 1. Push your code to a Git repository (GitHub/GitLab).
 2. Import the project into Vercel.

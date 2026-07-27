@@ -44,16 +44,21 @@ def generate_excel_from_session(session_id: str) -> bytes:
             "Raw AI Response": row_data["raw_ai_value"],
         }
         
-        # Parse extra_data string back into dict if it exists
+        # Parse extra_data back into dict if it exists
         extra = row_data["extra_data"]
-        if extra and isinstance(extra, str) and extra.startswith("{"):
-            try:
-                extra_dict = json.loads(extra)
-                for k, v in extra_dict.items():
+        if extra:
+            if isinstance(extra, dict):
+                for k, v in extra.items():
                     if k not in row:
                         row[k] = v
-            except Exception:
-                pass
+            elif isinstance(extra, str) and extra.startswith("{"):
+                try:
+                    extra_dict = json.loads(extra)
+                    for k, v in extra_dict.items():
+                        if k not in row:
+                            row[k] = v
+                except Exception:
+                    pass
                 
         rows.append(row)
 

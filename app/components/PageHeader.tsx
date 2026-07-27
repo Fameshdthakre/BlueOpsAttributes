@@ -18,17 +18,9 @@ export default function PageHeader({
   breadcrumbs,
   children,
 }: PageHeaderProps) {
-  // If we have breadcrumbs and the first one has an href, use it for the back button
-  const backHref =
-    breadcrumbs && breadcrumbs.length > 1 && breadcrumbs[0].href
-      ? breadcrumbs[0].href
-      : null;
-
   return (
     <div className="flex h-16 shrink-0 items-center justify-between border-b border-bg-input bg-bg-dark px-6">
       <div className="flex items-center gap-3">
-
-
         <h1 className="text-[22px] font-normal text-text-main tracking-tight whitespace-nowrap">
           {title}
         </h1>
