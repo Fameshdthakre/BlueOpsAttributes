@@ -13,7 +13,6 @@ const findHeader = (headersLower: string[], ...keywords: string[]) => {
 export default function InputPage() {
   const [asinFile, setAsinFile] = useState<File | null>(null);
   const [validationFile, setValidationFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null);
 
@@ -115,27 +114,29 @@ export default function InputPage() {
     }
   };
 
-  const handleLoadJobs = async () => {
-    if (!asinCol || !attrCol) {
-      setError("Please map the required ASIN and Attribute ID columns.");
+  // Auto-load jobs when all requirements are met
+  useEffect(() => {
+    if (hasApiKeys === false || !asinCol || !attrCol) {
+      // Requirements not met, don't load yet
       return;
     }
-    setLoading(true);
-    setError(null);
+    
+    if (validationFile && (!valAttrCol || !valDdCol)) {
+      // Validation file present but columns missing, don't load
+      return;
+    }
+
     try {
       const asinDataStr = sessionStorage.getItem("blueops_jobs_raw");
       const valDataStr = sessionStorage.getItem("blueops_val_raw");
       
-      if (!asinDataStr) throw new Error("No ASIN data found. Please re-upload.");
+      if (!asinDataStr) return;
+      
       const asinData = JSON.parse(asinDataStr);
       
       let validationMapToUse: Record<string, string[]> | null = null;
       if (validationFile && valDataStr) {
-        if (!valAttrCol || !valDdCol) {
-          throw new Error("Validation file is uploaded, but required columns are not mapped.");
-        }
         const valData = JSON.parse(valDataStr);
-        // Build the validation map: { "AttributeID|ProductType": ["val1", "val2"] }
         validationMapToUse = {};
         valData.forEach((row: any) => {
           const aId = row[valAttrCol]?.toString().trim() || "";
@@ -149,16 +150,14 @@ export default function InputPage() {
         });
       }
 
-      // Convert to Map format for deduplication
       const jobMap: Record<string, any> = {};
       asinData.forEach((row: any) => {
         const rowAsin = row[asinCol]?.toString().trim() || "";
         const rowAttr = row[attrCol]?.toString().trim() || "";
-        if (!rowAsin || !rowAttr) return; // Skip invalid
+        if (!rowAsin || !rowAttr) return; 
         
         const key = `${rowAsin}_${rowAttr}`;
         
-        // Remove mapped columns from extra_data
         const extra = { ...row };
         [asinCol, attrCol, ptypeCol, brandCol, titleCol].forEach(c => {
           if (c) delete extra[c];
@@ -175,18 +174,16 @@ export default function InputPage() {
       });
       
       setJobsAndMap(Object.values(jobMap), validationMapToUse);
-      setLoading(false);
-      
-      // Smoothly scroll down to the processing section
-      setTimeout(() => {
-        document.getElementById('processing-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      
+      setError(null);
     } catch (err: any) {
       setError(err.message);
-      setLoading(false);
     }
-  };
+  }, [
+    hasApiKeys, 
+    asinCol, attrCol, ptypeCol, brandCol, titleCol,
+    valAttrCol, valPtypeCol, valDdCol,
+    validationFile, setJobsAndMap
+  ]);
 
   // Log scrolling
   useEffect(() => {
@@ -406,18 +403,6 @@ export default function InputPage() {
         </div>
       </div>
       
-      {asinHeaders.length > 0 && (
-        <div className="flex justify-end border-t border-bg-input pt-6 mt-8">
-          <button 
-            onClick={handleLoadJobs}
-            disabled={loading}
-            className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-accent/20 transition-all transform hover:scale-105 disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
-          >
-            {loading ? "Loading Data..." : "Load Jobs & Configure"}
-            {!loading && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
-          </button>
-        </div>
-      )}
 
       {/* --- Processing Dashboard merged below --- */}
       {totalJobsCount > 0 && (
