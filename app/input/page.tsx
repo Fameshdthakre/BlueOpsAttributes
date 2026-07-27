@@ -176,13 +176,13 @@ export default function InputPage() {
             tooltip = rawVal;
           } else {
             allowedValues = rawVal
-              .split(",")
+              .split("|")
               .map((v: string) => v.trim())
               .filter(Boolean);
           }
 
           if (aId) {
-            const key = pType ? `${aId}|${pType}` : aId;
+            const key = aId.toLowerCase();
             if (!validationMapToUse![key]) {
               validationMapToUse![key] = [];
             }
