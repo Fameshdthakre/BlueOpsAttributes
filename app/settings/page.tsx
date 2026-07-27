@@ -230,14 +230,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Provider Cards */}
-      <div className="space-y-6" id="tour-api-keys">
+      <div className="space-y-6">
         {PROVIDERS.map(provider => {
           const pCfg = config.providers[provider];
           const customModels = config.custom_models[provider] || [];
           const allModels = [...DEFAULT_MODELS[provider], ...customModels];
           
           return (
-            <div key={provider} className={`bg-bg-card p-6 rounded-xl border ${pCfg.enabled ? 'border-bg-input' : 'border-bg-input/30 opacity-70'} transition-opacity`}>
+            <div key={provider} id={provider === 'Gemini' ? 'tour-api-keys' : undefined} className={`bg-bg-card p-6 rounded-xl border ${pCfg.enabled ? 'border-bg-input' : 'border-bg-input/30 opacity-70'} transition-opacity`}>
               {/* Header */}
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-bg-input">
                 <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">

@@ -15,7 +15,7 @@ interface CustomStep {
   target: string;
   content: string;
   route: string;
-  placement?: 'bottom' | 'top' | 'left' | 'right';
+  placement?: 'bottom' | 'top' | 'left' | 'right' | 'bottom-left' | 'bottom-right';
 }
 
 const TOUR_STEPS: CustomStep[] = [
@@ -23,37 +23,37 @@ const TOUR_STEPS: CustomStep[] = [
     target: '#tour-api-keys',
     content: 'Welcome to BlueOps! To power the AI extraction, you must first paste in at least one API key here.',
     route: '/settings',
-    placement: 'bottom',
+    placement: 'bottom-left',
   },
   {
     target: '#tour-templates',
     content: 'Next, download our Excel templates. This shows you exactly how to format your ASIN data for perfect results.',
     route: '/input',
-    placement: 'bottom',
+    placement: 'bottom-right',
   },
   {
     target: '#tour-asin-upload',
     content: 'Upload your filled-out ASIN file here. We will magically map your columns for you automatically!',
     route: '/input',
-    placement: 'bottom',
+    placement: 'bottom-left',
   },
   {
     target: '#tour-validation-upload',
     content: 'Want strict formatting? Upload a Validation sheet to force the AI to only pick from your allowed Dropdown values.',
     route: '/input',
-    placement: 'bottom',
+    placement: 'bottom-right',
   },
   {
     target: '#tour-start-process',
     content: 'Choose how fast you want to process (up to 10 at a time), and hit Start to unleash the AI!',
-    route: '/process',
-    placement: 'bottom',
+    route: '/input',
+    placement: 'bottom-right',
   },
   {
     target: '#tour-export',
     content: 'All your batches are saved here permanently. You can download your beautiful, color-coded Excel reports anytime. You\'re ready to go!',
     route: '/history',
-    placement: 'bottom',
+    placement: 'bottom-right',
   }
 ];
 
@@ -190,6 +190,8 @@ function TourOverlay({
       className={`absolute z-[99999] min-w-[300px] w-max max-w-sm bg-bg-dark border border-bg-input rounded-xl shadow-2xl p-5 mt-4 ml-4 pointer-events-auto
         animate-in fade-in zoom-in-95 duration-200
         ${step.placement === 'bottom' ? 'top-full left-1/2 -translate-x-1/2' : ''}
+        ${step.placement === 'bottom-right' ? 'top-full right-0' : ''}
+        ${step.placement === 'bottom-left' ? 'top-full left-0' : ''}
         ${step.placement === 'right' ? 'top-1/2 -translate-y-1/2 left-full ml-4' : ''}
         ${step.placement === 'left' ? 'top-1/2 -translate-y-1/2 right-full mr-4' : ''}
         ${step.placement === 'top' ? 'bottom-full left-1/2 -translate-x-1/2 mb-4' : ''}

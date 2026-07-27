@@ -142,7 +142,7 @@ export default function HistoryPage() {
           </div>
           <h2 className="text-2xl font-bold text-text-main mb-2">No extraction jobs found!</h2>
           <p className="text-text-muted mb-8 text-center max-w-md">
-            Your database is completely fresh. Head over to the Input page to upload your first batch of ASINs and start extracting attributes.
+            Your database is completely fresh. Head over to the Attribute Master page to upload your first batch of ASINs and start extracting attributes.
           </p>
           <Link 
             href="/input" 
