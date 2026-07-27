@@ -74,7 +74,8 @@ export default function Sidebar() {
   }, [pathname, setExpanded]);
 
   const { running, paused, totalJobsCount, processedCount, limit } = useApp();
-  const targetLimit = limit > 0 ? limit : totalJobsCount;
+  const numLimit = typeof limit === 'number' ? limit : 0;
+  const targetLimit = numLimit > 0 ? numLimit : totalJobsCount;
   const progressPercent =
     targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
