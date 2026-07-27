@@ -216,7 +216,7 @@ export default function HistoryPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6">
             {/* Sidebar: Session List */}
             <div className="bg-bg-card border border-bg-input rounded-xl overflow-hidden flex flex-col h-[700px]">
               <div className="p-4 bg-bg-dark border-b border-bg-input font-semibold text-text-main flex justify-between items-center">
@@ -292,7 +292,7 @@ export default function HistoryPage() {
             </div>
 
             {/* Main: Results Data Grid */}
-            <div className="md:col-span-4 bg-bg-card border border-bg-input rounded-xl flex flex-col h-[700px]">
+            <div className="bg-bg-card border border-bg-input rounded-xl flex flex-col h-[700px] overflow-hidden">
               {/* Header & Filters */}
               <div className="p-4 border-b border-bg-input flex flex-col md:flex-row gap-4 justify-between items-center bg-bg-dark rounded-t-xl">
                 <div className="flex flex-wrap gap-2">
