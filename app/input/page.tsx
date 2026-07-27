@@ -191,24 +191,30 @@ export default function InputPage() {
         const rowAttr = row[attrCol]?.toString().trim() || "";
         if (!rowAsin || !rowAttr) return;
 
-        const key = `${rowAsin}_${rowAttr}`;
+        const key = rowAsin;
 
-        const extra: Record<string, any> = {};
-        for (let i = 0; i < extraCols.length; i++) {
-          const col = extraCols[i];
-          if (row[col] !== undefined) {
-            extra[col] = row[col];
+        if (!jobMap[key]) {
+          const extra: Record<string, any> = {};
+          for (let i = 0; i < extraCols.length; i++) {
+            const col = extraCols[i];
+            if (row[col] !== undefined) {
+              extra[col] = row[col];
+            }
+          }
+
+          jobMap[key] = {
+            asin: rowAsin,
+            attributes: [rowAttr],
+            product_type: ptypeCol ? row[ptypeCol]?.toString().trim() : "",
+            brand: brandCol ? row[brandCol]?.toString().trim() : "",
+            title: titleCol ? row[titleCol]?.toString().trim() : "",
+            extra_data: extra,
+          };
+        } else {
+          if (!jobMap[key].attributes.includes(rowAttr)) {
+            jobMap[key].attributes.push(rowAttr);
           }
         }
-
-        jobMap[key] = {
-          asin: rowAsin,
-          attribute_id: rowAttr,
-          product_type: ptypeCol ? row[ptypeCol]?.toString().trim() : "",
-          brand: brandCol ? row[brandCol]?.toString().trim() : "",
-          title: titleCol ? row[titleCol]?.toString().trim() : "",
-          extra_data: extra,
-        };
       });
 
       setJobsAndMap(Object.values(jobMap), validationMapToUse);
@@ -250,7 +256,8 @@ export default function InputPage() {
     URL.revokeObjectURL(url);
   };
 
-  const targetLimit = limit > 0 ? limit : totalJobsCount;
+  const numLimit = typeof limit === 'number' ? limit : 0;
+  const targetLimit = numLimit > 0 ? numLimit : totalJobsCount;
   const progressPercent =
     targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
@@ -608,8 +615,8 @@ export default function InputPage() {
                 Almost Ready!
               </h3>
               <p className="text-text-muted max-w-lg mb-6">
-                You've mapped your columns successfully, but the processing
-                dashboard is paused because you haven't configured an AI
+                You&apos;ve mapped your columns successfully, but the processing
+                dashboard is paused because you haven&apos;t configured an AI
                 Provider API Key.
               </p>
               <Link
@@ -753,7 +760,7 @@ export default function InputPage() {
                   <input
                     type="number"
                     value={limit}
-                    onChange={(e) => setLimit(Number(e.target.value))}
+                    onChange={(e) => setLimit(e.target.value === "" ? "" : Number(e.target.value))}
                     disabled={running}
                     className="w-full bg-bg-input border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"
                   />

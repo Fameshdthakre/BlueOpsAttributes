@@ -5,8 +5,29 @@ import { api } from "@/app/lib/api";
 import { PROVIDERS, DEFAULT_MODELS } from "@/app/lib/constants";
 import PageHeader from "@/app/components/PageHeader";
 
+interface AppConfig {
+  primary_provider: string;
+  fallback_order: string[];
+  custom_models: Record<string, string[]>;
+  providers: Record<
+    string,
+    {
+      enabled: boolean;
+      api_key: string;
+      model: string;
+      max_retries: number;
+      timeout: number;
+      rpm_limit: number;
+      temperature: number;
+      top_k: number;
+      top_p: number;
+      enable_web_search?: boolean;
+    }
+  >;
+}
+
 export default function SettingsPage() {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<AppConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -19,10 +40,15 @@ export default function SettingsPage() {
     const draft = localStorage.getItem("blueops_settings_draft");
     if (draft) {
       try {
-        setConfig(JSON.parse(draft));
-        setLoading(false);
+        const parsed = JSON.parse(draft) as AppConfig;
+        setTimeout(() => {
+          setConfig(parsed);
+          setLoading(false);
+        }, 0);
         return;
-      } catch (e) {}
+      } catch (err) {
+        // ignore parse error
+      }
     }
 
     api.getSettings().then((cfg) => {
@@ -49,7 +75,7 @@ export default function SettingsPage() {
 
 
   // Save to draft on change
-  const updateConfig = (newCfg: any) => {
+  const updateConfig = (newCfg: AppConfig) => {
     setConfig(newCfg);
     localStorage.setItem("blueops_settings_draft", JSON.stringify(newCfg));
   };
@@ -60,7 +86,8 @@ export default function SettingsPage() {
       await api.saveSettings(config);
       localStorage.removeItem("blueops_settings_draft");
       alert("Settings saved securely!");
-    } catch (e: any) {
+    } catch (err: unknown) {
+      const e = err as Error;
       alert("Error saving: " + e.message);
     } finally {
       setSaving(false);
@@ -77,7 +104,8 @@ export default function SettingsPage() {
     try {
       const res = await api.testConnection(provider, pCfg.api_key, pCfg.model);
       setTestResult({ provider, ok: res.ok, msg: res.message });
-    } catch (e: any) {
+    } catch (err: unknown) {
+      const e = err as Error;
       setTestResult({ provider, ok: false, msg: e.message });
     }
   };
@@ -89,18 +117,21 @@ export default function SettingsPage() {
     );
   }, [config]);
 
-  // Ensure primary provider is in available
   useEffect(() => {
+    const currentConfig = config;
     if (
-      config &&
+      currentConfig &&
       availableProviders.length > 0 &&
-      !availableProviders.includes(config.primary_provider)
+      !availableProviders.includes(currentConfig.primary_provider)
     ) {
-      updateConfig({ ...config, primary_provider: availableProviders[0] });
+      setTimeout(() => {
+        updateConfig({ ...currentConfig, primary_provider: availableProviders[0] });
+      }, 0);
     }
   }, [availableProviders, config]);
 
   const handleCustomModel = (provider: string) => {
+    if (!config) return;
     const custom = window.prompt(`Enter custom model ID for ${provider}:`);
     if (custom && custom.trim() !== "") {
       const val = custom.trim();
@@ -149,6 +180,7 @@ export default function SettingsPage() {
   if (fb2 && !fb2Options.includes(fb2)) fb2 = "";
 
   const updateFallback = (idx: number, val: string) => {
+    if (!config) return;
     const newFb = [...config.fallback_order];
     newFb[idx] = val;
     updateConfig({ ...config, fallback_order: newFb.filter((x) => x !== "") });

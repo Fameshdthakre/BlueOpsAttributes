@@ -11,6 +11,7 @@ import React, {
 import { api } from "@/app/lib/api";
 import { Job } from "@/app/lib/types";
 import { set as idbSet, get as idbGet, del as idbDel } from "idb-keyval";
+import { useCallback } from "react";
 
 export interface LogEntry {
   time: string;
@@ -36,8 +37,8 @@ interface AppContextType {
   setJobsAndMap: (jobs: Job[], map: any) => void;
 
   // Process State
-  limit: number;
-  setLimit: (limit: number) => void;
+  limit: number | '';
+  setLimit: (limit: number | '') => void;
   concurrency: number;
   setConcurrency: (concurrency: number) => void;
   running: boolean;
@@ -81,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [totalJobsCount, setTotalJobsCount] = useState(0);
   const [validationMap, setValidationMap] = useState<any>({});
 
-  const [limit, setLimit] = useState(0);
+  const [limit, setLimit] = useState<number | ''>(0);
   const [concurrency, setConcurrency] = useState(1);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -117,7 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLogs((prev) => [...prev.slice(-499), { time, level, message }]);
   };
 
-  const setJobsAndMap = async (newJobs: Job[], newMap: any) => {
+  const setJobsAndMap = useCallback(async (newJobs: Job[], newMap: any) => {
     // Store huge array in IndexedDB instead of memory
     await idbSet("blueops_jobs", newJobs);
     
@@ -127,8 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setJobs([]);
     setTotalJobsCount(newJobs.length);
     setValidationMap(newMap);
-    setLimit(newJobs.length);
-  };
+  }, []);
 
   const processNext = async () => {
     if (
@@ -222,8 +222,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setFailedCount(0);
     setLogs([]);
 
-    let savedJobs = await idbGet<Job[]>("blueops_jobs") || [];
-    const jobsToRun = limit > 0 ? savedJobs.slice(0, limit) : savedJobs;
+    const savedJobs = await idbGet<Job[]>("blueops_jobs") || [];
+    const numLimit = typeof limit === 'number' ? limit : 0;
+    const jobsToRun = numLimit > 0 ? savedJobs.slice(0, numLimit) : savedJobs;
     setTotalJobsCount(jobsToRun.length);
     queueRef.current = jobsToRun;
 

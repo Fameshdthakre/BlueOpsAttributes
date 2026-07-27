@@ -17,6 +17,7 @@ export default function Topbar() {
           onClick={toggleSidebar}
           className="rounded p-2 text-text-muted hover:bg-bg-input hover:text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Toggle Navigation"
+          title="Toggle Navigation"
         >
           <svg
             className={`h-6 w-6 transition-transform duration-300 ${!isExpanded ? "rotate-90" : "rotate-0"}`}
