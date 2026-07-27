@@ -47,44 +47,6 @@ export default function SettingsPage() {
     });
   }, []);
 
-  // Unsaved changes prompt
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (localStorage.getItem("blueops_settings_draft")) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest("a");
-      if (
-        target &&
-        target.href &&
-        target.href.startsWith(window.location.origin) &&
-        !target.href.includes("/settings")
-      ) {
-        if (localStorage.getItem("blueops_settings_draft")) {
-          if (
-            !window.confirm(
-              "You have unsaved changes in Settings. Are you sure you want to leave without saving?",
-            )
-          ) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("click", handleClick, { capture: true });
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("click", handleClick, { capture: true });
-    };
-  }, []);
 
   // Save to draft on change
   const updateConfig = (newCfg: any) => {
