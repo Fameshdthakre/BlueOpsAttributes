@@ -8,59 +8,48 @@ export interface Breadcrumb {
 export interface PageHeaderProps {
   title: string;
   subtitle?: string;
-  breadcrumbs: Breadcrumb[];
+  breadcrumbs?: Breadcrumb[];
   children?: React.ReactNode;
 }
 
 export default function PageHeader({ title, subtitle, breadcrumbs, children }: PageHeaderProps) {
+  // If we have breadcrumbs and the first one has an href, use it for the back button
+  const backHref = breadcrumbs && breadcrumbs.length > 1 && breadcrumbs[0].href ? breadcrumbs[0].href : null;
+
   return (
-    <div className="flex flex-col border-b border-bg-input px-6 py-4">
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mb-2">
-        <ol className="flex items-center space-x-2 text-sm text-text-muted">
-          {breadcrumbs.map((crumb, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            
-            return (
-              <li key={index} className="flex items-center">
-                {crumb.href && !isLast ? (
-                  <Link 
-                    href={crumb.href} 
-                    className="hover:text-primary transition-colors hover:underline"
-                  >
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span className={isLast ? "text-text-main font-medium" : ""}>
-                    {crumb.label}
-                  </span>
-                )}
-                
-                {!isLast && (
-                  <span className="mx-2 text-text-muted select-none">/</span>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
-      
-      {/* Title & Actions */}
-      <div className="flex items-center justify-between mt-1">
-        <div>
-          <h1 className="text-2xl font-normal text-text-main tracking-tight">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-sm text-text-muted mt-1">{subtitle}</p>
-          )}
-        </div>
-        {children && (
-          <div className="flex items-center gap-3">
-            {children}
-          </div>
+    <div className="flex h-16 shrink-0 items-center justify-between border-b border-bg-input bg-bg-card px-6">
+      <div className="flex items-center gap-3">
+        {backHref && (
+          <Link 
+            href={backHref} 
+            className="p-2 -ml-2 rounded-full hover:bg-bg-input text-text-muted hover:text-text-main transition-colors"
+            aria-label="Go back"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </Link>
+        )}
+        
+        <h1 className="text-[22px] font-normal text-text-main tracking-tight whitespace-nowrap">
+          {title}
+        </h1>
+        
+        {subtitle && (
+          <>
+            <div className="h-6 w-px bg-bg-input mx-2 hidden sm:block" aria-hidden="true"></div>
+            <span className="text-sm text-text-muted hidden sm:block truncate max-w-md">
+              {subtitle}
+            </span>
+          </>
         )}
       </div>
+
+      {children && (
+        <div className="flex items-center gap-3">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
