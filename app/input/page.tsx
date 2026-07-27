@@ -138,8 +138,8 @@ export default function InputPage() {
 
   // Auto-load jobs when all requirements are met
   useEffect(() => {
-    if (hasApiKeys === false || !asinCol || !attrCol) {
-      // Requirements not met, don't load yet
+    if (hasApiKeys !== true || !asinCol || !attrCol) {
+      // Requirements not met or still checking, don't load yet
       return;
     }
 
@@ -285,61 +285,6 @@ export default function InputPage() {
           </div>
         )}
 
-        {hasApiKeys === false && (
-          <div className="p-4 bg-status-warning/10 border border-status-warning/20 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-status-warning">
-              <div className="text-2xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-status-warning"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-bold">Missing AI Provider API Key</h3>
-                <p className="text-sm opacity-90">
-                  You must add at least one API Key (OpenAI or Gemini) before
-                  you can process ASINs.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/settings"
-              className="bg-status-warning hover:bg-status-warning/80 text-bg-dark px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap text-center flex items-center gap-2"
-            >
-              <span>Go to Settings</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </Link>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ASIN Card */}
@@ -629,7 +574,7 @@ export default function InputPage() {
         </div>
 
         {/* Missing API Key Block if columns are mapped but jobs can't load */}
-        {hasApiKeys === false && asinCol && attrCol && totalJobsCount === 0 && (
+        {hasApiKeys === false && asinCol && attrCol && (
           <div className="bg-status-warning/10 border border-status-warning/30 rounded-xl p-6 mt-8 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4">
             <svg
               className="w-12 h-12 text-status-warning mb-4"
@@ -658,7 +603,7 @@ export default function InputPage() {
         )}
 
         {/* --- Processing Dashboard merged below --- */}
-        {totalJobsCount > 0 && (
+        {totalJobsCount > 0 && hasApiKeys === true && (
           <div
             id="processing-section"
             className="space-y-8 pt-8 border-t border-bg-input mt-12 animate-in fade-in slide-in-from-bottom-4 duration-500"
