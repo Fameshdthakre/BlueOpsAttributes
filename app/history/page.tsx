@@ -140,7 +140,8 @@ export default function HistoryPage() {
           onClick={handleExport}
           disabled={!selectedSessionId || !sessionDetails}
           id="tour-export"
-          className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors text-sm"
+          className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+          title={(!selectedSessionId || !sessionDetails) ? "Select a session to export" : "Export session to Excel"}
         >
           <svg
             className="w-4 h-4"
@@ -225,18 +226,18 @@ export default function HistoryPage() {
                     <button
                       onClick={() => handleDelete(false)}
                       disabled={isDeleting}
-                      className="text-xs bg-status-error/20 hover:bg-status-error/40 text-status-error px-2 py-1 rounded transition-colors"
+                      className="text-xs bg-status-error/20 hover:bg-status-error/40 text-status-error px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 min-w-[70px]"
                     >
-                      Delete ({selectedForDeletion.size})
+                      {isDeleting ? "Deleting..." : `Delete (${selectedForDeletion.size})`}
                     </button>
                   )}
                   {sessions.length > 0 && (
                     <button
                       onClick={() => handleDelete(true)}
                       disabled={isDeleting}
-                      className="text-xs bg-status-error/10 hover:bg-status-error/30 text-status-error px-2 py-1 rounded transition-colors"
+                      className="text-xs bg-status-error/10 hover:bg-status-error/30 text-status-error px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 min-w-[70px]"
                     >
-                      Clear All
+                      {isDeleting ? "Clearing..." : "Clear All"}
                     </button>
                   )}
                 </div>
