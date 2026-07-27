@@ -39,7 +39,7 @@ export default function Topbar() {
           <span className="text-xl">⚙️</span>
         </Link>
         <button className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white" aria-label="Profile">
-          FT
+          BO
         </button>
       </div>
     </header>

@@ -117,23 +117,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <div className="pb-4">
-        <Link
-          href="/settings"
-          title={!isExpanded ? "Settings" : undefined}
-          className={`flex items-center gap-4 py-3 pl-5 pr-4 mr-2 transition-all rounded-r-full ${
-            pathname.startsWith('/settings') 
-              ? 'bg-primary/10 text-primary font-bold border-l-4 border-primary' 
-              : 'text-text-muted hover:bg-bg-input hover:text-text-main border-l-4 border-transparent'
-          }`}
-        >
-          <span className="text-xl shrink-0">⚙️</span>
-          <span className={`font-medium whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
-            Settings
-          </span>
-        </Link>
-      </div>
-      
       {/* Footer */}
       <div className={`p-4 border-t border-bg-input flex flex-col items-center justify-center gap-1 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden py-0 border-transparent'}`}>
         <div className="text-xs text-text-muted text-center">
