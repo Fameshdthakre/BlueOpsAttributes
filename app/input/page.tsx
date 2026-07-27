@@ -222,17 +222,20 @@ export default function InputPage() {
 
           jobMap[key] = {
             asin: rowAsin,
-            attributes: [rowAttr],
+            attributes: [],
             product_type: ptypeCol ? row[ptypeCol]?.toString().trim() : "",
             brand: brandCol ? row[brandCol]?.toString().trim() : "",
             title: titleCol ? row[titleCol]?.toString().trim() : "",
             extra_data: extra,
           };
-        } else {
-          if (!jobMap[key].attributes.includes(rowAttr)) {
-            jobMap[key].attributes.push(rowAttr);
-          }
         }
+        
+        const attrs = rowAttr.split("|").map((a: string) => a.trim()).filter(Boolean);
+        attrs.forEach((a: string) => {
+          if (!jobMap[key].attributes.includes(a)) {
+            jobMap[key].attributes.push(a);
+          }
+        });
       });
 
       setTimeout(() => {
