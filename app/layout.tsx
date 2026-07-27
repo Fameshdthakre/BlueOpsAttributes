@@ -4,7 +4,9 @@ import "./globals.css";
 import { AppProvider } from '@/app/lib/AppContext';
 import { TourProvider } from '@/app/components/TourProvider';
 import Sidebar from "@/app/components/Sidebar";
+import Topbar from "@/app/components/Topbar";
 import { Providers } from "@/app/components/Providers";
+import { SidebarProvider } from "@/app/lib/SidebarContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,13 +25,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-bg-dark text-text-main flex flex-col md:flex-row h-[100dvh] overflow-hidden`}>
+      <body className={`${inter.className} bg-bg-dark text-text-main flex flex-col h-[100dvh] overflow-hidden`}>
         <Providers>
           <TourProvider>
-            <Sidebar />
-            <main className="flex-1 h-full overflow-y-auto overflow-x-hidden relative pt-16 md:pt-0">
-              {children}
-            </main>
+            <SidebarProvider>
+              {/* GCP Style Topbar */}
+              <Topbar />
+              
+              {/* Main App Container */}
+              <div className="flex flex-1 overflow-hidden">
+                <Sidebar />
+                <main className="flex-1 h-full overflow-y-auto overflow-x-hidden relative bg-bg-dark">
+                  {children}
+                </main>
+              </div>
+            </SidebarProvider>
           </TourProvider>
         </Providers>
       </body>
