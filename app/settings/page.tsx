@@ -81,6 +81,7 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
+    if (!config) return;
     setSaving(true);
     try {
       await api.saveSettings(config);
@@ -95,6 +96,7 @@ export default function SettingsPage() {
   };
 
   const handleTest = async (provider: string) => {
+    if (!config) return;
     const pCfg = config.providers[provider];
     if (!pCfg.api_key) {
       setTestResult({ provider, ok: false, msg: "API key is empty." });
