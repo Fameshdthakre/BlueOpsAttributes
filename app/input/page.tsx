@@ -156,7 +156,7 @@ export default function InputPage() {
 
       const asinData = JSON.parse(asinDataStr);
 
-      let validationMapToUse: Record<string, string[]> | null = null;
+      let validationMapToUse: Record<string, any[]> | null = null;
       if (validationFile && valDataStr) {
         const valData = JSON.parse(valDataStr);
         validationMapToUse = {};
@@ -165,16 +165,34 @@ export default function InputPage() {
           const pType = valPtypeCol
             ? row[valPtypeCol]?.toString().trim() || ""
             : "";
-          const vals =
-            row[valDdCol]
-              ?.toString()
+          
+          const rawVal = row[valDdCol]?.toString().trim() || "";
+          let isFreeText = false;
+          let tooltip = "";
+          let allowedValues: string[] = [];
+
+          if (rawVal.toLowerCase().startsWith("tooltip:") || rawVal.toLowerCase().startsWith("example:")) {
+            isFreeText = true;
+            tooltip = rawVal;
+          } else {
+            allowedValues = rawVal
               .split(",")
               .map((v: string) => v.trim())
-              .filter(Boolean) || [];
+              .filter(Boolean);
+          }
 
           if (aId) {
             const key = pType ? `${aId}|${pType}` : aId;
-            validationMapToUse![key] = vals;
+            if (!validationMapToUse![key]) {
+              validationMapToUse![key] = [];
+            }
+            validationMapToUse![key].push({
+              attribute_id: aId,
+              product_type: pType,
+              allowed_values: allowedValues,
+              is_free_text: isFreeText,
+              tooltip: tooltip
+            });
           }
         });
       }
@@ -217,10 +235,12 @@ export default function InputPage() {
         }
       });
 
-      setJobsAndMap(Object.values(jobMap), validationMapToUse);
-      setError(null);
+      setTimeout(() => {
+        setJobsAndMap(Object.values(jobMap), validationMapToUse);
+        setError(null);
+      }, 0);
     } catch (err: any) {
-      setError(err.message);
+      setTimeout(() => setError(err.message), 0);
     }
   }, [
     hasApiKeys,
