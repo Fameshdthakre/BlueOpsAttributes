@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '@/app/lib/api';
 import { SessionResult, DetailedSessionResult, AttributeResult } from '@/app/lib/types';
 import { STATUS_COLORS } from '@/app/lib/constants';
+import PageHeader from '@/app/components/PageHeader';
 
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<SessionResult[]>([]);
@@ -105,21 +106,23 @@ export default function HistoryPage() {
   const extraColsArray = Array.from(extraColumns);
 
   return (
-    <div className="p-8 w-full mx-auto space-y-8 animate-in fade-in">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main">History & Export</h1>
-          <p className="text-text-muted mt-2">View past extraction sessions and download results.</p>
-        </div>
+    <div className="animate-in fade-in flex flex-col h-full">
+      <PageHeader 
+        title="History & Export" 
+        subtitle="View past extraction sessions and download results."
+        breadcrumbs={[{ label: 'BlueOps Hub', href: '/' }, { label: 'History' }]}
+      >
         <button 
           onClick={handleExport}
           disabled={!selectedSessionId || !sessionDetails}
           id="tour-export"
-          className="bg-accent hover:bg-accent/90 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors"
+          className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors text-sm"
         >
           ⬇️ Export to Excel
         </button>
-      </header>
+      </PageHeader>
+      
+      <div className="p-8 w-full mx-auto space-y-8 overflow-y-auto flex-1">
 
       {error && (
         <div className="p-4 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg">
@@ -295,6 +298,7 @@ export default function HistoryPage() {
 
       </div>
       )}
+      </div>
     </div>
   );
 }

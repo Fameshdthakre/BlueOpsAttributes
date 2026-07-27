@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/app/lib/api';
 import { PROVIDERS, DEFAULT_MODELS } from '@/app/lib/constants';
+import PageHeader from '@/app/components/PageHeader';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<any>(null);
@@ -172,20 +173,22 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in pb-20">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main">Settings</h1>
-          <p className="text-text-muted mt-2">Manage API keys and provider configurations.</p>
-        </div>
+    <div className="animate-in fade-in flex flex-col h-full">
+      <PageHeader 
+        title="Settings" 
+        subtitle="Manage API keys and provider configurations."
+        breadcrumbs={[{ label: 'BlueOps Hub', href: '/' }, { label: 'Settings' }]}
+      >
         <button 
           onClick={handleSave}
           disabled={saving}
-          className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+          className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors text-sm"
         >
           {saving ? "Saving..." : "Save Settings"}
         </button>
-      </header>
+      </PageHeader>
+      
+      <div className="p-8 max-w-5xl mx-auto space-y-8 overflow-y-auto flex-1 pb-20">
 
       {/* Priority & Fallback Card */}
       <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
@@ -387,6 +390,7 @@ export default function SettingsPage() {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

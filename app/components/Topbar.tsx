@@ -3,12 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSidebar } from '@/app/lib/SidebarContext';
+import { useTour } from '@/app/components/TourProvider';
 
 export default function Topbar() {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isExpanded } = useSidebar();
+  const { startTour } = useTour();
 
   return (
-    <header className="flex h-16 w-full items-center justify-between border-b border-bg-input bg-bg-card px-4 z-50">
+    <header className="flex h-16 w-full items-center justify-between bg-bg-card px-4 z-50">
       <div className="flex items-center gap-4">
         {/* Hamburger Menu */}
         <button
@@ -16,7 +18,10 @@ export default function Topbar() {
           className="rounded p-2 text-text-muted hover:bg-bg-input hover:text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Toggle Navigation"
         >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg 
+            className={`h-6 w-6 transition-transform duration-300 ${!isExpanded ? 'rotate-90' : 'rotate-0'}`} 
+            fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
@@ -32,6 +37,14 @@ export default function Topbar() {
 
       {/* Right-side Action Icons */}
       <div className="flex items-center gap-2">
+        <button 
+          onClick={startTour}
+          className="rounded p-2 text-text-muted hover:bg-bg-input hover:text-text-main" 
+          aria-label="Replay Tour"
+          title="Replay Tour"
+        >
+          <span className="text-xl">🧭</span>
+        </button>
         <button className="rounded p-2 text-text-muted hover:bg-bg-input hover:text-text-main" aria-label="Notifications">
           <span className="text-xl">🔔</span>
         </button>

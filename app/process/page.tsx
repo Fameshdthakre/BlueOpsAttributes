@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/app/lib/AppContext';
 import { STATUS_COLORS } from '@/app/lib/constants';
+import PageHeader from '@/app/components/PageHeader';
 
 export default function ProcessPage() {
   const router = useRouter();
@@ -51,7 +52,37 @@ export default function ProcessPage() {
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in">
+    <div className="animate-in fade-in flex flex-col h-full">
+      <PageHeader 
+        title="Process Jobs" 
+        subtitle={`Loaded ${totalJobsCount} unique ASINs.`}
+        breadcrumbs={[{ label: 'BlueOps Hub', href: '/' }, { label: 'Process' }]}
+      >
+        <div className="flex gap-2">
+          {totalJobsCount > 0 && !running ? (
+            <button onClick={startProcessing} className="text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
+              ▶ Start
+            </button>
+          ) : totalJobsCount > 0 ? (
+            <>
+              {paused ? (
+                <button onClick={resumeProcessing} className="text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
+                  ▶ Resume
+                </button>
+              ) : (
+                <button onClick={pauseProcessing} className="text-sm bg-status-warning hover:bg-status-warning/80 text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
+                  ⏸ Pause
+                </button>
+              )}
+              <button onClick={cancelProcessing} className="text-sm bg-status-error hover:bg-status-error/80 text-white px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors">
+                ⏹ Cancel
+              </button>
+            </>
+          ) : null}
+        </div>
+      </PageHeader>
+      
+      <div className="p-8 max-w-6xl mx-auto space-y-8 w-full overflow-y-auto flex-1">
       {totalJobsCount === 0 && !running && logs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 bg-bg-card border border-bg-input rounded-xl shadow-sm mt-8">
           <div className="text-6xl mb-6">🚀</div>
@@ -68,34 +99,6 @@ export default function ProcessPage() {
         </div>
       ) : (
         <>
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main">Process Jobs</h1>
-          <p className="text-text-muted mt-2">Loaded {totalJobsCount} unique ASINs.</p>
-        </div>
-        <div className="flex gap-4">
-          {!running ? (
-            <button onClick={startProcessing} className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2">
-              ▶ Start
-            </button>
-          ) : (
-            <>
-              {paused ? (
-                <button onClick={resumeProcessing} className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2">
-                  ▶ Resume
-                </button>
-              ) : (
-                <button onClick={pauseProcessing} className="bg-status-warning hover:bg-status-warning/80 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2">
-                  ⏸ Pause
-                </button>
-              )}
-              <button onClick={cancelProcessing} className="bg-status-error hover:bg-status-error/80 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2">
-                ⏹ Cancel
-              </button>
-            </>
-          )}
-        </div>
-      </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Controls */}
@@ -243,6 +246,7 @@ export default function ProcessPage() {
       </div>
         </>
       )}
+      </div>
     </div>
   );
 }

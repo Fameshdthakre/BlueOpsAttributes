@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/app/lib/api';
 import { useApp } from '@/app/lib/AppContext';
+import PageHeader from '@/app/components/PageHeader';
 
 const findHeader = (headersLower: string[], ...keywords: string[]) => {
   return headersLower.find(h => keywords.some(k => h.includes(k)));
@@ -160,20 +161,22 @@ export default function InputPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in">
-      <header className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main">Input Data</h1>
-          <p className="text-text-muted mt-2">Upload your ASIN extraction jobs and validation reference.</p>
-        </div>
+    <div className="animate-in fade-in flex flex-col h-full">
+      <PageHeader 
+        title="Input Data" 
+        subtitle="Upload your ASIN extraction jobs and validation reference."
+        breadcrumbs={[{ label: 'BlueOps Hub', href: '/' }, { label: 'Input' }]}
+      >
         <a 
           href={api.downloadTemplatesUrl()}
           id="tour-templates"
-          className="bg-bg-input hover:bg-surface-2 text-accent px-4 py-2 rounded-lg font-medium border border-accent/20 hover:border-accent/50 transition-colors flex items-center gap-2"
+          className="bg-bg-input hover:bg-surface-2 text-accent px-4 py-2 rounded-lg font-medium border border-accent/20 hover:border-accent/50 transition-colors flex items-center gap-2 text-sm"
         >
           <span>📥</span> Download Templates
         </a>
-      </header>
+      </PageHeader>
+      
+      <div className="p-8 max-w-6xl mx-auto space-y-8 w-full overflow-y-auto flex-1">
       
       {error && (
         <div className="p-4 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg">
@@ -365,6 +368,7 @@ export default function InputPage() {
         >
           {loading ? "Processing..." : "Next: Configure Processing"}
         </button>
+      </div>
       </div>
     </div>
   );

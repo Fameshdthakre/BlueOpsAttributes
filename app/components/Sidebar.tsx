@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/app/lib/AppContext';
-import { useTour } from '@/app/components/TourProvider';
 import { useSidebar } from '@/app/lib/SidebarContext';
 import { useEffect } from 'react';
 
@@ -15,7 +14,6 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { startTour } = useTour();
   const { isExpanded, setExpanded } = useSidebar();
   
   // Auto-collapse sidebar on mobile after navigation
@@ -57,7 +55,7 @@ export default function Sidebar() {
 
       {/* Actual Sidebar */}
       <div className={`
-        fixed md:static inset-y-0 left-0 z-40 h-full bg-bg-card border-r border-bg-input flex flex-col transition-all duration-300 ease-in-out
+        fixed md:static inset-y-0 left-0 z-40 h-full bg-bg-card flex flex-col transition-all duration-300 ease-in-out
         ${isExpanded ? "w-64 translate-x-0" : "w-16 -translate-x-full md:translate-x-0"}
       `}>
       
@@ -101,22 +99,6 @@ export default function Sidebar() {
         </div>
       )}
       
-      <div className="pb-2">
-        <button
-          onClick={() => {
-            if (window.innerWidth < 768) setExpanded(false);
-            startTour();
-          }}
-          title={!isExpanded ? "Replay Tour" : undefined}
-          className="flex items-center gap-4 w-full text-left py-3 pl-5 pr-4 mr-2 rounded-r-full border-l-4 border-transparent text-text-muted hover:bg-bg-input hover:text-text-main transition-colors"
-        >
-          <span className="text-xl shrink-0">🧭</span>
-          <span className={`font-medium whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
-            Replay Tour
-          </span>
-        </button>
-      </div>
-
       {/* Footer */}
       <div className={`p-4 border-t border-bg-input flex flex-col items-center justify-center gap-1 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden py-0 border-transparent'}`}>
         <div className="text-xs text-text-muted text-center">
