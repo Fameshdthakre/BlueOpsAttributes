@@ -143,8 +143,8 @@ export default function InputPage() {
       return;
     }
 
-    if (validationFile && (!valAttrCol || !valDdCol)) {
-      // Validation file present but columns missing, don't load
+    if (!validationFile || !valAttrCol || !valDdCol) {
+      // Validation file and columns are mandatory, wait for it
       return;
     }
 
@@ -180,6 +180,12 @@ export default function InputPage() {
       }
 
       const jobMap: Record<string, any> = {};
+      
+      // PRE-COMPUTE: Find exactly which columns are "extra" to avoid `{...row}` and `delete` inside the loop (which is O(N) and deoptimizes V8 hidden classes)
+      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol].filter(Boolean));
+      const allCols = asinData.length > 0 ? Object.keys(asinData[0]) : [];
+      const extraCols = allCols.filter(c => !excludeCols.has(c));
+
       asinData.forEach((row: any) => {
         const rowAsin = row[asinCol]?.toString().trim() || "";
         const rowAttr = row[attrCol]?.toString().trim() || "";
@@ -187,10 +193,13 @@ export default function InputPage() {
 
         const key = `${rowAsin}_${rowAttr}`;
 
-        const extra = { ...row };
-        [asinCol, attrCol, ptypeCol, brandCol, titleCol].forEach((c) => {
-          if (c) delete extra[c];
-        });
+        const extra: Record<string, any> = {};
+        for (let i = 0; i < extraCols.length; i++) {
+          const col = extraCols[i];
+          if (row[col] !== undefined) {
+            extra[col] = row[col];
+          }
+        }
 
         jobMap[key] = {
           asin: rowAsin,
@@ -285,7 +294,6 @@ export default function InputPage() {
           </div>
         )}
 
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ASIN Card */}
           <div
@@ -376,6 +384,7 @@ export default function InputPage() {
                       <tr>
                         <td className="p-3 text-text-main font-medium">
                           Product Type
+                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -398,8 +407,9 @@ export default function InputPage() {
                         </td>
                       </tr>
                       <tr>
-                        <td className="p-3 text-text-main font-medium">
+                        <td className="p-3 text-text-main font-medium flex items-center gap-2">
                           Brand
+                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -422,8 +432,9 @@ export default function InputPage() {
                         </td>
                       </tr>
                       <tr>
-                        <td className="p-3 text-text-main font-medium">
+                        <td className="p-3 text-text-main font-medium flex items-center gap-2">
                           Title
+                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -458,10 +469,7 @@ export default function InputPage() {
             id="tour-validation-upload"
           >
             <h2 className="text-xl font-semibold mb-4 text-text-main flex items-center gap-2">
-              <span className="text-primary">2</span> Validation File{" "}
-              <span className="text-sm font-normal text-text-muted">
-                (Optional)
-              </span>
+              <span className="text-primary">2</span> Validation File
             </h2>
 
             <input
@@ -519,6 +527,7 @@ export default function InputPage() {
                       <tr>
                         <td className="p-3 text-text-main font-medium">
                           Product Type
+                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -574,33 +583,62 @@ export default function InputPage() {
         </div>
 
         {/* Missing API Key Block if columns are mapped but jobs can't load */}
-        {hasApiKeys === false && asinCol && attrCol && (
-          <div className="bg-status-warning/10 border border-status-warning/30 rounded-xl p-6 mt-8 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4">
-            <svg
-              className="w-12 h-12 text-status-warning mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <h3 className="text-xl font-bold text-text-main mb-2">Almost Ready!</h3>
-            <p className="text-text-muted max-w-lg mb-6">
-              You've mapped your columns successfully, but the processing dashboard is paused because you haven't configured an AI Provider API Key.
-            </p>
-            <Link
-              href="/settings"
-              className="bg-status-warning hover:bg-status-warning/80 text-bg-dark px-6 py-3 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-lg shadow-status-warning/20"
-            >
-              <span>Configure API Keys</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        {hasApiKeys === false &&
+          asinCol &&
+          attrCol &&
+          validationFile &&
+          valAttrCol &&
+          valDdCol && (
+            <div className="bg-status-warning/10 border border-status-warning/30 rounded-xl p-6 mt-8 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4">
+              <svg
+                className="w-12 h-12 text-status-warning mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
-            </Link>
-          </div>
-        )}
+              <h3 className="text-xl font-bold text-text-main mb-2">
+                Almost Ready!
+              </h3>
+              <p className="text-text-muted max-w-lg mb-6">
+                You've mapped your columns successfully, but the processing
+                dashboard is paused because you haven't configured an AI
+                Provider API Key.
+              </p>
+              <Link
+                href="/settings"
+                className="bg-status-warning hover:bg-status-warning/80 text-bg-dark px-6 py-3 rounded-lg font-bold transition-colors flex items-center gap-2 shadow-lg shadow-status-warning/20"
+              >
+                <span>Configure API Keys</span>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </Link>
+            </div>
+          )}
 
         {/* --- Processing Dashboard merged below --- */}
         {totalJobsCount > 0 && hasApiKeys === true && (
