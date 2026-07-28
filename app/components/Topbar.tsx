@@ -2,15 +2,36 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 import { useSidebar } from "@/app/lib/SidebarContext";
 import { useTour } from "@/app/components/TourProvider";
+import { useSession, signOut } from "next-auth/react";
+import { LogOut, Settings, User } from "lucide-react";
 
 export default function Topbar() {
   const { toggleSidebar, isExpanded } = useSidebar();
   const { startTour } = useTour();
+  const { data: session } = useSession();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const initials = session?.user?.email 
+    ? session.user.email.substring(0, 2).toUpperCase() 
+    : "BO";
 
   return (
-    <header className="flex h-16 w-full items-center justify-between bg-bg-card px-4 z-50">
+    <header className="flex h-16 w-full items-center justify-between bg-bg-card px-4 z-50 relative">
       <div className="flex items-center gap-4">
         {/* Hamburger Menu */}
         <button
@@ -93,40 +114,48 @@ export default function Topbar() {
             />
           </svg>
         </button>
-        <Link
-          href="/settings"
-          className="rounded p-2 text-text-muted hover:bg-bg-input hover:text-text-main"
-          aria-label="Settings"
-          title="Settings"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+        
+        {/* Profile Dropdown */}
+        <div className="relative ml-2" ref={profileRef}>
+          <button
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary hover:bg-blue-600 transition-colors text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-card"
+            aria-label="Profile Menu"
+            title={session?.user?.email || "Profile"}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        </Link>
-        <button
-          className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white"
-          aria-label="Profile"
-          title="Profile"
-        >
-          BO
-        </button>
+            {initials}
+          </button>
+
+          {profileOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-bg-dark border border-bg-input rounded-xl shadow-xl py-1 z-50">
+              <div className="px-4 py-3 border-b border-bg-input">
+                <p className="text-sm font-medium text-text-main truncate">
+                  {session?.user?.email || "Not signed in"}
+                </p>
+              </div>
+              <div className="py-1">
+                <Link
+                  href="/settings"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-text-muted hover:bg-bg-input hover:text-text-main transition-colors"
+                >
+                  <Settings size={16} />
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    signOut({ callbackUrl: "/login" });
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
+                >
+                  <LogOut size={16} />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
