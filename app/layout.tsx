@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-bg-dark text-text-main flex flex-col h-[100dvh] overflow-hidden`}
       >
+        <Toaster position="top-right" toastOptions={{ style: { background: '#1e293b', color: '#fff' } }} />
         <Providers>
           <TourProvider>
             <SidebarProvider>

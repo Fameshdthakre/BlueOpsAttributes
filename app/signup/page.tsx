@@ -4,41 +4,91 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/app/actions/auth";
 import Link from "next/link";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
+import zxcvbn from "zxcvbn";
 
 export default function SignupPage() {
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
   const router = useRouter();
+
+  const passwordStrength = zxcvbn(password);
+  
+  // 0-4 score from zxcvbn
+  const getStrengthColor = () => {
+    if (!password) return "bg-gray-800";
+    switch (passwordStrength.score) {
+      case 0:
+      case 1:
+        return "bg-red-500 w-1/4";
+      case 2:
+        return "bg-orange-500 w-2/4";
+      case 3:
+        return "bg-yellow-500 w-3/4";
+      case 4:
+        return "bg-green-500 w-full";
+      default:
+        return "bg-gray-800";
+    }
+  };
+
+  const getStrengthLabel = () => {
+    if (!password) return "";
+    switch (passwordStrength.score) {
+      case 0:
+      case 1:
+        return "Weak";
+      case 2:
+        return "Fair";
+      case 3:
+        return "Good";
+      case 4:
+        return "Strong";
+      default:
+        return "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (passwordStrength.score < 2) {
+      toast.error("Please choose a stronger password");
+      return;
+    }
+
     setLoading(true);
-    setError("");
 
     const formData = new FormData(e.currentTarget);
     const res = await registerUser(formData);
 
     if (res?.error) {
-      setError(res.error);
+      toast.error(res.error);
       setLoading(false);
     } else {
-      router.push("/login?registered=true");
+      toast.success("Account created successfully!");
+      // Redirect to onboarding welcome page
+      router.push("/welcome");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white p-4">
       <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Image
+            src="/logo.png"
+            alt="BlueOps Logo"
+            width={48}
+            height={48}
+            className="rounded mb-4"
+          />
           <h1 className="text-3xl font-bold mb-2">Create an Account</h1>
           <p className="text-gray-400">Join BlueOps today</p>
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200 text-sm">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -58,14 +108,38 @@ export default function SignupPage() {
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Password
             </label>
-            <input
-              name="password"
-              type="password"
-              minLength={6}
-              className="w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white pr-12"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            {password && (
+              <div className="mt-2">
+                <div className="h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all duration-300 ${getStrengthColor()}`}></div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1 flex justify-between">
+                  <span>Password strength: {getStrengthLabel()}</span>
+                  {passwordStrength.feedback.warning && (
+                    <span className="text-orange-400">{passwordStrength.feedback.warning}</span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
 
           <button
