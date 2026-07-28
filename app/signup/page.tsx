@@ -1,40 +1,28 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { registerUser } from "@/app/actions/auth";
 import Link from "next/link";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
+    const formData = new FormData(e.currentTarget);
+    const res = await registerUser(formData);
 
-      if (res?.error) {
-        setError("Invalid email or password");
-      } else {
-        router.push("/");
-        router.refresh();
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
-    } finally {
+    if (res?.error) {
+      setError(res.error);
       setLoading(false);
+    } else {
+      router.push("/login?registered=true");
     }
   };
 
@@ -42,8 +30,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white p-4">
       <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to your account</p>
+          <h1 className="text-3xl font-bold mb-2">Create an Account</h1>
+          <p className="text-gray-400">Join BlueOps today</p>
         </div>
 
         {error && (
@@ -58,11 +46,10 @@ export default function LoginPage() {
               Email Address
             </label>
             <input
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white"
-              placeholder="admin@example.com"
+              placeholder="you@example.com"
               required
             />
           </div>
@@ -72,9 +59,9 @@ export default function LoginPage() {
               Password
             </label>
             <input
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
               className="w-full px-4 py-3 bg-gray-950 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white"
               placeholder="••••••••"
               required
@@ -86,14 +73,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-400">
-          Don't have an account?{" "}
-          <Link href="/signup" className="text-blue-500 hover:text-blue-400 font-medium">
-            Sign up
+          Already have an account?{" "}
+          <Link href="/login" className="text-blue-500 hover:text-blue-400 font-medium">
+            Sign in
           </Link>
         </p>
       </div>

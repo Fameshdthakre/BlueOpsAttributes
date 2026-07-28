@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
-  const isLoginRoute = req.nextUrl.pathname === "/login";
+  const isLoginRoute = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup";
 
   if (isAuthRoute) {
     return;
