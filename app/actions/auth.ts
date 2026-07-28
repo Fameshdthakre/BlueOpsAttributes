@@ -1,7 +1,13 @@
 "use server";
 
-import { sql } from "@vercel/postgres";
+import pkg from 'pg';
+const { Pool } = pkg;
 import bcrypt from "bcryptjs";
+
+// Initialize the pool once
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
 export async function registerUser(formData: FormData) {
   const email = formData.get("email") as string;
@@ -13,17 +19,17 @@ export async function registerUser(formData: FormData) {
 
   try {
     // Check if user already exists
-    const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rowCount && existing.rowCount > 0) {
       return { error: "User already exists with this email." };
     }
 
     // Hash the password and insert
     const password_hash = await bcrypt.hash(password, 10);
-    await sql`
+    await pool.query(`
       INSERT INTO users (email, password_hash)
-      VALUES (${email}, ${password_hash})
-    `;
+      VALUES ($1, $2)
+    `, [email, password_hash]);
 
     return { success: true };
   } catch (error) {
