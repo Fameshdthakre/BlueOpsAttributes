@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
 import pkg from 'pg';
 const { Pool } = pkg;
@@ -9,6 +10,7 @@ const pool = new Pool({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -48,25 +50,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return null;
       }
     })
-  ],
-  session: {
-    strategy: "jwt"
-  },
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token?.id) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    }
-  }
+  ]
 });
