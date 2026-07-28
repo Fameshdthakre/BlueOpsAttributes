@@ -53,8 +53,5 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # legacy apps
-New Integration/
-<<<<<<< HEAD
+New Integration (Not a part of App)/
 .jules/
-=======
->>>>>>> 98f77cf (Fix file upload state bug during navigation)
