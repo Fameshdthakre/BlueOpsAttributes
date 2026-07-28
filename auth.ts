@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { createClient } from "@vercel/postgres";
+import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -20,11 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials.password as string;
 
         try {
-          const client = createClient({ connectionString: process.env.POSTGRES_URL });
-          await client.connect();
-          
-          const { rows } = await client.query('SELECT * FROM users WHERE email = $1', [email]);
-          await client.end();
+          const { rows } = await sql`SELECT * FROM users WHERE email = ${email}`;
           
           const user = rows[0];
 
