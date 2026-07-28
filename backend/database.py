@@ -65,6 +65,14 @@ def get_connection():
 def init_db():
     """Initialize the database schema if it doesn't exist."""
     schema = """
+    -- Users for Authentication
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     -- Settings (key-value store per device)
     CREATE TABLE IF NOT EXISTS settings (
         device_id TEXT DEFAULT 'global',
