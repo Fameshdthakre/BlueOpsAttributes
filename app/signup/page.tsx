@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { registerUser } from "@/app/actions/auth";
 import Link from "next/link";
 import Image from "next/image";
@@ -70,8 +71,16 @@ export default function SignupPage() {
       setLoading(false);
     } else {
       toast.success("Account created successfully!");
+      // Auto-login the user
+      const email = formData.get("email") as string;
+      await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
       // Redirect to onboarding welcome page
       router.push("/welcome");
+      router.refresh();
     }
   };
 
