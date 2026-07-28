@@ -29,7 +29,10 @@ interface AppContextType {
   setMappings: (mappings: any) => void;
   valMappings: any;
   setValMappings: (mappings: any) => void;
-
+  asinFile: File | null;
+  setAsinFile: (file: File | null) => void;
+  validationFile: File | null;
+  setValidationFile: (file: File | null) => void;
   // Job State
   jobs: Job[];
   totalJobsCount: number;
@@ -76,7 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     valPtypeCol: "",
     valDdCol: "",
   });
-
+  const [asinFile, setAsinFile] = useState<File | null>(null);
+  const [validationFile, setValidationFile] = useState<File | null>(null);
   // Process Data
   const [jobs, setJobs] = useState<Job[]>([]);
   const [totalJobsCount, setTotalJobsCount] = useState(0);
@@ -306,6 +310,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMappings,
         valMappings,
         setValMappings,
+        asinFile,
+        setAsinFile,
+        validationFile,
+        setValidationFile,
         jobs,
         totalJobsCount,
         validationMap,

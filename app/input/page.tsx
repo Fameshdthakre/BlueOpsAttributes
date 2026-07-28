@@ -47,6 +47,10 @@ export default function InputPage() {
     setMappings,
     valMappings,
     setValMappings,
+    asinFile,
+    setAsinFile,
+    validationFile,
+    setValidationFile,
     setJobsAndMap,
     jobs,
     totalJobsCount,
@@ -334,18 +338,41 @@ export default function InputPage() {
               <span className="text-primary">1</span> ASIN Job File
             </h2>
 
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleAsinUpload}
-              className="block w-full text-sm text-text-muted
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-primary file:text-white
-              hover:file:bg-primary-hover
-              cursor-pointer mb-6"
-            />
+            {!asinFile ? (
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleAsinUpload}
+                className="block w-full text-sm text-text-muted
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-primary file:text-white
+                hover:file:bg-primary-hover
+                cursor-pointer mb-6"
+              />
+            ) : (
+              <div className="flex items-center justify-between bg-bg-dark border border-primary/30 p-4 rounded-lg mb-6">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <span className="text-2xl flex-shrink-0">📄</span>
+                  <div className="truncate">
+                    <p className="font-semibold text-text-main truncate" title={asinFile.name}>{asinFile.name}</p>
+                    <p className="text-xs text-text-muted">{(asinFile.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { 
+                    setAsinFile(null); 
+                    setAsinHeaders([]); 
+                    setMappings({asinCol: "", attrCol: "", ptypeCol: "", brandCol: "", titleCol: ""}); 
+                    sessionStorage.removeItem("blueops_jobs_raw"); 
+                  }} 
+                  className="text-status-error hover:underline text-sm font-medium ml-4"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {asinHeaders.length > 0 && (
               <div className="space-y-4">
@@ -502,18 +529,40 @@ export default function InputPage() {
               <span className="text-primary">2</span> Validation File
             </h2>
 
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleValidationUpload}
-              className="block w-full text-sm text-text-muted
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-primary file:text-white
-              hover:file:bg-primary-hover
-              cursor-pointer mb-6"
-            />
+            {!validationFile ? (
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleValidationUpload}
+                className="block w-full text-sm text-text-muted
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-primary file:text-white
+                hover:file:bg-primary-hover
+                cursor-pointer mb-6"
+              />
+            ) : (
+              <div className="flex items-center justify-between bg-bg-dark border border-accent/30 p-4 rounded-lg mb-6">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <span className="text-2xl flex-shrink-0">📄</span>
+                  <div className="truncate">
+                    <p className="font-semibold text-text-main truncate" title={validationFile.name}>{validationFile.name}</p>
+                    <p className="text-xs text-text-muted">{(validationFile.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { 
+                    setValidationFile(null); 
+                    setValidationHeaders([]); 
+                    setValMappings({valAttrCol: "", valPtypeCol: "", valDdCol: ""}); 
+                  }} 
+                  className="text-status-error hover:underline text-sm font-medium ml-4"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             {validationHeaders.length > 0 && (
               <div className="space-y-4">

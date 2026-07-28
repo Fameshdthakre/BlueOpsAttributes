@@ -22,6 +22,7 @@ const fetchWithDevice = async (url: string, options: RequestInit = {}) => {
   headers.set("x-device-id", getDeviceId());
 
   return fetch(url, {
+    cache: 'no-store',
     ...options,
     headers,
   });
