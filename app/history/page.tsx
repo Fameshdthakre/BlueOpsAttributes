@@ -375,7 +375,7 @@ export default function HistoryPage() {
                   </button>
                 </div>
                 <div className="text-sm text-text-muted">
-                  Showing {filteredResults.length} records
+                  Showing {filteredResults.length} records &bull; {wideRows.length} unique ASINs
                 </div>
               </div>
 
