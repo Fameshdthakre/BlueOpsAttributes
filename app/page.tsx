@@ -56,7 +56,6 @@ export default function Home() {
                   src="/dashboard-preview.png" 
                   alt="Dashboard Preview" 
                   className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity z-10 relative" 
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
              </div>
           </div>
@@ -77,7 +76,6 @@ export default function Home() {
                   src="/history-preview.png" 
                   alt="History Preview" 
                   className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity z-10 relative" 
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
              </div>
           </div>
