@@ -79,8 +79,7 @@ export default function SignupPage() {
         password,
       });
       // Redirect to onboarding welcome page
-      router.push("/welcome");
-      router.refresh();
+      window.location.href = "/welcome";
     }
   };
 
