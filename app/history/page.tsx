@@ -25,6 +25,7 @@ export default function HistoryPage() {
     new Set(),
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<"long" | "wide">("long");
 
   useEffect(() => {
     loadSessions();
@@ -66,7 +67,7 @@ export default function HistoryPage() {
 
   const handleExport = async () => {
     if (!selectedSessionId) return;
-    window.location.href = await api.exportSessionUrl(selectedSessionId);
+    window.location.href = await api.exportSessionUrl(selectedSessionId, viewMode);
   };
 
   const handleDelete = async (clearAll: boolean) => {
@@ -127,6 +128,36 @@ export default function HistoryPage() {
   // Exclude barcode and description from the catch-all extra columns since they are explicit
   const extraColsArray = Array.from(extraColumns).filter(c => c !== "barcode" && c !== "description");
 
+  // Group results for wide view
+  const { wideRows, wideCols } = useMemo(() => {
+    if (!sessionDetails || viewMode !== "wide") return { wideRows: [], wideCols: [] };
+    const grouped: Record<string, any> = {};
+    const cols = new Set<string>();
+    
+    filteredResults.forEach(r => {
+      if (!grouped[r.asin]) {
+        let parsedExtra: any = {};
+        if (r.extra_data) {
+          try {
+            parsedExtra = typeof r.extra_data === "string" ? JSON.parse(r.extra_data) : r.extra_data;
+          } catch (e) {}
+        }
+        grouped[r.asin] = {
+          asin: r.asin,
+          product_type: r.product_type,
+          brand: r.brand,
+          title: r.title,
+          barcode: parsedExtra["barcode"] || "",
+          description: parsedExtra["description"] || "",
+        };
+      }
+      grouped[r.asin][r.attribute_id] = r.final_value;
+      cols.add(r.attribute_id);
+    });
+    
+    return { wideRows: Object.values(grouped), wideCols: Array.from(cols) };
+  }, [filteredResults, sessionDetails, viewMode]);
+
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
@@ -158,7 +189,7 @@ export default function HistoryPage() {
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
             />
           </svg>
-          Export to Excel
+          Export {viewMode === "wide" ? "Grouped" : "Detailed"}
           </button>
         </div>
       </PageHeader>
@@ -323,13 +354,75 @@ export default function HistoryPage() {
                     </button>
                   ))}
                 </div>
-                <div className="text-sm text-text-muted">
+                
+                {/* View Mode Toggle */}
+                <div className="flex bg-bg-dark rounded-lg p-1 border border-bg-input mt-4 lg:mt-0">
+                  <button
+                    onClick={() => setViewMode("long")}
+                    className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                      viewMode === "long" ? "bg-bg-input text-text-main shadow-sm" : "text-text-muted hover:text-text-main"
+                    }`}
+                  >
+                    Detailed
+                  </button>
+                  <button
+                    onClick={() => setViewMode("wide")}
+                    className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
+                      viewMode === "wide" ? "bg-bg-input text-text-main shadow-sm" : "text-text-muted hover:text-text-main"
+                    }`}
+                  >
+                    Grouped (Pivot)
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm text-text-muted">
                   Showing {filteredResults.length} records
                 </div>
               </div>
 
               {/* Table */}
               <div className="overflow-x-auto flex-1 w-full relative">
+                {viewMode === "wide" ? (
+                  <table className="w-full text-left text-sm text-text-main border-collapse whitespace-nowrap">
+                    <thead className="bg-bg-dark sticky top-0 z-10 shadow-sm text-text-muted uppercase text-xs">
+                      <tr>
+                        <th className="p-4 font-semibold border-b border-bg-input">ASIN</th>
+                        <th className="p-4 font-semibold border-b border-bg-input">Product Type</th>
+                        <th className="p-4 font-semibold border-b border-bg-input">Brand</th>
+                        <th className="p-4 font-semibold border-b border-bg-input">Title</th>
+                        <th className="p-4 font-semibold border-b border-bg-input">Barcode</th>
+                        <th className="p-4 font-semibold border-b border-bg-input">Description</th>
+                        {wideCols.map(c => (
+                          <th key={c} className="p-4 font-semibold border-b border-bg-input text-primary">
+                            {c}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-bg-input">
+                      {wideRows.map((r, i) => (
+                        <tr key={i} className="hover:bg-bg-input/50 transition-colors">
+                          <td className="p-4 font-mono text-xs">{r.asin}</td>
+                          <td className="p-4 text-xs text-text-muted">{r.product_type}</td>
+                          <td className="p-4 text-xs text-text-muted">{r.brand}</td>
+                          <td className="p-4 text-xs text-text-muted truncate max-w-[150px]" title={r.title}>{r.title}</td>
+                          <td className="p-4 text-xs text-text-muted">{r.barcode}</td>
+                          <td className="p-4 text-xs text-text-muted truncate max-w-[150px]" title={r.description}>{r.description}</td>
+                          {wideCols.map(c => (
+                            <td key={c} className="p-4 text-xs font-semibold text-primary max-w-[200px] truncate" title={r[c] || ""}>
+                              {r[c] || ""}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                      {wideRows.length === 0 && !loading && (
+                        <tr>
+                          <td colSpan={100} className="p-8 text-center text-text-muted">No results match this filter.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                ) : (
                 <table className="w-full text-left text-sm text-text-main border-collapse whitespace-nowrap">
                   <thead className="bg-bg-dark sticky top-0 z-10 shadow-sm text-text-muted uppercase text-xs">
                     <tr>
@@ -468,14 +561,18 @@ export default function HistoryPage() {
                       <tr>
                         <td
                           colSpan={100}
-                          className="p-8 text-center text-text-muted"
+                          className="p-8 text-center"
                         >
-                          Loading...
+                          <div className="flex items-center justify-center gap-3 text-text-muted">
+                            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                            Loading session details...
+                          </div>
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
+                )}
               </div>
             </div>
           </div>

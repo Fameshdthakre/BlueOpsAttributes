@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
-from backend.result_writer import generate_excel_from_session
+from backend.result_writer import generate_excel_from_session, generate_wide_excel_from_session
 from backend.database import get_connection
 import datetime
 
 app = FastAPI()
 
 @app.get("/api/export")
-def export_session(session_id: str, user_id: int):
+def export_session(session_id: str, user_id: int, format: str = "long"):
     """
     Generate an Excel file for the given session ID and return it as a download.
     """
@@ -44,9 +44,12 @@ def export_session(session_id: str, user_id: int):
         # Actually to match the example exactly: 7-24-2026_9-59
         date_str = f"{ts.month}-{ts.day}-{ts.year}_{ts.hour}-{ts.minute:02d}"
         
-        filename = f'blueops_export_{asin_count}-ASINs_{date_str}.xlsx'
-        
-        excel_bytes = generate_excel_from_session(session_id)
+        if format == "wide":
+            filename = f'blueops_export_wide_{asin_count}-ASINs_{date_str}.xlsx'
+            excel_bytes = generate_wide_excel_from_session(session_id)
+        else:
+            filename = f'blueops_export_detailed_{asin_count}-ASINs_{date_str}.xlsx'
+            excel_bytes = generate_excel_from_session(session_id)
         
         headers = {
             'Content-Disposition': f'attachment; filename="{filename}"',

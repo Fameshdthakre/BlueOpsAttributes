@@ -88,3 +88,83 @@ def generate_excel_from_session(session_id: str) -> bytes:
     final_output = io.BytesIO()
     wb.save(final_output)
     return final_output.getvalue()
+
+def generate_wide_excel_from_session(session_id: str) -> bytes:
+    conn = get_connection()
+    try:
+        query = """
+            SELECT 
+                asin, attribute_id, product_type, brand, title,
+                final_value, extra_data
+            FROM job_results
+            WHERE session_id = %s
+            ORDER BY id ASC
+        """
+        df = pd.read_sql(query, conn, params=(session_id,))
+    finally:
+        conn.close()
+
+    if df.empty:
+        raise ValueError(f"No results found for session {session_id}")
+
+    # Group by ASIN
+    grouped = {}
+    
+    for _, row_data in df.iterrows():
+        asin = row_data["asin"]
+        if asin not in grouped:
+            extra = row_data["extra_data"]
+            extra_dict = {}
+            if extra:
+                if isinstance(extra, dict):
+                    extra_dict = extra
+                elif isinstance(extra, str) and extra.startswith("{"):
+                    try:
+                        extra_dict = json.loads(extra)
+                    except Exception:
+                        pass
+            
+            base_row = {
+                "ASIN": asin,
+                "Product Type": row_data["product_type"] or "",
+                "Brand": row_data["brand"] or "",
+                "Title": row_data["title"] or "",
+                "Barcode": extra_dict.get("barcode", ""),
+                "Description": extra_dict.get("description", ""),
+            }
+            
+            # Add remaining extra cols
+            for k, v in extra_dict.items():
+                if k not in base_row and k not in ("barcode", "description"):
+                    base_row[k] = v
+                    
+            grouped[asin] = base_row
+            
+        # Add the attribute final value as a column
+        attr = row_data["attribute_id"]
+        grouped[asin][attr] = row_data["final_value"]
+
+    out_df = pd.DataFrame(list(grouped.values()))
+    
+    # Save to BytesIO
+    output = io.BytesIO()
+    out_df.to_excel(output, index=False, engine="openpyxl")
+    output.seek(0)
+    
+    # Apply formatting
+    wb = load_workbook(output)
+    ws = wb.active
+
+    # Bold header with light grey background
+    for cell in ws[1]:
+        cell.font = _BOLD
+        cell.fill = _GREY
+
+    for col in ws.columns:
+        max_len = max((len(str(cell.value or "")) for cell in col), default=0)
+        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 60)
+
+    final_output = io.BytesIO()
+    wb.save(final_output)
+    return final_output.getvalue()
+

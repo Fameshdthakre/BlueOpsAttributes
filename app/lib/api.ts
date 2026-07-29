@@ -153,8 +153,8 @@ export const api = {
     return res.json();
   },
 
-  exportSessionUrl: async (sessionId: string) => {
-    return `/api/export?session_id=${sessionId}&user_id=${await getUserId()}`;
+  exportSessionUrl: async (sessionId: string, format: "long" | "wide" = "long") => {
+    return `/api/export?session_id=${sessionId}&user_id=${await getUserId()}&format=${format}`;
   },
 
   downloadTemplatesUrl: () => {
