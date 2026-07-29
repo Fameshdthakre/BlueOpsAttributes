@@ -81,6 +81,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const isAuthRoute = pathname === "/" || pathname === "/login" || pathname === "/signup";
 
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
@@ -95,7 +96,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const lastNavigatedStep = useRef<number | null>(null);
 
   useEffect(() => {
-    const isAuthRoute = pathname === "/" || pathname === "/login" || pathname === "/signup";
     if (isAuthRoute) return;
 
     if (run && TOUR_STEPS[stepIndex]) {
