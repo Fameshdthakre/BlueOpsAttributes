@@ -142,7 +142,7 @@ export const api = {
   },
 
   testConnection: async (provider: string, apiKey: string, model: string) => {
-    const res = await fetchWithDevice("/api/test_connection", {
+    const res = await fetchWithAuth("/api/test_connection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider_name: provider, api_key: apiKey, model }),
