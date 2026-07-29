@@ -82,11 +82,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
   useEffect(() => {
     setIsMounted(true);
     const tourCompleted = localStorage.getItem("blueops_tour_completed");
     if (!tourCompleted) {
-      setRun(true);
+      setShowWelcomeModal(true);
     }
   }, []);
 
@@ -136,6 +138,45 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   return (
     <TourContext.Provider value={{ startTour, stopTour }}>
       {children}
+      
+      {/* Soft Welcome Modal */}
+      {isMounted && showWelcomeModal && !isAuthRoute && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-bg-card border border-bg-input rounded-2xl shadow-2xl p-8 max-w-md w-full animate-in zoom-in-95 duration-300 text-center mx-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-text-main mb-3">Welcome to BlueOps!</h2>
+            <p className="text-text-muted mb-8 leading-relaxed">
+              We've prepared a quick 6-step interactive tour to show you exactly how to automate your attribute extraction. Would you like to see it?
+            </p>
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => {
+                  setShowWelcomeModal(false);
+                  localStorage.setItem("blueops_tour_completed", "true");
+                }}
+                className="flex-1 px-4 py-3 rounded-xl font-bold text-text-muted bg-bg-input/50 hover:bg-bg-input hover:text-text-main transition-all"
+              >
+                Skip Tour
+              </button>
+              <button
+                onClick={() => {
+                  setShowWelcomeModal(false);
+                  startTour();
+                }}
+                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all transform hover:scale-105"
+              >
+                Start Tour
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actual Tour Tooltip */}
       {isMounted && run && (
         <TourOverlay
           step={TOUR_STEPS[stepIndex]}
