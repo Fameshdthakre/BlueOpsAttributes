@@ -90,11 +90,19 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const lastNavigatedStep = useRef<number | null>(null);
+
   useEffect(() => {
+    const isAuthRoute = pathname === "/welcome" || pathname === "/login" || pathname === "/signup";
+    if (isAuthRoute) return;
+
     if (run && TOUR_STEPS[stepIndex]) {
-      const targetRoute = TOUR_STEPS[stepIndex].route;
-      if (pathname !== targetRoute) {
-        router.push(targetRoute);
+      if (lastNavigatedStep.current !== stepIndex) {
+        const targetRoute = TOUR_STEPS[stepIndex].route;
+        if (pathname !== targetRoute) {
+          router.push(targetRoute);
+        }
+        lastNavigatedStep.current = stepIndex;
       }
     }
   }, [stepIndex, run, pathname, router]);
