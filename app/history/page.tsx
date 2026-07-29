@@ -124,7 +124,8 @@ export default function HistoryPage() {
       } catch (e) {}
     }
   });
-  const extraColsArray = Array.from(extraColumns);
+  // Exclude barcode and description from the catch-all extra columns since they are explicit
+  const extraColsArray = Array.from(extraColumns).filter(c => c !== "barcode" && c !== "description");
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">
@@ -336,13 +337,22 @@ export default function HistoryPage() {
                         ASIN
                       </th>
                       <th className="p-4 font-semibold border-b border-bg-input">
+                        Attribute ID
+                      </th>
+                      <th className="p-4 font-semibold border-b border-bg-input">
+                        Product Type
+                      </th>
+                      <th className="p-4 font-semibold border-b border-bg-input">
                         Brand
                       </th>
                       <th className="p-4 font-semibold border-b border-bg-input">
                         Title
                       </th>
                       <th className="p-4 font-semibold border-b border-bg-input">
-                        Attribute ID
+                        Barcode
+                      </th>
+                      <th className="p-4 font-semibold border-b border-bg-input">
+                        Description
                       </th>
                       <th className="p-4 font-semibold border-b border-bg-input">
                         Ref. Product Type
@@ -390,6 +400,10 @@ export default function HistoryPage() {
                           className="hover:bg-bg-input/50 transition-colors"
                         >
                           <td className="p-4 font-mono text-xs">{r.asin}</td>
+                          <td className="p-4 font-medium">{r.attribute_id}</td>
+                          <td className="p-4 text-xs text-text-muted">
+                            {r.product_type}
+                          </td>
                           <td className="p-4 text-xs text-text-muted">
                             {r.brand}
                           </td>
@@ -399,7 +413,12 @@ export default function HistoryPage() {
                           >
                             {r.title}
                           </td>
-                          <td className="p-4 font-medium">{r.attribute_id}</td>
+                          <td className="p-4 text-xs text-text-muted">
+                            {parsedExtra["barcode"] || ""}
+                          </td>
+                          <td className="p-4 text-xs text-text-muted truncate max-w-[150px]" title={parsedExtra["description"] || ""}>
+                            {parsedExtra["description"] || ""}
+                          </td>
                           <td className="p-4 text-xs text-text-muted truncate max-w-[130px]">
                             {r.validated_product_type}
                           </td>

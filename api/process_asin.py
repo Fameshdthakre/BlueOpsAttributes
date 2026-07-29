@@ -18,6 +18,8 @@ class ProcessRequest(BaseModel):
     product_type: Optional[str] = None
     brand: Optional[str] = ""
     title: Optional[str] = ""
+    barcode: Optional[str] = ""
+    description: Optional[str] = ""
     extra_data: Dict[str, Any] = {}
     validation_map: Dict[str, Any] = {}
 
@@ -35,6 +37,8 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
             product_type=req.product_type,
             brand=req.brand,
             title=req.title,
+            barcode=req.barcode,
+            description=req.description,
             extra_data=req.extra_data
         )
         
@@ -56,7 +60,13 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         # Execute AI processing
         result = process_single_asin(job, val_map, config)
         
-        # Save result to Postgres
+        # Merge explicit fields back into extra_data for storage in the DB JSONB column
+        db_extra = job.extra_data.copy()
+        if job.barcode:
+            db_extra["barcode"] = job.barcode
+        if job.description:
+            db_extra["description"] = job.description
+
         conn = get_connection()
         try:
             with conn.cursor() as cur:
@@ -70,7 +80,7 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
-                        ar.raw_ai_value, json.dumps(job.extra_data), ar.validated_product_type, ar.validated_allowed_options
+                        ar.raw_ai_value, json.dumps(db_extra), ar.validated_product_type, ar.validated_allowed_options
                     ))
             conn.commit()
         finally:

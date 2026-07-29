@@ -18,9 +18,11 @@ class Job:
     asin: str
     attributes: list[str]               # List of AttributeIDs to resolve
     product_type: Optional[str]
-    brand: str = ""                      # e.g. "Geepas"
-    title: str = ""                      # Product title for AI context
-    extra_data: dict = field(default_factory=dict)   # pass-through columns
+    brand: Optional[str] = None
+    title: Optional[str] = None
+    barcode: Optional[str] = None
+    description: Optional[str] = None
+    extra_data: dict[str, Any] = field(default_factory=dict)   # pass-through columns
     row_index: int = 0                               # original row in input file
 
 

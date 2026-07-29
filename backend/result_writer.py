@@ -29,12 +29,26 @@ def generate_excel_from_session(session_id: str) -> bytes:
 
     rows = []
     for _, row_data in df.iterrows():
+        # Parse extra_data back into dict if it exists
+        extra = row_data["extra_data"]
+        extra_dict = {}
+        if extra:
+            if isinstance(extra, dict):
+                extra_dict = extra
+            elif isinstance(extra, str) and extra.startswith("{"):
+                try:
+                    extra_dict = json.loads(extra)
+                except Exception:
+                    pass
+
         row = {
             "ASIN": row_data["asin"],
             "Attribute ID": row_data["attribute_id"],
             "Product Type": row_data["product_type"] or "",
             "Brand": row_data["brand"] or "",
             "Title": row_data["title"] or "",
+            "Barcode": extra_dict.get("barcode", ""),
+            "Description": extra_dict.get("description", ""),
             "Ref. Product Type": row_data["validated_product_type"] or "",
             "Ref. Allowed Options": row_data["validated_allowed_options"] or "",
             "Final Value": row_data["final_value"],
@@ -44,21 +58,10 @@ def generate_excel_from_session(session_id: str) -> bytes:
             "Raw AI Response": row_data["raw_ai_value"],
         }
         
-        # Parse extra_data back into dict if it exists
-        extra = row_data["extra_data"]
-        if extra:
-            if isinstance(extra, dict):
-                for k, v in extra.items():
-                    if k not in row:
-                        row[k] = v
-            elif isinstance(extra, str) and extra.startswith("{"):
-                try:
-                    extra_dict = json.loads(extra)
-                    for k, v in extra_dict.items():
-                        if k not in row:
-                            row[k] = v
-                except Exception:
-                    pass
+        # Add any remaining extra columns
+        for k, v in extra_dict.items():
+            if k not in row and k not in ("barcode", "description"):
+                row[k] = v
                 
         rows.append(row)
 

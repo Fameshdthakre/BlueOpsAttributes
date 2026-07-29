@@ -94,6 +94,8 @@ export const api = {
         product_type: job.product_type,
         brand: job.brand,
         title: job.title,
+        barcode: job.barcode,
+        description: job.description,
         validation_map: validationMap,
       }),
     });

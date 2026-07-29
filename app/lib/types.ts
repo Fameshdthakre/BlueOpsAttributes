@@ -4,6 +4,8 @@ export interface Job {
   product_type?: string;
   brand?: string;
   title?: string;
+  barcode?: string;
+  description?: string;
   extra_data?: Record<string, string>;
   row_index?: number;
 }

@@ -56,13 +56,25 @@ class BaseProvider(ABC):
         lines = []
         lines.append("You are an Amazon product data specialist.")
         lines.append("Search the web for information about this Amazon product and extract the requested attributes.\n")
-        lines.append(f"ASIN: {job.asin}")
+        
+        context = {
+            "ASIN": job.asin,
+        }
         if job.product_type:
-            lines.append(f"Product Type: {job.product_type}")
+            context["Product Type"] = job.product_type
         if job.brand:
-            lines.append(f"Brand: {job.brand}")
+            context["Brand"] = job.brand
         if job.title:
-            lines.append(f"Title: {job.title}")
+            context["Title"] = job.title
+        if job.barcode:
+            context["Barcode"] = job.barcode
+        if job.description:
+            context["Description"] = job.description
+
+        lines.append("=" * 60)
+        lines.append("PRODUCT CONTEXT (JSON):")
+        lines.append("=" * 60)
+        lines.append(json.dumps(context, indent=2, ensure_ascii=False))
 
         lines.append("")
         lines.append("=" * 60)

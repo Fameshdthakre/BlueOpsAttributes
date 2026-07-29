@@ -72,7 +72,7 @@ export default function InputPage() {
     cancelProcessing,
   } = useApp();
 
-  const { asinCol, attrCol, ptypeCol, brandCol, titleCol } = mappings;
+  const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol } = mappings;
   const { valAttrCol, valPtypeCol, valDdCol } = valMappings;
 
   const handleAsinUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +91,8 @@ export default function InputPage() {
       const ptypeMatch = findHeader(h_lower, "product type", "producttype");
       const brandMatch = findHeader(h_lower, "brand");
       const titleMatch = findHeader(h_lower, "title", "name");
+      const barcodeMatch = findHeader(h_lower, "barcode", "upc", "ean");
+      const descMatch = findHeader(h_lower, "description", "desc");
 
       setMappings({
         asinCol: asinMatch ? res.headers[h_lower.indexOf(asinMatch)] : "",
@@ -98,6 +100,8 @@ export default function InputPage() {
         ptypeCol: ptypeMatch ? res.headers[h_lower.indexOf(ptypeMatch)] : "",
         brandCol: brandMatch ? res.headers[h_lower.indexOf(brandMatch)] : "",
         titleCol: titleMatch ? res.headers[h_lower.indexOf(titleMatch)] : "",
+        barcodeCol: barcodeMatch ? res.headers[h_lower.indexOf(barcodeMatch)] : "",
+        descCol: descMatch ? res.headers[h_lower.indexOf(descMatch)] : "",
       });
 
       // Store raw data in session storage for the process page
@@ -203,7 +207,7 @@ export default function InputPage() {
       const jobMap: Record<string, any> = {};
       
       // PRE-COMPUTE: Find exactly which columns are "extra" to avoid `{...row}` and `delete` inside the loop (which is O(N) and deoptimizes V8 hidden classes)
-      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol].filter(Boolean));
+      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol].filter(Boolean));
       const allCols = asinData.length > 0 ? Object.keys(asinData[0]) : [];
       const extraCols = allCols.filter(c => !excludeCols.has(c));
 
@@ -229,6 +233,8 @@ export default function InputPage() {
             product_type: ptypeCol ? row[ptypeCol]?.toString().trim() : "",
             brand: brandCol ? row[brandCol]?.toString().trim() : "",
             title: titleCol ? row[titleCol]?.toString().trim() : "",
+            barcode: barcodeCol ? row[barcodeCol]?.toString().trim() : "",
+            description: descCol ? row[descCol]?.toString().trim() : "",
             extra_data: extra,
           };
         }
@@ -363,7 +369,7 @@ export default function InputPage() {
                 onClick={() => { 
                   setAsinFile(null); 
                   setAsinHeaders([]); 
-                  setMappings({asinCol: "", attrCol: "", ptypeCol: "", brandCol: "", titleCol: ""}); 
+                  setMappings({asinCol: "", attrCol: "", ptypeCol: "", brandCol: "", titleCol: "", barcodeCol: "", descCol: ""}); 
                   sessionStorage.removeItem("blueops_jobs_raw"); 
                 }} 
                 className="text-status-error hover:underline text-sm font-medium ml-4"
@@ -465,7 +471,6 @@ export default function InputPage() {
                       <tr>
                         <td className="p-3 text-text-main font-medium flex items-center gap-2">
                           Brand
-                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -490,7 +495,6 @@ export default function InputPage() {
                       <tr>
                         <td className="p-3 text-text-main font-medium flex items-center gap-2">
                           Title
-                          <span className="text-status-error text-xs">*</span>
                         </td>
                         <td className="p-2">
                           <select
@@ -499,6 +503,54 @@ export default function InputPage() {
                               setMappings({
                                 ...mappings,
                                 titleCol: e.target.value,
+                              })
+                            }
+                            className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"
+                          >
+                            <option value="">-- Optional --</option>
+                            {asinHeaders.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 text-text-main font-medium flex items-center gap-2">
+                          Barcode
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={barcodeCol}
+                            onChange={(e) =>
+                              setMappings({
+                                ...mappings,
+                                barcodeCol: e.target.value,
+                              })
+                            }
+                            className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"
+                          >
+                            <option value="">-- Optional --</option>
+                            {asinHeaders.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 text-text-main font-medium flex items-center gap-2">
+                          Description
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={descCol}
+                            onChange={(e) =>
+                              setMappings({
+                                ...mappings,
+                                descCol: e.target.value,
                               })
                             }
                             className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"

@@ -73,6 +73,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ptypeCol: "",
     brandCol: "",
     titleCol: "",
+    barcodeCol: "",
+    descCol: "",
   });
   const [valMappings, setValMappings] = useState<any>({
     valAttrCol: "",
