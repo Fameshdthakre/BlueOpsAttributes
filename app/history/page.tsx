@@ -374,8 +374,7 @@ export default function HistoryPage() {
                     Grouped (Pivot)
                   </button>
                 </div>
-              </div>
-              <div className="text-sm text-text-muted">
+                <div className="text-sm text-text-muted">
                   Showing {filteredResults.length} records
                 </div>
               </div>
