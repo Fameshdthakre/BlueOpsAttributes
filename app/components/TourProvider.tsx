@@ -62,7 +62,7 @@ const TOUR_STEPS: CustomStep[] = [
   {
     target: "#tour-start-process",
     content:
-      "Choose how fast you want to process (up to 10 at a time), and hit Start to unleash the AI!",
+      "Choose how fast you want to process (up to 5 at a time), and hit Start to unleash the AI!",
     route: "/input",
     placement: "bottom-right",
   },

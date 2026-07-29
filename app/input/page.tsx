@@ -845,7 +845,7 @@ export default function InputPage() {
                   <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="5"
                     value={concurrency}
                     onChange={(e) => setConcurrency(Number(e.target.value))}
                     disabled={running}
@@ -853,7 +853,7 @@ export default function InputPage() {
                   />
                   <div className="flex justify-between text-xs text-text-muted mt-1">
                     <span>Sequential (1)</span>
-                    <span>Fast (10)</span>
+                    <span>Fast (5)</span>
                   </div>
                 </div>
               </div>
