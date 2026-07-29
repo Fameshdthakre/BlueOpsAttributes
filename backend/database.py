@@ -70,7 +70,10 @@ def init_db():
         id SERIAL PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        name TEXT,
+        profile_image TEXT
     );
 
     -- Settings (key-value store per user)
@@ -78,6 +81,7 @@ def init_db():
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
         key TEXT,
         value TEXT,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
         PRIMARY KEY (user_id, key)
     );
 
@@ -138,7 +142,7 @@ def init_db():
 
     -- Individual attribute results
     CREATE TABLE IF NOT EXISTS job_results (
-        id SERIAL PRIMARY KEY,
+        id BIGSERIAL PRIMARY KEY,
         session_id TEXT REFERENCES sessions(session_id) ON DELETE CASCADE,
         asin TEXT,
         attribute_id TEXT,
@@ -150,15 +154,48 @@ def init_db():
         provider_used TEXT,
         confidence REAL,
         raw_ai_value TEXT,
-        extra_data TEXT,
+        extra_data JSONB,
         validated_product_type TEXT,
-        validated_allowed_options TEXT
+        validated_allowed_options TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
     -- Indexes
     CREATE INDEX IF NOT EXISTS idx_sessions_timestamp ON sessions(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_job_results_session ON job_results(session_id);
     CREATE INDEX IF NOT EXISTS idx_job_results_status ON job_results(match_status);
+
+    -- Trigger Function for updated_at
+    CREATE OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+       NEW.updated_at = NOW();
+       RETURN NEW;
+    END;
+    $$ language 'plpgsql';
+
+    -- Apply trigger to users
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_users') THEN
+            CREATE TRIGGER set_updated_at_users
+            BEFORE UPDATE ON users
+            FOR EACH ROW
+            EXECUTE PROCEDURE update_updated_at_column();
+        END IF;
+    END $$;
+
+    -- Apply trigger to settings
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_settings') THEN
+            CREATE TRIGGER set_updated_at_settings
+            BEFORE UPDATE ON settings
+            FOR EACH ROW
+            EXECUTE PROCEDURE update_updated_at_column();
+        END IF;
+    END $$;
     """
     
     conn = None
