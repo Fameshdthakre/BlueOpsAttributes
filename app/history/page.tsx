@@ -128,9 +128,9 @@ export default function HistoryPage() {
   // Exclude barcode and description from the catch-all extra columns since they are explicit
   const extraColsArray = Array.from(extraColumns).filter(c => c !== "barcode" && c !== "description");
 
-  // Group results for wide view
+  // Group results for wide view (and to count unique ASINs)
   const { wideRows, wideCols } = useMemo(() => {
-    if (!sessionDetails || viewMode !== "wide") return { wideRows: [], wideCols: [] };
+    if (!sessionDetails) return { wideRows: [], wideCols: [] };
     const grouped: Record<string, any> = {};
     const cols = new Set<string>();
     
