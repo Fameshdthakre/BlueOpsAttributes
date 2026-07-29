@@ -52,9 +52,15 @@ export default function WelcomePage() {
           </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4">
           <Link
-            href="/"
+            href="/login"
+            className="px-8 py-4 bg-bg-card hover:bg-bg-input border border-bg-input text-white font-bold rounded-xl transition-all text-lg flex items-center justify-center"
+          >
+            Log In
+          </Link>
+          <Link
+            href="/signup"
             className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all text-lg flex items-center gap-2 group"
           >
             Get Started

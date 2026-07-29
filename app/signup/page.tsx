@@ -78,8 +78,8 @@ export default function SignupPage() {
         email,
         password,
       });
-      // Redirect to onboarding welcome page
-      window.location.href = "/welcome";
+      // Redirect to dashboard
+      window.location.href = "/";
     }
   };
 

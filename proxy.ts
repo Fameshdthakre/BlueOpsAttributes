@@ -6,15 +6,15 @@ export const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
-  const isLoginRoute = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup";
+  const isLoginRoute = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup" || req.nextUrl.pathname === "/welcome";
 
   if (isAuthRoute) {
     return;
   }
 
   if (!isLoggedIn && !isLoginRoute) {
-    const loginUrl = new URL("/login", req.nextUrl);
-    return Response.redirect(loginUrl);
+    const welcomeUrl = new URL("/welcome", req.nextUrl);
+    return Response.redirect(welcomeUrl);
   }
 
   if (isLoggedIn && isLoginRoute) {
