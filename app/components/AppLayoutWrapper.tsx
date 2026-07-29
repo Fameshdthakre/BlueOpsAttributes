@@ -7,7 +7,7 @@ import { ReactNode } from "react";
 
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAuthRoute = pathname === "/welcome" || pathname === "/login" || pathname === "/signup";
+  const isAuthRoute = pathname === "/" || pathname === "/login" || pathname === "/signup";
 
   if (isAuthRoute) {
     return (

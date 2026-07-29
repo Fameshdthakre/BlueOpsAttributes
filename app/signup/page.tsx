@@ -79,7 +79,7 @@ export default function SignupPage() {
         password,
       });
       // Redirect to dashboard
-      window.location.href = "/";
+      window.location.href = "/input";
     }
   };
 

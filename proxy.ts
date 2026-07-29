@@ -6,7 +6,7 @@ export const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
-  const isLoginRoute = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup" || req.nextUrl.pathname === "/welcome";
+  const isLoginRoute = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/signup" || req.nextUrl.pathname === "/";
 
   if (isAuthRoute) {
     return;
@@ -18,7 +18,7 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isLoginRoute) {
-    const dashboardUrl = new URL("/", req.nextUrl);
+    const dashboardUrl = new URL("/input", req.nextUrl);
     return Response.redirect(dashboardUrl);
   }
 });
