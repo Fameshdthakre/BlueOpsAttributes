@@ -26,9 +26,11 @@ export default function Topbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const initials = session?.user?.email 
-    ? session.user.email.substring(0, 2).toUpperCase() 
-    : "BO";
+  const initials = session?.user?.name
+    ? session.user.name.substring(0, 2).toUpperCase()
+    : session?.user?.email 
+      ? session.user.email.substring(0, 2).toUpperCase() 
+      : "BO";
 
   return (
     <header className="flex h-16 w-full items-center justify-between bg-bg-card px-4 z-50 relative">
@@ -119,19 +121,28 @@ export default function Topbar() {
         <div className="relative ml-2" ref={profileRef}>
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary hover:bg-blue-600 transition-colors text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-card"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary hover:bg-blue-600 transition-colors text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-card overflow-hidden"
             aria-label="Profile Menu"
-            title={session?.user?.email || "Profile"}
+            title={session?.user?.name || session?.user?.email || "Profile"}
           >
-            {initials}
+            {session?.user?.image ? (
+              <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
           </button>
 
           {profileOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-bg-dark border border-bg-input rounded-xl shadow-xl py-1 z-50">
               <div className="px-4 py-3 border-b border-bg-input">
-                <p className="text-sm font-medium text-text-main truncate">
-                  {session?.user?.email || "Not signed in"}
+                <p className="text-sm font-bold text-text-main truncate">
+                  {session?.user?.name || session?.user?.email || "Not signed in"}
                 </p>
+                {session?.user?.name && (
+                  <p className="text-xs text-text-muted truncate mt-0.5">
+                    {session.user.email}
+                  </p>
+                )}
               </div>
               <div className="py-1">
                 <Link

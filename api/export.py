@@ -7,7 +7,7 @@ import datetime
 app = FastAPI()
 
 @app.get("/api/export")
-def export_session(session_id: str, device_id: str = "global"):
+def export_session(session_id: str, user_id: int):
     """
     Generate an Excel file for the given session ID and return it as a download.
     """
@@ -20,13 +20,18 @@ def export_session(session_id: str, device_id: str = "global"):
         try:
             with conn.cursor() as cur:
                 # Get unique ASIN count
-                cur.execute("SELECT COUNT(DISTINCT asin) FROM job_results WHERE session_id = %s", (session_id,))
+                cur.execute("""
+                    SELECT COUNT(DISTINCT jr.asin) 
+                    FROM job_results jr
+                    JOIN sessions s ON jr.session_id = s.session_id
+                    WHERE jr.session_id = %s AND s.user_id = %s
+                """, (session_id, user_id))
                 asin_count = cur.fetchone()[0]
                 
-                # Get session timestamp and verify device ownership
-                cur.execute("SELECT timestamp, device_id FROM sessions WHERE session_id = %s", (session_id,))
+                # Get session timestamp and verify user ownership
+                cur.execute("SELECT timestamp FROM sessions WHERE session_id = %s AND user_id = %s", (session_id, user_id))
                 row = cur.fetchone()
-                if not row or row[1] != device_id:
+                if not row:
                     raise HTTPException(status_code=404, detail="Session not found or unauthorized")
                 ts = row[0]
         finally:

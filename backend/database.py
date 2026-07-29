@@ -73,34 +73,34 @@ def init_db():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    -- Settings (key-value store per device)
+    -- Settings (key-value store per user)
     CREATE TABLE IF NOT EXISTS settings (
-        device_id TEXT DEFAULT 'global',
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         key TEXT,
         value TEXT,
-        PRIMARY KEY (device_id, key)
+        PRIMARY KEY (user_id, key)
     );
 
-    -- Encrypted API keys per device
+    -- Encrypted API keys per user
     CREATE TABLE IF NOT EXISTS api_keys (
-        device_id TEXT DEFAULT 'global',
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         provider TEXT,
         encrypted_key BYTEA,
-        PRIMARY KEY (device_id, provider)
+        PRIMARY KEY (user_id, provider)
     );
 
-    -- Custom model names per device
+    -- Custom model names per user
     CREATE TABLE IF NOT EXISTS custom_models (
-        device_id TEXT DEFAULT 'global',
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         provider TEXT,
         model_name TEXT,
-        PRIMARY KEY (device_id, provider, model_name)
+        PRIMARY KEY (user_id, provider, model_name)
     );
 
-    -- Batch processing sessions per device
+    -- Batch processing sessions per user
     CREATE TABLE IF NOT EXISTS sessions (
         session_id TEXT PRIMARY KEY,
-        device_id TEXT DEFAULT 'global',
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         timestamp TIMESTAMPTZ DEFAULT NOW(),
         input_file TEXT,
         status TEXT DEFAULT 'Running'
@@ -110,29 +110,29 @@ def init_db():
     DO $$ 
     BEGIN 
         -- settings
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='device_id') THEN
-            ALTER TABLE settings ADD COLUMN device_id TEXT DEFAULT 'global';
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='user_id') THEN
+            ALTER TABLE settings ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_pkey;
-            ALTER TABLE settings ADD PRIMARY KEY (device_id, key);
+            ALTER TABLE settings ADD PRIMARY KEY (user_id, key);
         END IF;
         
         -- api_keys
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='api_keys' AND column_name='device_id') THEN
-            ALTER TABLE api_keys ADD COLUMN device_id TEXT DEFAULT 'global';
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='api_keys' AND column_name='user_id') THEN
+            ALTER TABLE api_keys ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE api_keys DROP CONSTRAINT IF EXISTS api_keys_pkey;
-            ALTER TABLE api_keys ADD PRIMARY KEY (device_id, provider);
+            ALTER TABLE api_keys ADD PRIMARY KEY (user_id, provider);
         END IF;
 
         -- custom_models
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='custom_models' AND column_name='device_id') THEN
-            ALTER TABLE custom_models ADD COLUMN device_id TEXT DEFAULT 'global';
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='custom_models' AND column_name='user_id') THEN
+            ALTER TABLE custom_models ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE custom_models DROP CONSTRAINT IF EXISTS custom_models_pkey;
-            ALTER TABLE custom_models ADD PRIMARY KEY (device_id, provider, model_name);
+            ALTER TABLE custom_models ADD PRIMARY KEY (user_id, provider, model_name);
         END IF;
 
         -- sessions
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='device_id') THEN
-            ALTER TABLE sessions ADD COLUMN device_id TEXT DEFAULT 'global';
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='user_id') THEN
+            ALTER TABLE sessions ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
         END IF;
     END $$;
 

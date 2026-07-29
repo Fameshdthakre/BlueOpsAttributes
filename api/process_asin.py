@@ -22,7 +22,7 @@ class ProcessRequest(BaseModel):
     validation_map: Dict[str, Any] = {}
 
 @app.post("/api/process_asin")
-def process_asin(req: ProcessRequest, x_device_id: Optional[str] = Header(default="global")):
+def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
     """
     Process a single ASIN and store the result in Postgres.
     Called concurrently by the Next.js frontend (Fan-out model).
@@ -51,7 +51,7 @@ def process_asin(req: ProcessRequest, x_device_id: Optional[str] = Header(defaul
                     tooltip=v.get("tooltip", "")
                 ))
 
-        config = load_config(x_device_id)
+        config = load_config(x_user_id)
         
         # Execute AI processing
         result = process_single_asin(job, val_map, config)

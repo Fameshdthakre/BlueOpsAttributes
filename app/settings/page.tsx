@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useSession } from "next-auth/react";
+import { updateProfile, updatePassword } from "@/app/actions/user";
+import toast from "react-hot-toast";
 import { api } from "@/app/lib/api";
 import { PROVIDERS, DEFAULT_MODELS } from "@/app/lib/constants";
 import PageHeader from "@/app/components/PageHeader";
@@ -35,6 +38,83 @@ export default function SettingsPage() {
     ok: boolean;
     msg: string;
   } | null>(null);
+
+  const { data: session, update: updateSession } = useSession();
+  const [activeTab, setActiveTab] = useState<"general" | "personal">("general");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Profile Form State
+  const [profileName, setProfileName] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password Form State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      if (session.user.name) setProfileName(session.user.name);
+      if (session.user.image) setProfileImage(session.user.image);
+    }
+  }, [session]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    const formData = new FormData();
+    formData.append("name", profileName);
+    formData.append("image", profileImage);
+
+    const res = await updateProfile(formData);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      await updateSession({
+        ...session,
+        name: profileName,
+        image: profileImage,
+      });
+      toast.success("Profile updated successfully!");
+    }
+    setSavingProfile(false);
+  };
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match!");
+      return;
+    }
+    setSavingPassword(true);
+    const formData = new FormData();
+    formData.append("currentPassword", currentPassword);
+    formData.append("newPassword", newPassword);
+
+    const res = await updatePassword(formData);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setSavingPassword(false);
+  };
 
   useEffect(() => {
     const draft = localStorage.getItem("blueops_settings_draft");
@@ -198,16 +278,142 @@ export default function SettingsPage() {
           { label: "Settings" },
         ]}
       >
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors text-sm"
-        >
-          {saving ? "Saving..." : "Save Settings"}
-        </button>
+        {activeTab === "general" && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors text-sm"
+          >
+            {saving ? "Saving..." : "Save Settings"}
+          </button>
+        )}
       </PageHeader>
 
-      <div className="p-8 max-w-5xl mx-auto space-y-8 overflow-y-auto flex-1 pb-20">
+      <div className="flex border-b border-bg-input px-8 mt-2">
+        <button
+          onClick={() => setActiveTab("general")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "general"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          General (API Keys)
+        </button>
+        <button
+          onClick={() => setActiveTab("personal")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "personal"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          Personal Settings
+        </button>
+      </div>
+
+      <div className="p-8 max-w-5xl mx-auto space-y-8 overflow-y-auto flex-1 pb-20 w-full">
+        {activeTab === "personal" && (
+          <div className="space-y-8">
+            <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+              <h2 className="text-xl font-semibold mb-6 text-text-main">Profile Settings</h2>
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                <div className="flex items-center gap-6">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-bg-dark border-2 border-bg-input flex items-center justify-center">
+                      {profileImage ? (
+                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-4xl text-text-muted">
+                          {session?.user?.email?.substring(0, 2).toUpperCase() || "BO"}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/50 text-white flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Change
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm text-text-muted mb-2">Display Name</label>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full bg-bg-dark border border-bg-input rounded p-3 text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none max-w-md"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {savingProfile ? "Saving..." : "Save Profile"}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+              <h2 className="text-xl font-semibold mb-6 text-text-main">Change Password</h2>
+              <form onSubmit={handleSavePassword} className="space-y-6 max-w-md">
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    className="w-full bg-bg-dark border border-bg-input rounded p-3 text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full bg-bg-dark border border-bg-input rounded p-3 text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full bg-bg-dark border border-bg-input rounded p-3 text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingPassword}
+                  className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {savingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "general" && (
+          <>
         {/* Priority & Fallback Card */}
         <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
           <h2 className="text-xl font-semibold mb-2 text-text-main flex items-center gap-2">
@@ -609,6 +815,8 @@ export default function SettingsPage() {
             );
           })}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -20,9 +20,9 @@ PROVIDERS = {
 }
 
 @app.post("/api/test_connection")
-def test_connection(req: TestConnectionRequest, x_device_id: Optional[str] = Header(default="global")):
+def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
     """Test AI provider connection."""
-    config = load_config(x_device_id)
+    config = load_config(x_user_id)
     provider_cls = PROVIDERS.get(req.provider_name)
     if not provider_cls:
         raise HTTPException(status_code=400, detail="Unknown provider")

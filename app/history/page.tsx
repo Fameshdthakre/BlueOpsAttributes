@@ -64,9 +64,9 @@ export default function HistoryPage() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!selectedSessionId) return;
-    window.location.href = api.exportSessionUrl(selectedSessionId);
+    window.location.href = await api.exportSessionUrl(selectedSessionId);
   };
 
   const handleDelete = async (clearAll: boolean) => {

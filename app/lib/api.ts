@@ -5,21 +5,21 @@ import {
   DetailedSessionResult,
 } from "./types";
 
-// Helper to get or create a unique device ID
-const getDeviceId = () => {
-  if (typeof window === "undefined") return "server";
-  let deviceId = localStorage.getItem("blueops_device_id");
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-    localStorage.setItem("blueops_device_id", deviceId);
+import { getSession } from "next-auth/react";
+
+// Helper to get user ID from session
+const getUserId = async () => {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    throw new Error("User not authenticated");
   }
-  return deviceId;
+  return session.user.id;
 };
 
-// Wrapper for fetch to inject device_id header
-const fetchWithDevice = async (url: string, options: RequestInit = {}) => {
+// Wrapper for fetch to inject user_id header
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers || {});
-  headers.set("x-device-id", getDeviceId());
+  headers.set("x-user-id", await getUserId());
 
   return fetch(url, {
     cache: 'no-store',
@@ -32,7 +32,7 @@ export const api = {
   uploadFile: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetchWithDevice("/api/upload", {
+    const res = await fetchWithAuth("/api/upload", {
       method: "POST",
       body: formData,
     });
@@ -51,7 +51,7 @@ export const api = {
     formData.append("attribute_col", attributeCol);
     formData.append("product_type_col", productTypeCol);
     formData.append("dropdown_col", dropdownCol);
-    const res = await fetchWithDevice("/api/parse_validation", {
+    const res = await fetchWithAuth("/api/parse_validation", {
       method: "POST",
       body: formData,
     });
@@ -60,7 +60,7 @@ export const api = {
   },
 
   createSession: async (inputFile: string) => {
-    const res = await fetchWithDevice("/api/session", {
+    const res = await fetchWithAuth("/api/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input_file: inputFile }),
@@ -70,7 +70,7 @@ export const api = {
   },
 
   updateSession: async (sessionId: string, status: string) => {
-    const res = await fetchWithDevice("/api/session", {
+    const res = await fetchWithAuth("/api/session", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId, status }),
@@ -84,7 +84,7 @@ export const api = {
     job: Job,
     validationMap: any,
   ): Promise<ProcessResult> => {
-    const res = await fetchWithDevice("/api/process_asin", {
+    const res = await fetchWithAuth("/api/process_asin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -102,13 +102,13 @@ export const api = {
   },
 
   getSessions: async (): Promise<{ sessions: SessionResult[] }> => {
-    const res = await fetchWithDevice("/api/history");
+    const res = await fetchWithAuth("/api/history");
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   deleteSessions: async (sessionIds?: string[], clearAll: boolean = false) => {
-    const res = await fetchWithDevice("/api/history", {
+    const res = await fetchWithAuth("/api/history", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_ids: sessionIds, clear_all: clearAll }),
@@ -120,19 +120,19 @@ export const api = {
   getSessionDetails: async (
     sessionId: string,
   ): Promise<DetailedSessionResult> => {
-    const res = await fetchWithDevice(`/api/history?session_id=${sessionId}`);
+    const res = await fetchWithAuth(`/api/history?session_id=${sessionId}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   getSettings: async () => {
-    const res = await fetchWithDevice("/api/settings");
+    const res = await fetchWithAuth("/api/settings");
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   saveSettings: async (config: any) => {
-    const res = await fetchWithDevice("/api/settings", {
+    const res = await fetchWithAuth("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ config }),
@@ -151,8 +151,8 @@ export const api = {
     return res.json();
   },
 
-  exportSessionUrl: (sessionId: string) => {
-    return `/api/export?session_id=${sessionId}&device_id=${getDeviceId()}`;
+  exportSessionUrl: async (sessionId: string) => {
+    return `/api/export?session_id=${sessionId}&user_id=${await getUserId()}`;
   },
 
   downloadTemplatesUrl: () => {

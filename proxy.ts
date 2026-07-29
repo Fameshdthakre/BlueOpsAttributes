@@ -13,8 +13,8 @@ export default auth((req) => {
   }
 
   if (!isLoggedIn && !isLoginRoute) {
-    const welcomeUrl = new URL("/welcome", req.nextUrl);
-    return Response.redirect(welcomeUrl);
+    const loginUrl = new URL("/login", req.nextUrl);
+    return Response.redirect(loginUrl);
   }
 
   if (isLoggedIn && isLoginRoute) {

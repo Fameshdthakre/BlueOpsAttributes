@@ -9,19 +9,19 @@ class ConfigPayload(BaseModel):
     config: Dict[str, Any]
 
 @app.get("/api/settings")
-def get_settings(x_device_id: Optional[str] = Header(default="global")):
+def get_settings(x_user_id: int = Header(...)):
     """Load configuration including decrypted API keys."""
     try:
-        cfg = load_config(x_device_id)
+        cfg = load_config(x_user_id)
         return cfg
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/settings")
-def update_settings(payload: ConfigPayload, x_device_id: Optional[str] = Header(default="global")):
+def update_settings(payload: ConfigPayload, x_user_id: int = Header(...)):
     """Save configuration (encrypts API keys)."""
     try:
-        save_config(payload.config, x_device_id)
+        save_config(payload.config, x_user_id)
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

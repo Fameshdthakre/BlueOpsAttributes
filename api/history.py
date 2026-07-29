@@ -7,7 +7,7 @@ import json
 app = FastAPI()
 
 @app.get("/api/history")
-def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Header(default="global")):
+def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
     """Fetch session history or details of a specific session."""
     conn = get_connection()
     try:
@@ -17,9 +17,9 @@ def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Head
                 cur.execute(
                     """SELECT jr.* FROM job_results jr
                        JOIN sessions s ON jr.session_id = s.session_id
-                       WHERE jr.session_id = %s AND s.device_id = %s
+                       WHERE jr.session_id = %s AND s.user_id = %s
                        ORDER BY jr.id ASC""", 
-                    (session_id, x_device_id)
+                    (session_id, x_user_id)
                 )
                 results = cur.fetchall()
                 
@@ -45,10 +45,10 @@ def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Head
                            COUNT(DISTINCT j.asin) as asins_processed
                     FROM sessions s
                     LEFT JOIN job_results j ON s.session_id = j.session_id
-                    WHERE s.device_id = %s
+                    WHERE s.user_id = %s
                     GROUP BY s.session_id
                     ORDER BY s.timestamp DESC
-                """, (x_device_id,))
+                """, (x_user_id,))
                 sessions = cur.fetchall()
                 return {"sessions": [dict(s) for s in sessions]}
     except Exception as e:
@@ -57,7 +57,7 @@ def get_history(session_id: str = Query(None), x_device_id: Optional[str] = Head
         conn.close()
 
 @app.delete("/api/history")
-async def delete_sessions(request: Request, x_device_id: Optional[str] = Header(default="global")):
+async def delete_sessions(request: Request, x_user_id: int = Header(...)):
     """Delete specific sessions or all sessions."""
     try:
         body = await request.json()
@@ -68,14 +68,14 @@ async def delete_sessions(request: Request, x_device_id: Optional[str] = Header(
         try:
             with conn.cursor() as cur:
                 if clear_all:
-                    cur.execute("DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE device_id = %s)", (x_device_id,))
-                    cur.execute("DELETE FROM sessions WHERE device_id = %s", (x_device_id,))
+                    cur.execute("DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE user_id = %s)", (x_user_id,))
+                    cur.execute("DELETE FROM sessions WHERE user_id = %s", (x_user_id,))
                 elif session_ids and isinstance(session_ids, list):
                     format_strings = ','.join(['%s'] * len(session_ids))
                     
-                    # Ensure we only delete sessions owned by this device
-                    cur.execute(f"DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE session_id IN ({format_strings}) AND device_id = %s)", tuple(session_ids) + (x_device_id,))
-                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings}) AND device_id = %s", tuple(session_ids) + (x_device_id,))
+                    # Ensure we only delete sessions owned by this user
+                    cur.execute(f"DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE session_id IN ({format_strings}) AND user_id = %s)", tuple(session_ids) + (x_user_id,))
+                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings}) AND user_id = %s", tuple(session_ids) + (x_user_id,))
                 else:
                     raise HTTPException(status_code=400, detail="Must provide session_ids list or clear_all=True")
                 
