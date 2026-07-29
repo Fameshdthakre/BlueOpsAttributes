@@ -45,9 +45,14 @@ class GeminiProvider(BaseProvider):
             
         config = types.GenerateContentConfig(**config_kwargs)
 
-        last_exc = None
-        for attempt in range(1, self.max_retries + 1):
-            try:
+        from tenacity import Retrying, stop_after_attempt, wait_exponential
+
+        for attempt in Retrying(
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=2, max=10),
+            reraise=True
+        ):
+            with attempt:
                 response = client.models.generate_content(
                     model=self.model,
                     contents=prompt,
@@ -60,12 +65,6 @@ class GeminiProvider(BaseProvider):
                     confidence=0.85 if raw else 0.0,
                     prompt_sent=prompt,
                 )
-            except Exception as exc:
-                last_exc = exc
-                if attempt < self.max_retries:
-                    time.sleep(2 ** attempt)
-
-        raise RuntimeError(f"Gemini failed after {self.max_retries} retries: {last_exc}")
 
     def test_connection(self) -> tuple[bool, str]:
         try:

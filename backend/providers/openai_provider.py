@@ -38,9 +38,14 @@ class OpenAIProvider(BaseProvider):
         if self.enable_web_search:
             kwargs["tools"] = [{"type": "web_search_preview"}]
 
-        last_exc = None
-        for attempt in range(1, self.max_retries + 1):
-            try:
+        from tenacity import Retrying, stop_after_attempt, wait_exponential
+
+        for attempt in Retrying(
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=2, max=10),
+            reraise=True
+        ):
+            with attempt:
                 response = client.responses.create(**kwargs)
                 raw = (response.output_text or "").strip()
                 return ProviderResult(
@@ -49,12 +54,6 @@ class OpenAIProvider(BaseProvider):
                     confidence=0.85 if raw else 0.0,
                     prompt_sent=prompt,
                 )
-            except Exception as exc:
-                last_exc = exc
-                if attempt < self.max_retries:
-                    time.sleep(2 ** attempt)
-
-        raise RuntimeError(f"OpenAI failed after {self.max_retries} retries: {last_exc}")
 
     def test_connection(self) -> tuple[bool, str]:
         try:
