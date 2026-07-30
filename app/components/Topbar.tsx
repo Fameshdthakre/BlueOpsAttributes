@@ -59,7 +59,7 @@ export default function Topbar() {
         </button>
 
         {/* Logo and Title */}
-        <Link href="/input" className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3">
           <Image
             src="/logo.png"
             alt="BlueOps Logo"
