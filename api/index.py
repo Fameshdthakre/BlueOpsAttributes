@@ -3,10 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.api_tokens import router as api_tokens_router
 from backend.api.aplus_jobs import router as aplus_jobs_router
 from backend.api.aplus_session import router as aplus_session_router
+from backend.api.aplus_template import router as aplus_template_router
+from backend.api.aplus_ai import router as aplus_ai_router
 from backend.api.dashboard import router as dashboard_router
 from backend.api.export import router as export_router
 from backend.api.history import router as history_router
 from backend.api.image_audit_results import router as image_audit_results_router
+from backend.api.image_audit_report import router as image_audit_report_router
+from backend.api.image_similarity import router as image_similarity_router
 from backend.api.image_audit_session import router as image_audit_session_router
 from backend.api.listing_audit_report import router as listing_audit_report_router
 from backend.api.listing_audit_results import router as listing_audit_results_router
@@ -33,10 +37,14 @@ app.add_middleware(
 app.include_router(api_tokens_router)
 app.include_router(aplus_jobs_router)
 app.include_router(aplus_session_router)
+app.include_router(aplus_template_router)
+app.include_router(aplus_ai_router)
 app.include_router(dashboard_router)
 app.include_router(export_router)
 app.include_router(history_router)
 app.include_router(image_audit_results_router)
+app.include_router(image_audit_report_router)
+app.include_router(image_similarity_router)
 app.include_router(image_audit_session_router)
 app.include_router(listing_audit_report_router)
 app.include_router(listing_audit_results_router)

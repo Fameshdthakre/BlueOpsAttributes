@@ -189,3 +189,14 @@ export const api = {
     return res.json();
   },
 };
+
+export const getToken = async (): Promise<string | null> => {
+  try {
+    const res = await api.getTokens();
+    if (res.tokens && res.tokens.length > 0) return res.tokens[0].token;
+  } catch (e) {
+    return null;
+  }
+  return null;
+};
+
