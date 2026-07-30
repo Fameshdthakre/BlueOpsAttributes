@@ -1,13 +1,36 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { status } = useSession();
   const isAuthRoute = pathname === "/" || pathname === "/login" || pathname === "/signup";
+
+  useEffect(() => {
+    if (status === "unauthenticated" && !isAuthRoute) {
+      router.replace("/login");
+    } else if (status === "authenticated" && (pathname === "/login" || pathname === "/signup")) {
+      router.replace("/dashboard");
+    }
+  }, [status, isAuthRoute, pathname, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-dark text-text-muted">
+        <span className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated" && !isAuthRoute) {
+    return null; // prevent flash of protected content before redirect
+  }
 
   if (isAuthRoute) {
     return (
