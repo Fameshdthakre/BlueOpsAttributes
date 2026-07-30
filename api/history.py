@@ -34,7 +34,11 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
                 
                 # We need to map stats per-ASIN usually, but this is fine per attribute too
                 
+                cur.execute("SELECT session_id, timestamp, input_file, status FROM sessions WHERE session_id = %s AND user_id = %s", (session_id, x_user_id))
+                session_info = cur.fetchone()
+
                 return {
+                    "session": dict(session_info) if session_info else None,
                     "results": [dict(r) for r in results],
                     "stats": {r["match_status"]: r["count"] for r in stats_raw}
                 }

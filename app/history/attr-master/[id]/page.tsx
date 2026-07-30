@@ -82,7 +82,7 @@ export default function AttributeMasterHistoryPage() {
     return <div className="p-8 text-status-error">{error}</div>;
   }
 
-  if (!sessionDetails) {
+  if (!sessionDetails || !sessionDetails.session) {
     return <div className="p-8 text-text-muted">Session not found.</div>;
   }
 

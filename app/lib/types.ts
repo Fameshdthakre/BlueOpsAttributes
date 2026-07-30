@@ -41,6 +41,12 @@ export interface SessionResult {
 }
 
 export interface DetailedSessionResult {
+  session?: {
+    session_id: string;
+    timestamp: string;
+    input_file: string;
+    status: string;
+  };
   results: Array<Record<string, any>>;
   stats: Record<string, number>;
 }
