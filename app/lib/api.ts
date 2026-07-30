@@ -160,4 +160,32 @@ export const api = {
   downloadTemplatesUrl: () => {
     return `/api/templates`;
   },
+
+  getTokens: async () => {
+    const res = await fetchWithAuth("/api/tokens");
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  regenerateToken: async (label: string = "Default Token") => {
+    const res = await fetchWithAuth("/api/tokens/regenerate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  getUnifiedHistory: async (toolType: string = "all", limit: number = 50, offset: number = 0) => {
+    const res = await fetchWithAuth(`/api/history/unified?tool_type=${toolType}&limit=${limit}&offset=${offset}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  getDashboardStats: async () => {
+    const res = await fetchWithAuth("/api/dashboard/stats");
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };

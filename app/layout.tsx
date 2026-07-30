@@ -9,8 +9,8 @@ import { AppLayoutWrapper } from "@/app/components/AppLayoutWrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BlueOps | ASIN Attributes",
-  description: "AI-Powered ASIN Attribute Extraction",
+  title: "BlueOps Enterprise | Amazon Ops Platform",
+  description: "AI-Powered Amazon Operations: Attribute Extraction, A+ Publishing, Image Auditing, Listing Scraping",
   icons: {
     icon: "/logo.png",
   },

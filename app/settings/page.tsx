@@ -27,6 +27,10 @@ interface AppConfig {
       enable_web_search?: boolean;
     }
   >;
+  marketplace_config?: {
+    default_marketplace: string;
+    zip_codes: Record<string, string>;
+  };
 }
 
 export default function SettingsPage() {
@@ -40,8 +44,45 @@ export default function SettingsPage() {
   } | null>(null);
 
   const { data: session, update: updateSession } = useSession();
-  const [activeTab, setActiveTab] = useState<"general" | "personal">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "personal" | "integrations" | "marketplace">("general");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // API Token State
+  const [tokens, setTokens] = useState<any[]>([]);
+  const [tokenLoading, setTokenLoading] = useState(false);
+  const [newToken, setNewToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeTab === "integrations") {
+      setTokenLoading(true);
+      api.getTokens().then(data => {
+        setTokens(data.tokens);
+      }).catch(err => {
+        toast.error("Failed to load tokens");
+      }).finally(() => {
+        setTokenLoading(false);
+      });
+    }
+  }, [activeTab]);
+
+  const handleRegenerateToken = async () => {
+    if (!confirm("Are you sure? This will invalidate any existing API tokens.")) return;
+    try {
+      const data = await api.regenerateToken("Extension Default Token");
+      setNewToken(data.token);
+      toast.success("New token generated!");
+      // Reload tokens list
+      const updated = await api.getTokens();
+      setTokens(updated.tokens);
+    } catch (e: any) {
+      toast.error("Failed to generate token: " + e.message);
+    }
+  };
+
+  const copyToken = (tokenStr: string) => {
+    navigator.clipboard.writeText(tokenStr);
+    toast.success("Token copied to clipboard!");
+  };
 
   // Profile Form State
   const [profileName, setProfileName] = useState("");
@@ -309,6 +350,26 @@ export default function SettingsPage() {
           }`}
         >
           Personal Settings
+        </button>
+        <button
+          onClick={() => setActiveTab("integrations")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "integrations"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          Integrations
+        </button>
+        <button
+          onClick={() => setActiveTab("marketplace")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "marketplace"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          Marketplace
         </button>
       </div>
 
@@ -816,6 +877,156 @@ export default function SettingsPage() {
           })}
         </div>
           </>
+        )}
+
+        {activeTab === "integrations" && (
+          <div className="space-y-8">
+            <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  API Tokens
+                </h2>
+                <button
+                  onClick={handleRegenerateToken}
+                  className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
+                >
+                  Regenerate Token
+                </button>
+              </div>
+              <p className="text-sm text-text-muted mb-6">
+                Use your API token to authenticate Chrome Extensions (A+ Publisher, Image Auditor, Listing Auditor).
+                This token acts as your password—keep it secret!
+              </p>
+              
+              {newToken && (
+                <div className="mb-6 p-4 bg-status-success/10 border border-status-success/20 rounded-lg">
+                  <p className="text-status-success font-semibold mb-2">New token generated! Please copy it now, it won't be shown again.</p>
+                  <div className="flex gap-2 items-center">
+                    <code className="flex-1 p-3 bg-bg-dark border border-bg-input rounded font-mono text-white select-all break-all">{newToken}</code>
+                    <button onClick={() => copyToken(newToken)} className="p-3 bg-bg-input hover:bg-bg-dark rounded transition-colors text-text-main" title="Copy">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-text-main mb-2">Active Tokens</h3>
+                {tokenLoading ? (
+                  <div className="text-sm text-text-muted">Loading tokens...</div>
+                ) : tokens.length === 0 ? (
+                  <div className="text-sm text-text-muted">No active tokens. Generate one to connect extensions.</div>
+                ) : (
+                  tokens.map(token => (
+                    <div key={token.id} className="p-4 bg-bg-dark border border-bg-input rounded-lg flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-text-main">{token.label}</div>
+                        <div className="text-xs text-text-muted mt-1">
+                          Created: {new Date(token.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-text-main">
+                          {token.last_used_tool ? `Last used by ${token.last_used_tool}` : "Never used"}
+                        </div>
+                        {token.last_used_at && (
+                          <div className="text-xs text-text-muted mt-1">
+                            {new Date(token.last_used_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+              <h2 className="text-xl font-semibold text-text-main mb-4">Extension Setup Guide</h2>
+              <div className="space-y-4">
+                <div className="p-4 bg-bg-dark rounded border border-bg-input">
+                  <h4 className="font-semibold text-text-main mb-2">1. Listing Auditor</h4>
+                  <p className="text-sm text-text-muted">Click the BlueOps icon in Chrome. Paste your API token in the settings menu to enable pushing scraped catalogues to your account.</p>
+                </div>
+                <div className="p-4 bg-bg-dark rounded border border-bg-input">
+                  <h4 className="font-semibold text-text-main mb-2">2. Image Auditor</h4>
+                  <p className="text-sm text-text-muted">Open Vendor Central or Seller Central. Click the Image Auditor extension, go to options, and paste your API token.</p>
+                </div>
+                <div className="p-4 bg-bg-dark rounded border border-bg-input">
+                  <h4 className="font-semibold text-text-main mb-2">3. A+ Publisher</h4>
+                  <p className="text-sm text-text-muted">Open the A+ Content Manager on Amazon. The extension will prompt you for the API token to sync drafts and modules.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "marketplace" && (
+          <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+            <h2 className="text-xl font-semibold mb-6 text-text-main flex items-center gap-2">
+              <svg className="w-6 h-6 text-status-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Marketplace Defaults
+            </h2>
+            <p className="text-sm text-text-muted mb-6">
+              Set your default Amazon marketplace and override delivery zip codes for scraper accuracy.
+            </p>
+            
+            <div className="mb-8 max-w-sm">
+              <label className="block text-sm text-text-muted mb-2">Default Marketplace</label>
+              <select
+                value={config?.marketplace_config?.default_marketplace || "Amazon.com"}
+                onChange={(e) => {
+                  if (config) {
+                    updateConfig({
+                      ...config,
+                      marketplace_config: {
+                        ...(config.marketplace_config || { zip_codes: {} }),
+                        default_marketplace: e.target.value
+                      }
+                    });
+                  }
+                }}
+                className="w-full bg-bg-input border-none rounded p-3 text-text-main"
+              >
+                {Object.keys(config?.marketplace_config?.zip_codes || {}).map(mkt => (
+                  <option key={mkt} value={mkt}>{mkt}</option>
+                ))}
+              </select>
+            </div>
+            
+            <h3 className="text-md font-semibold text-text-main mb-4">Zip Code Overrides</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(config?.marketplace_config?.zip_codes || {}).map(([mkt, zip]) => (
+                <div key={mkt} className="flex flex-col gap-1">
+                  <label className="text-xs text-text-muted">{mkt}</label>
+                  <input
+                    type="text"
+                    value={zip}
+                    onChange={(e) => {
+                      if (config && config.marketplace_config) {
+                        updateConfig({
+                          ...config,
+                          marketplace_config: {
+                            ...config.marketplace_config,
+                            zip_codes: {
+                              ...config.marketplace_config.zip_codes,
+                              [mkt]: e.target.value
+                            }
+                          }
+                        });
+                      }
+                    }}
+                    className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-text-main focus:border-primary outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

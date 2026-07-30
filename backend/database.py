@@ -160,6 +160,112 @@ def init_db():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    -- ── API Tokens (Extension Auth) ───────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS api_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        label TEXT,
+        last_used_at TIMESTAMPTZ,
+        last_used_tool TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── A+ Publisher ──────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS aplus_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT,
+        portal TEXT DEFAULT 'vendor',
+        domain TEXT DEFAULT 'com',
+        status TEXT DEFAULT 'pending',
+        total_drafts INTEGER DEFAULT 0,
+        completed_drafts INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS aplus_jobs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id UUID REFERENCES aplus_sessions(id) ON DELETE CASCADE,
+        draft_url TEXT,
+        content_title TEXT,
+        modules JSONB,
+        status TEXT DEFAULT 'pending',
+        error TEXT,
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── VC/SC Image Auditor ───────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS image_audit_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT,
+        portal TEXT DEFAULT 'vendor',
+        domain TEXT DEFAULT 'com',
+        mode TEXT DEFAULT 'Audit',
+        total_asins INTEGER DEFAULT 0,
+        completed_asins INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS image_audit_results (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id UUID REFERENCES image_audit_sessions(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        match_status TEXT,
+        portal_images JSONB,
+        pdp_images JSONB,
+        similarity_scores JSONB,
+        report JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── Listing Auditor (Scraper v1 only) ─────────────────────────────────
+    CREATE TABLE IF NOT EXISTS listing_audit_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT,
+        marketplace TEXT DEFAULT 'Amazon.com',
+        mode TEXT DEFAULT 'Scraper',
+        total_asins INTEGER DEFAULT 0,
+        completed_asins INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS listing_audit_results (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id UUID REFERENCES listing_audit_sessions(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        scraped_data JSONB,
+        status TEXT DEFAULT 'success',
+        error TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── Unified History View ──────────────────────────────────────────────
+    CREATE OR REPLACE VIEW unified_sessions AS
+      SELECT session_id AS id, user_id, 'attr_master' AS tool_type, input_file AS name,
+             status, 0 AS total_asins, 0 AS processed_asins, timestamp AS created_at
+      FROM sessions
+    UNION ALL
+      SELECT id::TEXT, user_id, 'aplus' AS tool_type, name,
+             status, total_drafts AS total_asins, completed_drafts AS processed_asins, created_at
+      FROM aplus_sessions
+    UNION ALL
+      SELECT id::TEXT, user_id, 'image_audit' AS tool_type, name,
+             status, total_asins, completed_asins AS processed_asins, created_at
+      FROM image_audit_sessions
+    UNION ALL
+      SELECT id::TEXT, user_id, 'listing_audit' AS tool_type, name,
+             status, total_asins, completed_asins AS processed_asins, created_at
+      FROM listing_audit_sessions;
+
     -- Indexes
     CREATE INDEX IF NOT EXISTS idx_sessions_timestamp ON sessions(timestamp);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);

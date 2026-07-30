@@ -70,6 +70,31 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "enable_web_search": True,
         },
     },
+    "marketplace_config": {
+        "default_marketplace": "Amazon.com",
+        "zip_codes": {
+            "Amazon.com": "10001",
+            "Amazon.co.uk": "E1 6AN",
+            "Amazon.de": "10115",
+            "Amazon.fr": "75001",
+            "Amazon.it": "00118",
+            "Amazon.es": "28001",
+            "Amazon.ca": "M5V 2H1",
+            "Amazon.com.mx": "01000",
+            "Amazon.com.br": "01000-000",
+            "Amazon.in": "110001",
+            "Amazon.co.jp": "100-0001",
+            "Amazon.com.au": "2000",
+            "Amazon.ae": "00000",
+            "Amazon.sa": "11564",
+            "Amazon.sg": "018956",
+            "Amazon.nl": "1011",
+            "Amazon.se": "111 20",
+            "Amazon.pl": "00-001",
+            "Amazon.eg": "11511",
+            "Amazon.com.tr": "34000"
+        }
+    }
 }
 
 def load_config(user_id: int) -> dict[str, Any]:

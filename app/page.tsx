@@ -18,15 +18,14 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-primary/20 blur-[120px] rounded-full pointer-events-none z-0"></div>
         <div className="relative z-10">
           <span className="inline-block py-1 px-3 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-wider uppercase mb-6">
-            Enterprise ASIN Extraction
+            BlueOps Enterprise Platform
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent leading-tight">
-            Automate Attribute <br /> Extraction at Scale
+            Your Complete Amazon <br /> Operations Platform
           </h1>
           <p className="text-xl text-text-muted max-w-3xl mx-auto mb-10 leading-relaxed">
-            The ultimate AI-powered bridge between messy e-commerce data and
-            strict taxonomy validations. Process thousands of ASINs concurrently
-            with flawless accuracy.
+            Attribute extraction, A+ publishing, image auditing, and listing scraping —
+            all in one enterprise-grade platform with AI at its core.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20">
