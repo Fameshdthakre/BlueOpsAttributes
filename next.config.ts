@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '4mb',
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/index',
+      },
+    ]
+  }
 };
 
 export default nextConfig;
