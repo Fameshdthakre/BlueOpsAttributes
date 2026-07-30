@@ -25,14 +25,7 @@
       "maxDuration": 30,
       "memory": 512
     },
-    "api/aplus_template.py": {
-      "maxDuration": 60,
-      "memory": 1024
-    },
-    "api/aplus_ai.py": {
-      "maxDuration": 120,
-      "memory": 1024
-    },
+
     "api/image_audit_session.py": {
       "maxDuration": 30,
       "memory": 512
@@ -41,10 +34,7 @@
       "maxDuration": 30,
       "memory": 512
     },
-    "api/image_audit_report.py": {
-      "maxDuration": 60,
-      "memory": 1024
-    },
+
     "api/listing_audit_session.py": {
       "maxDuration": 30,
       "memory": 512
