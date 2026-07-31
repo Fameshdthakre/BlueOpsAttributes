@@ -2,50 +2,49 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - BlueOps2.0
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  test-backend:
+  frontend-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.10'
-          cache: 'pip'
-          
+          node-version: "20"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        env:
+          # Minimal placeholders for env vars that might be required during build.
+          # Override these in Actions repo secrets for production builds if needed.
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL || 'postgres://localhost:5432/blueops_db' }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || '' }}
+        run: npm run build
+
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          
+
       - name: Run Pytest
         run: |
           pytest tests/
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          
-      - name: Install Node dependencies
-        run: npm ci
-        
-      - name: Build Next.js
-        run: npm run build
-        env:
-          POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres
-          ENCRYPTION_KEY: VGVzdEtleVRoYXRJc0V4YWN0bHk0NENoYXJhY3RlcnM=
