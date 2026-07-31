@@ -68,22 +68,23 @@ export default function UnifiedHistoryPage() {
         ]}
       />
 
+      <div className="flex border-b border-bg-input px-8 mt-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+        {filters.map(f => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+              filter === f.id
+                ? "border-primary text-primary"
+                : "border-transparent text-text-muted hover:text-text-main"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="p-8 w-full max-w-6xl mx-auto space-y-8 flex-1">
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {filters.map(f => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors border ${
-                filter === f.id
-                  ? "bg-primary text-white border-primary"
-                  : "bg-bg-dark text-text-muted border-bg-input hover:border-text-muted"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
 
         {error && (
           <div className="p-4 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg">
