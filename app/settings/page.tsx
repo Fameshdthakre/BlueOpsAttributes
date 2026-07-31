@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { api } from "@/app/lib/api";
 import { PROVIDERS, DEFAULT_MODELS } from "@/app/lib/constants";
 import PageHeader from "@/app/components/PageHeader";
+import { useExtension } from "@/app/components/ExtensionSync";
 
 interface AppConfig {
   primary_provider: string;
@@ -46,6 +47,7 @@ export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession();
   const [activeTab, setActiveTab] = useState<"general" | "personal" | "integrations" | "marketplace">("general");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { status: extStatus, lastSynced, recheck: recheckExtension } = useExtension();
   
   // API Token State
   const [tokens, setTokens] = useState<any[]>([]);
@@ -881,6 +883,98 @@ export default function SettingsPage() {
 
         {activeTab === "integrations" && (
           <div className="space-y-8">
+
+            {/* ── Extension Status Card ─────────────────────────────── */}
+            <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-text-main flex items-center gap-3">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                  </svg>
+                  BlueOps Enterprise Extension
+                </h2>
+                <button
+                  onClick={recheckExtension}
+                  className="text-xs px-3 py-1.5 bg-bg-dark border border-bg-input rounded-lg text-text-muted hover:text-text-main transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Recheck
+                </button>
+              </div>
+
+              <div className={`flex items-center gap-4 p-4 rounded-xl border ${
+                extStatus === "connected"
+                  ? "bg-green-500/5 border-green-500/20"
+                  : extStatus === "checking"
+                  ? "bg-yellow-500/5 border-yellow-500/20"
+                  : "bg-red-500/5 border-red-500/30"
+              }`}>
+                {/* Animated status dot */}
+                <div className="relative flex-shrink-0">
+                  <span className={`w-4 h-4 rounded-full block ${
+                    extStatus === "connected" ? "bg-green-500"
+                    : extStatus === "checking" ? "bg-yellow-400"
+                    : "bg-red-500"
+                  }`} />
+                  {extStatus === "connected" && (
+                    <span className="absolute inset-0 w-4 h-4 rounded-full bg-green-500 animate-ping opacity-60" />
+                  )}
+                  {extStatus === "checking" && (
+                    <span className="absolute inset-0 w-4 h-4 rounded-full bg-yellow-400 animate-ping opacity-60" />
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <div className={`font-bold text-lg ${
+                    extStatus === "connected" ? "text-green-400"
+                    : extStatus === "checking" ? "text-yellow-300"
+                    : "text-red-400"
+                  }`}>
+                    {extStatus === "connected" ? "✓ Extension Connected & Active"
+                    : extStatus === "checking" ? "⏳ Checking for Extension..."
+                    : "✗ Extension Not Detected"}
+                  </div>
+                  <div className="text-sm text-text-muted mt-0.5">
+                    {extStatus === "connected" && lastSynced
+                      ? `API token synced automatically · Last seen: ${lastSynced.toLocaleTimeString()}`
+                      : extStatus === "checking"
+                      ? "Waiting for the extension to respond..."
+                      : "Load the BlueOps Enterprise Toolkit extension in Chrome to connect."}
+                  </div>
+                </div>
+
+                {extStatus === "disconnected" && (
+                  <a
+                    href="https://github.com/Fameshdthakre/BlueOpsAttributes/tree/main/extension"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-shrink-0 text-xs bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    Setup Guide →
+                  </a>
+                )}
+              </div>
+
+              {extStatus === "connected" && (
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Attribute Master", icon: "⚡" },
+                    { label: "Image Auditor", icon: "🖼" },
+                    { label: "Listing Auditor", icon: "📋" },
+                  ].map((f) => (
+                    <div key={f.label} className="p-3 bg-bg-dark border border-green-500/20 rounded-lg flex items-center gap-2 text-sm">
+                      <span>{f.icon}</span>
+                      <span className="text-text-main font-medium">{f.label}</span>
+                      <span className="ml-auto text-green-400 text-xs font-bold">READY</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── API Tokens Card ───────────────────────────────────── */}
             <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
@@ -945,20 +1039,23 @@ export default function SettingsPage() {
             </div>
             
             <div className="bg-bg-card p-6 rounded-xl border border-bg-input">
-              <h2 className="text-xl font-semibold text-text-main mb-4">Extension Setup Guide</h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-bg-dark rounded border border-bg-input">
-                  <h4 className="font-semibold text-text-main mb-2">1. Listing Auditor</h4>
-                  <p className="text-sm text-text-muted">Click the BlueOps icon in Chrome. Paste your API token in the settings menu to enable pushing scraped catalogues to your account.</p>
-                </div>
-                <div className="p-4 bg-bg-dark rounded border border-bg-input">
-                  <h4 className="font-semibold text-text-main mb-2">2. Image Auditor</h4>
-                  <p className="text-sm text-text-muted">Open Vendor Central or Seller Central. Click the Image Auditor extension, go to options, and paste your API token.</p>
-                </div>
-                <div className="p-4 bg-bg-dark rounded border border-bg-input">
-                  <h4 className="font-semibold text-text-main mb-2">3. A+ Publisher</h4>
-                  <p className="text-sm text-text-muted">Open the A+ Content Manager on Amazon. The extension will prompt you for the API token to sync drafts and modules.</p>
-                </div>
+              <h2 className="text-xl font-semibold text-text-main mb-1">How to Set Up</h2>
+              <p className="text-sm text-text-muted mb-5">The BlueOps Enterprise Extension is headless (no popup). Follow these steps to get started.</p>
+              <div className="space-y-3">
+                {[
+                  { step: "1", title: "Download the Extension", desc: "Go to the GitHub repo and download the extension/ folder, or clone the repository locally." },
+                  { step: "2", title: "Load in Chrome", desc: 'Open chrome://extensions → Enable "Developer Mode" (top-right) → Click "Load unpacked" → Select the extension/ folder.' },
+                  { step: "3", title: "Log In to BlueOps", desc: "Simply log in to this web app. Your API token is synced to the extension silently and automatically — no copy-pasting needed!" },
+                  { step: "4", title: "Verify Connection", desc: "Check the \"Extension Status\" card above. If it shows green and Connected, you are ready to use all features." },
+                ].map(({ step, title, desc }) => (
+                  <div key={step} className="flex gap-4 p-4 bg-bg-dark rounded-lg border border-bg-input">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center flex-shrink-0">{step}</div>
+                    <div>
+                      <h4 className="font-semibold text-text-main">{title}</h4>
+                      <p className="text-sm text-text-muted mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
