@@ -2,7 +2,7 @@ import io
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
-from backend.database import get_connection
+from backend.api.core.database import get_connection
 import json
 
 _GREY = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")

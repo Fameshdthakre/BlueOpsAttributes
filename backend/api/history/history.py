@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query, Request, Header, APIRouter
 from typing import Optional
 from psycopg2.extras import RealDictCursor
-from backend.database import get_connection
+from backend.api.core.database import get_connection
 import json
 
 router = APIRouter()

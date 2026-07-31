@@ -4,7 +4,7 @@ from typing import Optional
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.openai_provider import OpenAIProvider
 from backend.providers.claude_provider import ClaudeProvider
-from backend.config import load_config
+from backend.api.core.config import load_config
 
 router = APIRouter()
 

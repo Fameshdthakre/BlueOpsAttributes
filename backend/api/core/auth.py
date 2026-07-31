@@ -5,7 +5,7 @@ Middleware and helpers for dual-authentication (NextAuth and API Tokens).
 import hashlib
 from fastapi import Header, HTTPException
 from typing import Optional
-from backend.database import get_connection
+from backend.api.core.database import get_connection
 
 def verify_token(
     x_user_id: Optional[str] = Header(None),

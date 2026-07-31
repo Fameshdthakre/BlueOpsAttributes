@@ -1,7 +1,7 @@
 import pytest
 
-from backend.validation import fuzzy_match_value, lookup
-from backend.models import ValidationEntry
+from backend.api.attribute_master.validation import fuzzy_match_value, lookup
+from backend.api.core.models import ValidationEntry
 
 
 def test_fuzzy_match_value_accept():

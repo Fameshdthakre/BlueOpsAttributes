@@ -5,8 +5,8 @@ from pydantic import BaseModel
 from typing import List
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from backend.auth import verify_token
-from backend.aplus_modules import MODULE_REGISTRY
+from backend.api.core.auth import verify_token
+from backend.api.aplus_publisher.aplus_modules import MODULE_REGISTRY
 
 router = APIRouter()
 

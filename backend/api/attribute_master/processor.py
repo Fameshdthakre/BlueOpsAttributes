@@ -7,8 +7,8 @@ from __future__ import annotations
 import json
 import re
 from loguru import logger
-from backend.models import Job, ValidationEntry, AttributeResult, ProcessingResult
-from backend.validation import lookup, fuzzy_match_value
+from backend.api.core.models import Job, ValidationEntry, AttributeResult, ProcessingResult
+from backend.api.attribute_master.validation import lookup, fuzzy_match_value
 from backend.providers.gemini_provider import GeminiProvider
 from backend.providers.openai_provider import OpenAIProvider
 from backend.providers.claude_provider import ClaudeProvider

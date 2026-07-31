@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Header, APIRouter
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from backend.config import load_config, save_config
+from backend.api.core.config import load_config, save_config
 
 router = APIRouter()
 

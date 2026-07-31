@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from loguru import logger
 from rapidfuzz import process, fuzz
-from backend.models import ValidationEntry
+from backend.api.core.models import ValidationEntry
 
 UNRESOLVED_THRESHOLD = 70
 

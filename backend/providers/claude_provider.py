@@ -5,7 +5,7 @@ Claude provider.
 from __future__ import annotations
 import time
 from backend.providers.base import BaseProvider
-from backend.models import Job, ProviderResult, ValidationEntry
+from backend.api.core.models import Job, ProviderResult, ValidationEntry
 
 
 class ClaudeProvider(BaseProvider):

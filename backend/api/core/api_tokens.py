@@ -2,8 +2,8 @@ from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import secrets
 import hashlib
-from backend.database import get_connection
-from backend.auth import verify_token
+from backend.api.core.database import get_connection
+from backend.api.core.auth import verify_token
 
 router = APIRouter()
 

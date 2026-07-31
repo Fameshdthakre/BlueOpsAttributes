@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.responses import Response
-from backend.result_writer import generate_excel_from_session, generate_wide_excel_from_session
-from backend.database import get_connection
+from backend.api.history.result_writer import generate_excel_from_session, generate_wide_excel_from_session
+from backend.api.core.database import get_connection
 import datetime
 
 router = APIRouter()

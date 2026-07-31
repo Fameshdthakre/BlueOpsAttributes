@@ -2,10 +2,10 @@ import json
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
-from backend.auth import verify_token
-from backend.config import load_config
-from backend.aplus_prompts import GENERATE_CHART, GENERATE_MODULE_CONTENT, STRATEGY_BLOCKS
-from backend.aplus_modules import MODULE_REGISTRY
+from backend.api.core.auth import verify_token
+from backend.api.core.config import load_config
+from backend.api.aplus_publisher.aplus_prompts import GENERATE_CHART, GENERATE_MODULE_CONTENT, STRATEGY_BLOCKS
+from backend.api.aplus_publisher.aplus_modules import MODULE_REGISTRY
 
 router = APIRouter()
 

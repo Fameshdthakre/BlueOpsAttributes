@@ -2,7 +2,7 @@ import uuid
 from fastapi import FastAPI, HTTPException, Header, APIRouter
 from pydantic import BaseModel
 from typing import Optional
-from backend.database import get_connection
+from backend.api.core.database import get_connection
 
 router = APIRouter()
 

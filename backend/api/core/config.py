@@ -12,7 +12,7 @@ from cryptography.fernet import Fernet
 from loguru import logger
 from dotenv import load_dotenv
 
-from backend.database import get_connection, db_transaction
+from backend.api.core.database import get_connection, db_transaction
 
 load_dotenv()
 

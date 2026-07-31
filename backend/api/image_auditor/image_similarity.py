@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-from backend.auth import verify_token
+from backend.api.core.auth import verify_token
 import json
 
 router = APIRouter()

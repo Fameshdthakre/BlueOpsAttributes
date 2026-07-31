@@ -4,10 +4,10 @@ from fastapi import FastAPI, HTTPException, Header, APIRouter
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 
-from backend.models import Job, ValidationEntry
-from backend.config import load_config
-from backend.database import get_connection
-from backend.processor import process_single_asin
+from backend.api.core.models import Job, ValidationEntry
+from backend.api.core.config import load_config
+from backend.api.core.database import get_connection
+from backend.api.attribute_master.processor import process_single_asin
 
 router = APIRouter()
 

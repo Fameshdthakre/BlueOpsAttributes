@@ -5,7 +5,7 @@ Abstract base class for AI providers.
 from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
-from backend.models import Job, ProviderResult, ValidationEntry
+from backend.api.core.models import Job, ProviderResult, ValidationEntry
 
 
 class BaseProvider(ABC):

@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import uuid
 import json
-from backend.database import get_connection
-from backend.auth import verify_token
+from backend.api.core.database import get_connection
+from backend.api.core.auth import verify_token
 
 router = APIRouter()
 
