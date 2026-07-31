@@ -3,27 +3,25 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
+import { useSession } from "next-auth/react";
 
-const MARKETPLACES = [
-  "Amazon.com", "Amazon.co.uk", "Amazon.de", "Amazon.fr", "Amazon.it",
-  "Amazon.es", "Amazon.ca", "Amazon.com.mx", "Amazon.in", "Amazon.co.jp",
-  "Amazon.com.au", "Amazon.ae", "Amazon.sa", "Amazon.sg", "Amazon.nl",
-  "Amazon.se", "Amazon.pl", "Amazon.eg", "Amazon.com.tr",
-];
+
 
 export default function ListingAuditorPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
+    if (!session?.user?.id) return;
     fetch("/api/listing-audit/sessions", {
-      headers: { "x-user-id": "" },
+      headers: { "x-user-id": session.user.id },
     })
-      .then(r => r.json())
-      .then(data => setSessions(data.sessions || []))
+      .then((r) => r.json())
+      .then((data) => setSessions(data.sessions || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [session?.user?.id]);
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import JobStatusBadge from "./JobStatusBadge";
@@ -45,25 +47,28 @@ export default function SessionCard({
   const date = new Date(createdAt).toLocaleString();
 
   return (
-    <div className="bg-white dark:bg-[#1a1d21] rounded-lg border border-[var(--border-color)] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-sm">
-      <div className="flex flex-col gap-1">
+    <div className="bg-bg-card rounded-xl border border-bg-input p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary/30 transition-colors">
+      <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-3">
           <Link
             href={links.view}
-            className="font-semibold text-[var(--text-primary)] hover:text-[var(--blue-500)] transition-colors"
+            className="font-semibold text-text-main hover:text-primary transition-colors"
           >
             {name}
           </Link>
           <JobStatusBadge status={status} />
         </div>
-        <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
-          <span title="Session ID" className="font-mono bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded">
+        <div className="flex items-center gap-4 text-xs text-text-muted">
+          <span
+            title="Session ID"
+            className="font-mono bg-bg-dark px-1.5 py-0.5 rounded border border-bg-input"
+          >
             {id.substring(0, 8)}
           </span>
           <span>{date}</span>
           {marketplace && (
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
               {marketplace}
             </span>
           )}
@@ -71,10 +76,10 @@ export default function SessionCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-2 sm:mt-0">
+      <div className="flex items-center gap-2 mt-2 sm:mt-0 shrink-0">
         <Link
           href={links.view}
-          className="px-3 py-1.5 text-sm font-medium rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--border-color)] transition-colors"
+          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-bg-dark border border-bg-input hover:bg-bg-input text-text-muted hover:text-text-main transition-colors"
         >
           View Details
         </Link>

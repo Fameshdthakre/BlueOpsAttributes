@@ -3,30 +3,24 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
+import { useSession } from "next-auth/react";
 
-const MARKETPLACES = [
-  { label: "Amazon.com (US)", domain: "com", portal: "vendor" },
-  { label: "Amazon.co.uk (UK)", domain: "co.uk", portal: "vendor" },
-  { label: "Amazon.de (Germany)", domain: "de", portal: "vendor" },
-  { label: "Amazon.fr (France)", domain: "fr", portal: "vendor" },
-  { label: "Amazon.ca (Canada)", domain: "ca", portal: "vendor" },
-  { label: "Amazon.com.mx (Mexico)", domain: "com.mx", portal: "vendor" },
-  { label: "Amazon.in (India)", domain: "in", portal: "vendor" },
-];
 
 export default function ImageAuditorPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
+    if (!session?.user?.id) return;
     fetch("/api/image-audit/sessions", {
-      headers: { "x-user-id": "" },
+      headers: { "x-user-id": session.user.id },
     })
-      .then(r => r.json())
-      .then(data => setSessions(data.sessions || []))
+      .then((r) => r.json())
+      .then((data) => setSessions(data.sessions || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [session?.user?.id]);
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">

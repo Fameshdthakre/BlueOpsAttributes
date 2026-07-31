@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { getToken } from "@/app/lib/api";
+import { useSession } from "next-auth/react";
 
 interface ExportButtonProps {
   endpoint: string; // e.g. "/api/listing-audit/sessions/123/report"
@@ -17,14 +17,18 @@ export default function ExportButton({
   className = "",
 }: ExportButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { data: session } = useSession();
 
   const handleExport = async () => {
+    if (!session?.user?.id) {
+      alert("Not authenticated. Please sign in and try again.");
+      return;
+    }
     try {
       setLoading(true);
-      const token = await getToken();
       const res = await fetch(endpoint, {
         headers: {
-          ...(token && { "X-BlueOps-Token": token }),
+          "x-user-id": session.user.id,
         },
       });
 
@@ -52,10 +56,10 @@ export default function ExportButton({
     <button
       onClick={handleExport}
       disabled={loading}
-      className={`px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-[#1a1d21] border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}`}
+      className={`px-3 py-1.5 text-sm font-medium rounded-lg bg-bg-card border border-bg-input text-text-muted hover:bg-bg-input hover:text-text-main disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors ${className}`}
     >
       {loading ? (
-        <span className="w-3.5 h-3.5 border-2 border-[var(--text-secondary)] border-t-transparent rounded-full animate-spin" />
+        <span className="w-3.5 h-3.5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"

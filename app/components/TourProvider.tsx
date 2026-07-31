@@ -32,44 +32,51 @@ interface CustomStep {
 
 const TOUR_STEPS: CustomStep[] = [
   {
+    target: "#tour-dashboard-stats",
+    content:
+      "Welcome to BlueOps! Your new Dashboard gives you a birds-eye view of all your tool usage and recent sessions in one place.",
+    route: "/dashboard",
+    placement: "bottom",
+  },
+  {
     target: "#tour-api-keys",
     content:
-      "Welcome to BlueOps! To power the AI extraction, you must first paste in at least one API key here.",
+      "To power the AI extraction, you must first paste in at least one API key here.",
     route: "/settings",
     placement: "bottom-left",
   },
   {
-    target: "#tour-templates",
+    target: "#tour-attribute-master",
     content:
-      "Next, download our Excel templates. This shows you exactly how to format your ASIN data for perfect results.",
+      "Attribute Master automates extracting specific product data directly from ASINs using AI and Excel templates.",
     route: "/input",
     placement: "bottom-right",
   },
   {
-    target: "#tour-asin-upload",
+    target: "#tour-aplus-publisher",
     content:
-      "Upload your filled-out ASIN file here. We will magically map your columns for you automatically!",
-    route: "/input",
-    placement: "bottom-left",
-  },
-  {
-    target: "#tour-validation-upload",
-    content:
-      "Want strict formatting? Upload a Validation sheet to force the AI to only pick from your allowed Dropdown values.",
-    route: "/input",
+      "A+ Publisher lets you build beautiful Amazon A+ content modules and map images seamlessly.",
+    route: "/aplus-publisher",
     placement: "bottom-right",
   },
   {
-    target: "#tour-start-process",
+    target: "#tour-image-auditor",
     content:
-      "Choose how fast you want to process (up to 5 at a time), and hit Start to unleash the AI!",
-    route: "/input",
+      "Image Auditor compares your product images against competitors to find visual gaps and opportunities.",
+    route: "/image-auditor",
     placement: "bottom-right",
   },
   {
-    target: "#tour-export",
+    target: "#tour-listing-auditor",
     content:
-      "All your batches are saved here permanently. You can download your beautiful, color-coded Excel reports anytime. You're ready to go!",
+      "Listing Auditor analyzes your listing copy (title, bullets) and gives you an AI-driven scorecard.",
+    route: "/listing-auditor",
+    placement: "bottom-right",
+  },
+  {
+    target: "#tour-history",
+    content:
+      "All your batches from every tool are saved here permanently. You're ready to go!",
     route: "/history",
     placement: "bottom-right",
   },

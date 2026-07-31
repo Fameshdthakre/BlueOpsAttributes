@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSidebar } from "@/app/lib/SidebarContext";
 import { useTour } from "@/app/components/TourProvider";
 import { useSession, signOut } from "next-auth/react";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
 export default function Topbar() {
   const { toggleSidebar, isExpanded } = useSidebar();

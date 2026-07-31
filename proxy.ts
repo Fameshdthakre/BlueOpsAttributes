@@ -18,7 +18,7 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isLoginRoute) {
-    const dashboardUrl = new URL("/input", req.nextUrl);
+    const dashboardUrl = new URL("/dashboard", req.nextUrl);
     return Response.redirect(dashboardUrl);
   }
 });

@@ -15,7 +15,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status === "unauthenticated" && !isAuthRoute) {
       router.replace("/login");
-    } else if (status === "authenticated" && (pathname === "/login" || pathname === "/signup")) {
+    } else if (status === "authenticated" && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
       router.replace("/dashboard");
     }
   }, [status, isAuthRoute, pathname, router]);

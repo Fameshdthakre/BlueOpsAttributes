@@ -5,31 +5,43 @@ interface JobStatusBadgeProps {
 }
 
 export default function JobStatusBadge({ status }: JobStatusBadgeProps) {
-  let color = "bg-gray-100 text-gray-800 border-gray-200";
-  let label = status.toUpperCase();
+  let classes = "text-text-muted bg-bg-input border-bg-input";
+  let label = status;
 
   switch (status.toLowerCase()) {
     case "pending":
-      color = "bg-yellow-100 text-yellow-800 border-yellow-200";
+      classes = "text-status-warning bg-status-warning/10 border-status-warning/20";
+      label = "Pending";
       break;
     case "processing":
-      color = "bg-blue-100 text-blue-800 border-blue-200";
+      classes = "text-blue-400 bg-blue-500/10 border-blue-500/20";
+      label = "Processing";
       break;
     case "completed":
-      color = "bg-green-100 text-green-800 border-green-200";
+      classes = "text-status-success bg-status-success/10 border-status-success/20";
+      label = "Completed";
       break;
     case "failed":
-      color = "bg-red-100 text-red-800 border-red-200";
+      classes = "text-status-error bg-status-error/10 border-status-error/20";
+      label = "Failed";
       break;
     case "partially_completed":
-      color = "bg-orange-100 text-orange-800 border-orange-200";
-      label = "PARTIAL";
+      classes = "text-orange-400 bg-orange-500/10 border-orange-500/20";
+      label = "Partial";
+      break;
+    case "running":
+      classes = "text-blue-400 bg-blue-500/10 border-blue-500/20";
+      label = "Running";
+      break;
+    case "paused":
+      classes = "text-status-warning bg-status-warning/10 border-status-warning/20";
+      label = "Paused";
       break;
   }
 
   return (
     <span
-      className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${color} whitespace-nowrap`}
+      className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${classes} whitespace-nowrap`}
     >
       {label}
     </span>

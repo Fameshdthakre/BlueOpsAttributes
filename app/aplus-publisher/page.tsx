@@ -3,21 +3,24 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
-import { api } from "@/app/lib/api";
+import { useSession } from "next-auth/react";
+// api import kept for potential future use
 
 export default function AplusPublisherPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
+    if (!session?.user?.id) return;
     fetch("/api/aplus/sessions", {
-      headers: { "x-user-id": "" },
+      headers: { "x-user-id": session.user.id },
     })
-      .then(res => res.json())
-      .then(data => setSessions(data.sessions || []))
+      .then((res) => res.json())
+      .then((data) => setSessions(data.sessions || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [session?.user?.id]);
 
   const statusColor: Record<string, string> = {
     pending: "text-status-warning",
