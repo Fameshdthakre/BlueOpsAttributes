@@ -207,8 +207,8 @@ const groups = [
         isNew: true,
       },
       {
-        name: "Listing Auditor",
-        href: "/listing-auditor",
+        name: "Listing Scraper",
+        href: "/listing-scraper",
         icon: <ListIcon />,
         isNew: true,
       },

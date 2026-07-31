@@ -8,22 +8,22 @@ from backend.api.core.auth import verify_token
 router = APIRouter()
 
 
-class CreateListingAuditSession(BaseModel):
+class CreateListingScrapeSession(BaseModel):
     name: str
     marketplace: str = "Amazon.com"
     mode: str = "Scraper"
     total_asins: int = 0
 
 
-@router.post("/api/listing-audit/sessions")
-def create_session(payload: CreateListingAuditSession, user_id: int = Depends(verify_token)):
+@router.post("/api/listing-scrape/sessions")
+def create_session(payload: CreateListingScrapeSession, user_id: int = Depends(verify_token)):
     conn = None
     try:
         conn = get_connection()
         with conn.cursor() as cur:
             new_id = str(uuid.uuid4())
             cur.execute(
-                """INSERT INTO listing_audit_sessions (id, user_id, name, marketplace, mode, total_asins, status)
+                """INSERT INTO listing_scrape_sessions (id, user_id, name, marketplace, mode, total_asins, status)
                    VALUES (%s, %s, %s, %s, %s, %s, 'pending') RETURNING id""",
                 (new_id, user_id, payload.name, payload.marketplace, payload.mode, payload.total_asins),
             )
@@ -39,7 +39,7 @@ def create_session(payload: CreateListingAuditSession, user_id: int = Depends(ve
             conn.close()
 
 
-@router.get("/api/listing-audit/sessions")
+@router.get("/api/listing-scrape/sessions")
 def list_sessions(user_id: int = Depends(verify_token)):
     conn = None
     try:
@@ -47,7 +47,7 @@ def list_sessions(user_id: int = Depends(verify_token)):
         with conn.cursor() as cur:
             cur.execute(
                 """SELECT id, name, marketplace, mode, status, total_asins, completed_asins, created_at
-                   FROM listing_audit_sessions WHERE user_id = %s ORDER BY created_at DESC""",
+                   FROM listing_scrape_sessions WHERE user_id = %s ORDER BY created_at DESC""",
                 (user_id,),
             )
             sessions = []
@@ -70,14 +70,14 @@ def list_sessions(user_id: int = Depends(verify_token)):
             conn.close()
 
 
-@router.get("/api/listing-audit/sessions/{session_id}/results")
+@router.get("/api/listing-scrape/sessions/{session_id}/results")
 def get_session_results(session_id: str, user_id: int = Depends(verify_token)):
     conn = None
     try:
         conn = get_connection()
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, name, marketplace, mode, status, total_asins, completed_asins, created_at FROM listing_audit_sessions WHERE id = %s AND user_id = %s",
+                "SELECT id, name, marketplace, mode, status, total_asins, completed_asins, created_at FROM listing_scrape_sessions WHERE id = %s AND user_id = %s",
                 (session_id, user_id),
             )
             session = cur.fetchone()
@@ -85,7 +85,7 @@ def get_session_results(session_id: str, user_id: int = Depends(verify_token)):
                 raise HTTPException(status_code=404, detail="Session not found")
 
             cur.execute(
-                "SELECT id, asin, scraped_data, status, error, created_at FROM listing_audit_results WHERE session_id = %s ORDER BY created_at",
+                "SELECT id, asin, scraped_data, status, error, created_at FROM listing_scrape_results WHERE session_id = %s ORDER BY created_at",
                 (session_id,),
             )
             results = []
@@ -125,14 +125,14 @@ class PatchSession(BaseModel):
     status: Optional[str] = None
 
 
-@router.patch("/api/listing-audit/sessions/{session_id}")
+@router.patch("/api/listing-scrape/sessions/{session_id}")
 def patch_session(session_id: str, payload: PatchSession, user_id: int = Depends(verify_token)):
     conn = None
     try:
         conn = get_connection()
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE listing_audit_sessions SET status = COALESCE(%s, status), updated_at = NOW() WHERE id = %s AND user_id = %s",
+                "UPDATE listing_scrape_sessions SET status = COALESCE(%s, status), updated_at = NOW() WHERE id = %s AND user_id = %s",
                 (payload.status, session_id, user_id),
             )
             conn.commit()
@@ -144,6 +144,3 @@ def patch_session(session_id: str, payload: PatchSession, user_id: int = Depends
     finally:
         if conn:
             conn.close()
-
-
-

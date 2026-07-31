@@ -5,7 +5,7 @@ import { api } from "@/app/lib/api";
 import { SessionResult, DetailedSessionResult } from "@/app/lib/types";
 import { STATUS_COLORS } from "@/app/lib/constants";
 
-export type FeatureToolType = "attr_master" | "aplus" | "image_audit" | "listing_audit";
+export type FeatureToolType = "attr_master" | "aplus" | "image_audit" | "listing_scrape";
 
 interface Props {
   toolType: FeatureToolType;

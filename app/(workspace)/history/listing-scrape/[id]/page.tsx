@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import PageHeader from "@/app/components/PageHeader";
 
-export default function ListingAuditHistoryPage() {
+export default function ListingScrapeHistoryPage() {
   const params = useParams();
   const id = params.id as string;
 
@@ -21,7 +21,7 @@ export default function ListingAuditHistoryPage() {
 
   const loadData = async (sessionId: string) => {
     try {
-      const res = await fetch(`/api/listing-audit/sessions/${sessionId}/results`);
+      const res = await fetch(`/api/listing-scrape/sessions/${sessionId}/results`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setSession(data.session);
@@ -34,7 +34,7 @@ export default function ListingAuditHistoryPage() {
   };
 
   const handleExport = () => {
-    window.location.href = `/api/listing-audit/sessions/${id}/report`;
+    window.location.href = `/api/listing-scrape/sessions/${id}/report`;
   };
 
   const filteredResults = results.filter(r =>
@@ -56,12 +56,12 @@ export default function ListingAuditHistoryPage() {
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
-        title={`Listing Audit: ${session?.name || id}`}
+        title={`Scrape Session: ${session?.name || id}`}
         subtitle={`Marketplace: ${session?.marketplace} · Mode: ${session?.mode}`}
         breadcrumbs={[
           { label: "BlueOps Hub", href: "/" },
           { label: "History", href: "/history" },
-          { label: "Listing Auditor" },
+          { label: "Listing Scraper" },
         ]}
       >
         <div className="flex gap-2">

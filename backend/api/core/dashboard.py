@@ -72,19 +72,19 @@ def get_dashboard_stats(user_id: int = Depends(verify_token)):
                 "mismatched": row["mismatched"] or 0,
             }
 
-            # Listing Auditor stats
+            # Listing Scraper stats
             cur.execute("""
                 SELECT
                     COUNT(DISTINCT s.id) as total_sessions,
                     COUNT(r.id) as total_asins,
                     SUM(CASE WHEN r.status = 'success' THEN 1 ELSE 0 END) as success,
                     SUM(CASE WHEN r.status = 'error' THEN 1 ELSE 0 END) as errors
-                FROM listing_audit_sessions s
-                LEFT JOIN listing_audit_results r ON s.id = r.session_id
+                FROM listing_scrape_sessions s
+                LEFT JOIN listing_scrape_results r ON s.id = r.session_id
                 WHERE s.user_id = %s
             """, (user_id,))
             row = cur.fetchone()
-            stats["listing_audit"] = {
+            stats["listing_scrape"] = {
                 "total_sessions": row["total_sessions"] or 0,
                 "total_asins": row["total_asins"] or 0,
                 "success": row["success"] or 0,

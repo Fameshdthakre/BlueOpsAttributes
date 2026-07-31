@@ -962,7 +962,7 @@ export default function SettingsPage() {
                   {[
                     { label: "Attribute Master", icon: "⚡" },
                     { label: "Image Auditor", icon: "🖼" },
-                    { label: "Listing Auditor", icon: "📋" },
+                    { label: "Listing Scraper", icon: "📋" },
                   ].map((f) => (
                     <div key={f.label} className="p-3 bg-bg-dark border border-green-500/20 rounded-lg flex items-center gap-2 text-sm">
                       <span>{f.icon}</span>
@@ -991,7 +991,7 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-sm text-text-muted mb-6">
-                Use your API token to authenticate Chrome Extensions (A+ Publisher, Image Auditor, Listing Auditor).
+                Use your API token to authenticate Chrome Extensions (A+ Publisher, Image Auditor, Listing Scraper).
                 This token acts as your password—keep it secret!
               </p>
               

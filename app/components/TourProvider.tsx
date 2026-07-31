@@ -67,10 +67,10 @@ const TOUR_STEPS: CustomStep[] = [
     placement: "bottom-right",
   },
   {
-    target: "#tour-listing-auditor",
+    target: "#tour-listing-scraper",
     content:
-      "Listing Auditor analyzes your listing copy (title, bullets) and gives you an AI-driven scorecard.",
-    route: "/listing-auditor",
+      "Listing Scraper bulk-scrapes Amazon product data (title, bullets, images, BSR) across any marketplace and pipes results directly to your History Dashboard.",
+    route: "/listing-scraper",
     placement: "bottom-right",
   },
   {

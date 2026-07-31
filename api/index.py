@@ -13,9 +13,9 @@ from backend.api.image_auditor.image_audit_results import router as image_audit_
 from backend.api.image_auditor.image_audit_report import router as image_audit_report_router
 from backend.api.image_auditor.image_similarity import router as image_similarity_router
 from backend.api.image_auditor.image_audit_session import router as image_audit_session_router
-from backend.api.listing_auditor.listing_audit_report import router as listing_audit_report_router
-from backend.api.listing_auditor.listing_audit_results import router as listing_audit_results_router
-from backend.api.listing_auditor.listing_audit_session import router as listing_audit_session_router
+from backend.api.listing_scraper.listing_scrape_report import router as listing_scrape_report_router
+from backend.api.listing_scraper.listing_scrape_results import router as listing_scrape_results_router
+from backend.api.listing_scraper.listing_scrape_session import router as listing_scrape_session_router
 from backend.api.attribute_master.parse_validation import router as parse_validation_router
 from backend.api.attribute_master.process_asin import router as process_asin_router
 from backend.api.attribute_master.session import router as session_router
@@ -47,9 +47,9 @@ app.include_router(image_audit_results_router)
 app.include_router(image_audit_report_router)
 app.include_router(image_similarity_router)
 app.include_router(image_audit_session_router)
-app.include_router(listing_audit_report_router)
-app.include_router(listing_audit_results_router)
-app.include_router(listing_audit_session_router)
+app.include_router(listing_scrape_report_router)
+app.include_router(listing_scrape_results_router)
+app.include_router(listing_scrape_session_router)
 app.include_router(parse_validation_router)
 app.include_router(process_asin_router)
 app.include_router(session_router)

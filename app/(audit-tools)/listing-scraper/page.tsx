@@ -30,7 +30,7 @@ export default function ListingAuditorPage() {
 
     try {
       // 1. Automatically create the session in the backend
-      const res = await fetch("/api/listing-audit/sessions", {
+      const res = await fetch("/api/listing-scrape/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-user-id": "" },
         body: JSON.stringify({ name, portal, domain, mode: "Scrape" }),
@@ -45,7 +45,7 @@ export default function ListingAuditorPage() {
           source: "BLUEOPS_WEB_APP",
           type: "START_TASK",
           taskDetails: {
-            taskType: "listing_audit",
+            taskType: "listing_scrape",
             sessionId: sessionId,
             url: url
           },
@@ -82,9 +82,9 @@ export default function ListingAuditorPage() {
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
-        title="Listing Auditor"
-        subtitle="Scrape and audit Amazon listing data at scale."
-        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "Listing Auditor" }]}
+        title="Listing Scraper"
+        subtitle="Bulk scrape Amazon listing data across any marketplace."
+        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "Listing Scraper" }]}
       />
 
       {/* Tab Switcher */}
@@ -113,7 +113,7 @@ export default function ListingAuditorPage() {
 
       {activeTab === "history" && (
         <div className="p-8 max-w-6xl mx-auto w-full flex-1 overflow-y-auto">
-          <FeatureHistory toolType="listing_audit" />
+          <FeatureHistory toolType="listing_scrape" />
         </div>
       )}
 

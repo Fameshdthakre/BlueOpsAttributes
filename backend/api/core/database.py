@@ -241,8 +241,8 @@ def init_db():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    -- ── Listing Auditor (Scraper v1 only) ─────────────────────────────────
-    CREATE TABLE IF NOT EXISTS listing_audit_sessions (
+    -- ── Listing Scraper ────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS listing_scrape_sessions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
         name TEXT,
@@ -255,9 +255,9 @@ def init_db():
         updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    CREATE TABLE IF NOT EXISTS listing_audit_results (
+    CREATE TABLE IF NOT EXISTS listing_scrape_results (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        session_id UUID REFERENCES listing_audit_sessions(id) ON DELETE CASCADE,
+        session_id UUID REFERENCES listing_scrape_sessions(id) ON DELETE CASCADE,
         asin TEXT NOT NULL,
         scraped_data JSONB,
         status TEXT DEFAULT 'success',
@@ -289,9 +289,9 @@ def init_db():
              status, total_asins, completed_asins AS processed_asins, created_at
       FROM image_audit_sessions
     UNION ALL
-      SELECT id::TEXT, user_id, 'listing_audit' AS tool_type, name,
+      SELECT id::TEXT, user_id, 'listing_scrape' AS tool_type, name,
              status, total_asins, completed_asins AS processed_asins, created_at
-      FROM listing_audit_sessions;
+      FROM listing_scrape_sessions;
 
     -- Indexes
     CREATE INDEX IF NOT EXISTS idx_attribute_master_sessions_timestamp ON attribute_master_sessions(timestamp);

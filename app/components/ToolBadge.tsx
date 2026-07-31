@@ -1,6 +1,6 @@
 import React from "react";
 
-export type ToolType = "attr_master" | "aplus" | "image_audit" | "listing_audit";
+export type ToolType = "attr_master" | "aplus" | "image_audit" | "listing_scrape";
 
 interface ToolBadgeProps {
   tool: ToolType;
@@ -20,8 +20,8 @@ export default function ToolBadge({ tool }: ToolBadgeProps) {
       label: "Image Auditor",
       color: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     },
-    listing_audit: {
-      label: "Listing Auditor",
+    listing_scrape: {
+      label: "Listing Scraper",
       color: "bg-green-500/10 text-green-400 border-green-500/20",
     },
   };

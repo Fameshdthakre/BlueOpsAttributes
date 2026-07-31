@@ -7,14 +7,14 @@ from backend.api.core.auth import verify_token
 router = APIRouter()
 
 
-@router.get("/api/listing-audit/sessions/{session_id}/report")
+@router.get("/api/listing-scrape/sessions/{session_id}/report")
 def download_report(session_id: str, user_id: int = Depends(verify_token)):
     conn = None
     try:
         conn = get_connection()
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, name, marketplace FROM listing_audit_sessions WHERE id = %s AND user_id = %s",
+                "SELECT id, name, marketplace FROM listing_scrape_sessions WHERE id = %s AND user_id = %s",
                 (session_id, user_id),
             )
             session = cur.fetchone()
@@ -22,7 +22,7 @@ def download_report(session_id: str, user_id: int = Depends(verify_token)):
                 raise HTTPException(status_code=404, detail="Session not found")
 
             cur.execute(
-                "SELECT asin, scraped_data, status, error FROM listing_audit_results WHERE session_id = %s ORDER BY created_at",
+                "SELECT asin, scraped_data, status, error FROM listing_scrape_results WHERE session_id = %s ORDER BY created_at",
                 (session_id,),
             )
             results = cur.fetchall()
@@ -45,7 +45,7 @@ def download_report(session_id: str, user_id: int = Depends(verify_token)):
             )
 
         csv_bytes = output.getvalue().encode("utf-8")
-        filename = f"listing_audit_{session_id[:8]}.csv"
+        filename = f"listing_scrape_{session_id[:8]}.csv"
         return Response(
             content=csv_bytes,
             media_type="text/csv",
@@ -58,6 +58,3 @@ def download_report(session_id: str, user_id: int = Depends(verify_token)):
     finally:
         if conn:
             conn.close()
-
-
-
