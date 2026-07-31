@@ -71,7 +71,6 @@ const groups = [
     id: "workspace",
     label: "WORKSPACE",
     items: [
-      { name: "History", href: "/history", icon: <HistoryIcon />, isNew: false },
       { name: "Settings", href: "/settings", icon: <SettingsIcon />, isNew: false },
     ],
   },

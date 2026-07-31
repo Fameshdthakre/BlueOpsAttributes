@@ -5,12 +5,14 @@ import Link from "next/link";
 import { api } from "@/app/lib/api";
 import { useApp } from "@/app/lib/AppContext";
 import PageHeader from "@/app/components/PageHeader";
+import FeatureHistory from "@/app/components/FeatureHistory";
 
 const findHeader = (headersLower: string[], ...keywords: string[]) => {
   return headersLower.find((h) => keywords.some((k) => h.includes(k)));
 };
 
 export default function InputPage() {
+  const [activeTab, setActiveTab] = useState<"process" | "history">("process");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null);
@@ -328,7 +330,38 @@ export default function InputPage() {
         </a>
       </PageHeader>
 
-      <div className="p-8 max-w-6xl mx-auto space-y-8 w-full overflow-y-auto flex-1">
+      {/* Tab Switcher */}
+      <div className="flex border-b border-bg-input px-8 mt-2">
+        <button
+          onClick={() => setActiveTab("process")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "process"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          Processing
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
+            activeTab === "history"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-muted hover:text-text-main"
+          }`}
+        >
+          History
+        </button>
+      </div>
+
+      {activeTab === "history" && (
+        <div className="p-8 max-w-6xl mx-auto w-full overflow-y-auto flex-1">
+          <FeatureHistory toolType="attr_master" />
+        </div>
+      )}
+
+      {activeTab === "process" && (
+        <div className="p-8 max-w-6xl mx-auto space-y-8 w-full overflow-y-auto flex-1">
         {error && (
           <div className="p-4 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg">
             {error}
@@ -1104,6 +1137,7 @@ export default function InputPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
