@@ -38,11 +38,11 @@ class OpenAIProvider(BaseProvider):
         if self.enable_web_search:
             kwargs["tools"] = [{"type": "web_search_preview"}]
 
-        from tenacity import Retrying, stop_after_attempt, wait_exponential
+        from tenacity import Retrying, stop_after_attempt, wait_random_exponential
 
         for attempt in Retrying(
             stop=stop_after_attempt(self.max_retries),
-            wait=wait_exponential(multiplier=1, min=2, max=10),
+            wait=wait_random_exponential(multiplier=1, max=10),
             reraise=True
         ):
             with attempt:

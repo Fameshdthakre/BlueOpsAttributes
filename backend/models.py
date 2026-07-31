@@ -24,6 +24,7 @@ class Job:
     description: Optional[str] = None
     extra_data: dict[str, Any] = field(default_factory=dict)   # pass-through columns
     row_index: int = 0                               # original row in input file
+    provider_override: Optional[str] = None
 
 
 @dataclass

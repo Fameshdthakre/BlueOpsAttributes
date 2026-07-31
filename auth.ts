@@ -1,13 +1,8 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
-import pkg from 'pg';
-const { Pool } = pkg;
+import { pool } from "@/lib/db";
 import bcrypt from "bcryptjs";
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-});
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -27,7 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials.password as string;
 
         try {
-          const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          const { rows } = await pool.query('SELECT id, email, name, password_hash, profile_image FROM users WHERE email = $1', [email]);
           
           const user = rows[0];
 

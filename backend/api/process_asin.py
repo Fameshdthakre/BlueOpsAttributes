@@ -22,6 +22,7 @@ class ProcessRequest(BaseModel):
     description: Optional[str] = ""
     extra_data: Dict[str, Any] = {}
     validation_map: Dict[str, Any] = {}
+    provider_override: Optional[str] = None
 
 @router.post("/api/process_asin")
 def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
@@ -39,7 +40,8 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
             title=req.title,
             barcode=req.barcode,
             description=req.description,
-            extra_data=req.extra_data
+            extra_data=req.extra_data,
+            provider_override=req.provider_override
         )
         
         # Reconstruct ValidationEntry objects (it's now a dict of lists)
@@ -92,7 +94,7 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
             "status": result.match_status,
             "provider_used": result.provider_used,
             "error": result.error_message,
-            "results": [{"attribute_id": ar.attribute_id, "status": ar.match_status, "value": ar.final_value} for ar in result.attribute_results]
+            "results": [{"attribute_id": ar.attribute_id, "status": ar.match_status, "value": ar.final_value, "confidence": ar.confidence} for ar in result.attribute_results]
         }
         
     except Exception as e:

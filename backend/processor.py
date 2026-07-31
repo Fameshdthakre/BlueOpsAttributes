@@ -61,7 +61,10 @@ def process_single_asin(
     primary_name = config.get("primary_provider", "Gemini")
     fallback_order = config.get("fallback_order", ["OpenAI", "Claude"])
     
-    attempts = [primary_name] + [p for p in fallback_order if p != primary_name]
+    if getattr(job, "provider_override", None):
+        attempts = [job.provider_override]
+    else:
+        attempts = [primary_name] + [p for p in fallback_order if p != primary_name]
     
     last_error = None
     

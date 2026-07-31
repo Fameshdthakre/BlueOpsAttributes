@@ -1,20 +1,17 @@
 "use server";
 
-import pkg from 'pg';
-const { Pool } = pkg;
+import { pool } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
-// Initialize the pool once
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-});
-
 export async function registerUser(formData: FormData) {
-  const email = formData.get("email") as string;
+  let email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  if (!email || !password || password.length < 6) {
-    return { error: "Invalid email or password (min 6 characters)." };
+  email = email?.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email || !emailRegex.test(email) || !password || password.length < 6) {
+    return { error: "Invalid email format or password (min 6 characters)." };
   }
 
   try {

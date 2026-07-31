@@ -14,6 +14,9 @@ async def upload_file(file: UploadFile = File(...)):
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="Only Excel files are supported")
         
+    if getattr(file, "size", 0) and file.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
+        
     try:
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), dtype=str)

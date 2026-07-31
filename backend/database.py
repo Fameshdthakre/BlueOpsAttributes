@@ -8,6 +8,7 @@ from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extras import DictCursor
 from loguru import logger
 from dotenv import load_dotenv
+from contextlib import contextmanager
 
 load_dotenv()
 
@@ -61,6 +62,22 @@ def get_connection():
             return self._conn.cursor(*args, **kwargs)
             
     return DictCursorPooledConnection(POOL, conn)
+
+@contextmanager
+def db_transaction():
+    """Context manager for safe database transactions with auto-commit/rollback and connection closing."""
+    conn = None
+    try:
+        conn = get_connection()
+        yield conn
+        conn.commit()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if conn:
+            conn.close()
 
 def init_db():
     """Initialize the database schema if it doesn't exist."""

@@ -8,6 +8,7 @@ export interface Job {
   description?: string;
   extra_data?: Record<string, string>;
   row_index?: number;
+  provider_override?: string;
 }
 
 export interface ValidationEntry {

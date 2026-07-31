@@ -57,6 +57,8 @@ export default function InputPage() {
     setLimit,
     concurrency,
     setConcurrency,
+    providerOverride,
+    setProviderOverride,
     running,
     paused,
     processedCount,
@@ -907,6 +909,23 @@ export default function InputPage() {
                     <span>Sequential (1)</span>
                     <span>Fast (5)</span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-text-muted mb-1">
+                    Provider Override
+                  </label>
+                  <select
+                    value={providerOverride}
+                    onChange={(e) => setProviderOverride(e.target.value)}
+                    disabled={running}
+                    className="w-full bg-bg-input border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"
+                  >
+                    <option value="">-- Use Default Fallback --</option>
+                    <option value="Gemini">Force Gemini</option>
+                    <option value="OpenAI">Force OpenAI</option>
+                    <option value="Claude">Force Claude</option>
+                  </select>
                 </div>
               </div>
 

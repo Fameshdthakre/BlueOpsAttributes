@@ -40,6 +40,16 @@ export default function AttributeMasterHistoryPage() {
     window.location.href = await api.exportSessionUrl(id, viewMode);
   };
 
+  const handleValueChange = (resultId: number, newValue: string) => {
+    setSessionDetails(prev => {
+      if (!prev) return prev;
+      const updatedResults = prev.results.map(r => 
+        r.id === resultId ? { ...r, final_value: newValue, match_status: "Manual Override" } : r
+      );
+      return { ...prev, results: updatedResults };
+    });
+  };
+
   const filteredResults =
     sessionDetails?.results.filter(
       (r) => statusFilter === "All" || r.match_status === statusFilter,
@@ -186,6 +196,7 @@ export default function AttributeMasterHistoryPage() {
                     <th className="p-4 font-semibold border-b border-bg-input">ASIN</th>
                     <th className="p-4 font-semibold border-b border-bg-input">Attribute</th>
                     <th className="p-4 font-semibold border-b border-bg-input">Status</th>
+                    <th className="p-4 font-semibold border-b border-bg-input">Confidence</th>
                     <th className="p-4 font-semibold border-b border-bg-input">Final Value</th>
                   </tr>
                 </thead>
@@ -197,12 +208,28 @@ export default function AttributeMasterHistoryPage() {
                       <td className="p-4 text-xs">
                         <span className={`px-2 py-1 rounded font-semibold bg-bg-dark border border-bg-input ${
                           r.match_status === "Validated" ? "text-status-success" :
-                          r.match_status === "Failed" ? "text-status-error" : "text-status-warning"
+                          r.match_status === "Failed" ? "text-status-error" : 
+                          r.match_status === "Manual Override" ? "text-accent" : "text-status-warning"
                         }`}>
                           {r.match_status}
                         </span>
                       </td>
-                      <td className="p-4 text-xs font-semibold text-primary">{r.final_value}</td>
+                      <td className="p-4 text-xs text-text-muted">
+                        {r.confidence !== undefined ? `${(r.confidence * 100).toFixed(0)}%` : "-"}
+                      </td>
+                      <td className="p-4 text-xs font-semibold text-primary">
+                        {(r.match_status === "Unresolved" || r.match_status === "Manual Override") ? (
+                          <input 
+                            type="text" 
+                            value={r.final_value === "UNRESOLVED" ? "" : r.final_value} 
+                            onChange={(e) => handleValueChange(r.id, e.target.value)}
+                            className="bg-bg-input border border-primary/50 text-text-main px-2 py-1 rounded focus:outline-none focus:border-primary w-full"
+                            placeholder="Enter value..."
+                          />
+                        ) : (
+                          r.final_value
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {filteredResults.length === 0 && (

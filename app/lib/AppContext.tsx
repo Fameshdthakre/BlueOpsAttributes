@@ -46,6 +46,8 @@ interface AppContextType {
   setConcurrency: (concurrency: number) => void;
   running: boolean;
   paused: boolean;
+  providerOverride: string;
+  setProviderOverride: (provider: string) => void;
   processedCount: number;
   validatedCount: number;
   unresolvedCount: number;
@@ -92,6 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [concurrency, setConcurrency] = useState(1);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [providerOverride, setProviderOverride] = useState("");
 
   const [processedCount, setProcessedCount] = useState(0);
   const [validatedCount, setValidatedCount] = useState(0);
@@ -108,6 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const sessionIdRef = useRef<string | null>(null);
   const concurrencyRef = useRef(1);
   const enableLogsRef = useRef(true);
+  const providerOverrideRef = useRef("");
 
   // Sync refs
   useEffect(() => {
@@ -117,6 +121,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     enableLogsRef.current = enableLogs;
   }, [enableLogs]);
+
+  useEffect(() => {
+    providerOverrideRef.current = providerOverride;
+  }, [providerOverride]);
 
   const addLog = (level: string, message: string) => {
     if (!enableLogsRef.current) return;
@@ -151,6 +159,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const job = queueRef.current.shift();
     if (!job) return;
+
+    if (providerOverrideRef.current) {
+      job.provider_override = providerOverrideRef.current;
+    }
 
     runningCountRef.current++;
     
@@ -326,6 +338,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setConcurrency,
         running,
         paused,
+        providerOverride,
+        setProviderOverride,
         processedCount,
         validatedCount,
         unresolvedCount,

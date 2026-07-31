@@ -1,13 +1,8 @@
 "use server";
 
-import pkg from 'pg';
-const { Pool } = pkg;
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-});
+import { pool } from "@/lib/db";
 
 export async function updateProfile(formData: FormData) {
   const session = await auth();
