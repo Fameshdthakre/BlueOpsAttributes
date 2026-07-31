@@ -2,7 +2,75 @@
 // background.js — BlueOps Enterprise Toolkit Service Worker
 // ============================================================
 
-const BLUEOPS_API_BASE = "https://blue-ops-attributes.vercel.app";
+const BLUEOPS_API_BASE = "http://localhost:3000";
+
+// --- Job Engine Polling ---
+chrome.alarms.create("pollJobs", { periodInMinutes: 1 });
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "pollJobs") {
+    pollForNextJob();
+  }
+});
+
+async function pollForNextJob() {
+  chrome.storage.local.get(["blueopsToken"], async (items) => {
+    if (!items.blueopsToken) return;
+    try {
+      const res = await fetch(`${BLUEOPS_API_BASE}/api/jobs/next`, {
+        headers: { "x-api-token": items.blueopsToken }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.job) {
+        startJob(data.job);
+      }
+    } catch (err) {
+      console.error("[BlueOps BG] Polling error:", err);
+    }
+  });
+}
+
+function startJob(job) {
+  const { task_type, payload, id } = job;
+  console.log(`[BlueOps BG] Starting polled job | type: ${task_type} | job_id: ${id}`);
+  
+  const url = payload.url;
+  if (!url) {
+    reportProgress(id, { status: "error", message: "No URL provided" });
+    return;
+  }
+  
+  chrome.tabs.create({ url, active: false }, (tab) => {
+    if (chrome.runtime.lastError) {
+      reportProgress(id, { status: "error", message: chrome.runtime.lastError.message });
+      return;
+    }
+    
+    // The content script will fetch this based on tab.id
+    const taskKey = `task_tab_${tab.id}`;
+    chrome.storage.local.set({
+      [taskKey]: { taskType: task_type, jobId: id, tabId: tab.id, payload: payload }
+    });
+  });
+}
+
+function reportProgress(jobId, progress) {
+  chrome.storage.local.get(["blueopsToken"], async (items) => {
+    try {
+      await fetch(`${BLUEOPS_API_BASE}/api/jobs/${jobId}/progress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-token": items.blueopsToken || ""
+        },
+        body: JSON.stringify(progress)
+      });
+    } catch (e) {
+      console.error("Progress report error:", e);
+    }
+  });
+}
 
 // --- Message Router ---
 // Listens for messages from ALL content scripts (blueops.js, amazon-pdp.js, etc.)
@@ -57,35 +125,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Required: keeps message channel open for async sendResponse
   }
 
-  // ── 3. Receive scraped data back from an Amazon content script ────────────
   if (request.type === "SCRAPE_RESULT") {
-    const { sessionId, asin, data } = request;
-    console.log(`[BlueOps BG] SCRAPE_RESULT received | ASIN: ${asin} | session: ${sessionId}`);
+    const { sessionId, jobId, asin, data } = request;
+    console.log(`[BlueOps BG] SCRAPE_RESULT received | ASIN: ${asin} | session: ${sessionId} | job: ${jobId}`);
 
-    // Push scraped data to the BlueOps backend API
-    chrome.storage.local.get(["blueopsToken"], async (items) => {
-      if (!items.blueopsToken) {
-        console.error("[BlueOps BG] No API token saved. Cannot push result.");
-        return;
-      }
-      try {
-        const res = await fetch(`${BLUEOPS_API_BASE}/api/extension/result`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-token": items.blueopsToken,
-          },
-          body: JSON.stringify({ sessionId, asin, data }),
-        });
-        if (!res.ok) {
-          console.error("[BlueOps BG] Failed to push result:", await res.text());
-        } else {
-          console.log(`[BlueOps BG] Result pushed for ASIN: ${asin}`);
+    if (jobId) {
+      // New Enterprise flow: post progress to job engine
+      reportProgress(jobId, {
+        asin,
+        status: "complete",
+        message: "Scraping completed successfully",
+        data
+      });
+    } else {
+      // Legacy flow
+      chrome.storage.local.get(["blueopsToken"], async (items) => {
+        if (!items.blueopsToken) return;
+        try {
+          const res = await fetch(`${BLUEOPS_API_BASE}/api/extension/result`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-token": items.blueopsToken,
+            },
+            body: JSON.stringify({ sessionId, asin, data }),
+          });
+          if (!res.ok) console.error("[BlueOps BG] Failed to push result:", await res.text());
+        } catch (err) {
+          console.error("[BlueOps BG] Network error:", err);
         }
-      } catch (err) {
-        console.error("[BlueOps BG] Network error pushing result:", err);
-      }
-    });
+      });
+    }
 
     // Close the tab after scraping
     if (sender.tab?.id) {
@@ -93,5 +163,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     sendResponse({ status: "result_received" });
     return true;
+  }
+});
+
+// ── Handle Tab Loading to Trigger Scrape ──────────────────────────────────
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    const taskKey = `task_tab_${tabId}`;
+    chrome.storage.local.get([taskKey], (items) => {
+      const taskContext = items[taskKey];
+      if (taskContext) {
+        console.log(`[BlueOps BG] Tab ${tabId} loaded, executing scrape for task:`, taskContext.taskType);
+        
+        // Let the content script know it should scrape
+        chrome.tabs.sendMessage(tabId, { type: "EXECUTE_SCRAPE" }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("[BlueOps BG] Execute error:", chrome.runtime.lastError.message);
+            if (taskContext.jobId) {
+                reportProgress(taskContext.jobId, { status: "error", message: chrome.runtime.lastError.message });
+            }
+            return;
+          }
+          if (response && response.status === "ok") {
+            const asinMatch = tab.url.match(/([A-Z0-9]{10})/);
+            const asin = asinMatch ? asinMatch[1] : "UNKNOWN";
+            
+            // Re-use the existing message router by sending a message to ourselves
+            chrome.runtime.sendMessage({
+              type: "SCRAPE_RESULT",
+              sessionId: taskContext.sessionId,
+              jobId: taskContext.jobId,
+              asin: asin,
+              data: response.data
+            });
+          }
+        });
+      }
+    });
   }
 });

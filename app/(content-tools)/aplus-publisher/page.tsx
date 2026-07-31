@@ -2,182 +2,164 @@
 
 import { useState } from "react";
 import PageHeader from "@/app/components/PageHeader";
-import FeatureHistory from "@/app/components/FeatureHistory";
-import { api } from "@/app/lib/api";
+import { Upload, LayoutGrid, List, FileText, CheckCircle, Search } from "lucide-react";
 
-const MARKETPLACES = [
-  { label: "amazon.com (US)", value: "com" },
-  { label: "amazon.co.uk (UK)", value: "co.uk" },
-  { label: "amazon.de (Germany)", value: "de" },
-];
-
-export default function AplusPublisherPage() {
-  const [activeTab, setActiveTab] = useState<"process" | "history">("process");
+export default function AplusPublisherWorkspace() {
+  const [activeTab, setActiveTab] = useState<"library" | "queue" | "import">("library");
   
-  // Headless Extension State
-  const [name, setName] = useState("");
-  const [portal, setPortal] = useState("vendor");
-  const [domain, setDomain] = useState("com");
-  const [url, setUrl] = useState("");
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const startTask = async () => {
-    if (!name.trim()) return setError("Session name is required.");
-    if (!url.trim()) return setError("Target Amazon URL is required.");
-    setError(null);
-    setRunning(true);
-
-    try {
-      // 1. Automatically create the session in the backend
-      const res = await fetch("/api/aplus/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": "" },
-        body: JSON.stringify({ name, portal, domain }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      const sessionId = data.session_id;
-
-      // 2. Command the Headless Chrome Extension to begin the scrape task
-      window.postMessage(
-        {
-          source: "BLUEOPS_WEB_APP",
-          type: "START_TASK",
-          taskDetails: {
-            taskType: "aplus_publisher",
-            sessionId: sessionId,
-            url: url
-          },
-        },
-        window.location.origin
-      );
-
-      // Listen for acknowledgement from extension
-      const listener = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        if (event.data?.source === "BLUEOPS_EXTENSION" && event.data?.type === "TASK_ACK") {
-          console.log("Extension acknowledged task:", event.data.payload);
-          window.removeEventListener("message", listener);
-          // Auto-switch to history tab so the user can watch results flow in!
-          setActiveTab("history");
-          setRunning(false);
-        }
-      };
-      window.addEventListener("message", listener);
-
-      // Fallback timeout in case extension isn't installed or fails to reply
-      setTimeout(() => {
-        window.removeEventListener("message", listener);
-        setRunning(false);
-        setError("Extension did not respond. Is the BlueOps Chrome Extension installed and enabled?");
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.message);
-      setRunning(false);
-    }
-  };
-
   return (
-    <div className="animate-in fade-in flex flex-col h-full">
+    <div className="animate-in fade-in flex flex-col h-full bg-bg-main">
       <PageHeader
-        title="A+ Publisher"
-        subtitle="Manage A+ Content drafts across Vendor and Seller Central portals."
-        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "A+ Publisher" }]}
+        title="A+ Content Studio"
+        subtitle="Manage A+ Content modules, import bulk data, and orchestrate publish queues."
+        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "A+ Content Studio" }]}
       />
 
-      {/* Tab Switcher */}
-      <div className="flex border-b border-bg-input px-8 mt-2">
-        <button
-          onClick={() => setActiveTab("process")}
-          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
-            activeTab === "process"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-muted hover:text-text-main"
-          }`}
-        >
-          New Sync
-        </button>
-        <button
-          onClick={() => setActiveTab("history")}
-          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
-            activeTab === "history"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-muted hover:text-text-main"
-          }`}
-        >
-          Dashboard & History
-        </button>
+      <div className="px-8 mt-2 flex justify-between items-end border-b border-bg-input">
+        <div className="flex gap-2">
+          {[
+            { id: "library", label: "Content Library", icon: LayoutGrid },
+            { id: "import", label: "Excel Import", icon: Upload },
+            { id: "queue", label: "Publish Queue", icon: List }
+          ].map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-6 py-3 font-semibold transition-colors border-b-2 flex items-center gap-2 ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-text-muted hover:text-text-main"
+                }`}
+              >
+                <Icon size={16} /> {tab.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {activeTab === "history" && (
-        <div className="p-8 max-w-6xl mx-auto w-full flex-1 overflow-y-auto">
-          <FeatureHistory toolType="aplus" />
-        </div>
-      )}
+      <div className="p-8 max-w-7xl mx-auto w-full flex-1 overflow-y-auto">
+        {activeTab === "library" && (
+            <div className="bg-bg-card border border-bg-input rounded-xl p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold">Content Library</h3>
+                        <p className="text-text-muted mt-1">Your saved A+ Content templates and modules.</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                            <input 
+                                type="text" 
+                                placeholder="Search content..." 
+                                className="bg-bg-dark border border-bg-input rounded-lg pl-10 pr-4 py-2 text-text-main focus:border-primary outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
 
-      {activeTab === "process" && (
-        <div className="p-8 max-w-2xl mx-auto w-full flex-1 space-y-6 overflow-y-auto">
-          <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-sm text-orange-300">
-            <strong>Headless Automation Active:</strong> Enter your target URL below. The BlueOps Chrome Extension will automatically open Amazon in the background and pipe drafts directly into your History Dashboard. You do not need to click anything in the extension.
-          </div>
-
-          <div className="bg-bg-card border border-bg-input rounded-xl p-8 space-y-6">
-            {error && (
-              <div className="p-3 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg text-sm">{error}</div>
-            )}
-
-            <div>
-              <label className="block text-sm text-text-muted mb-2">Session Name</label>
-              <input
-                type="text"
-                placeholder="e.g., Q3 A+ Content Sync"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
-              />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="border border-bg-input rounded-xl overflow-hidden bg-bg-dark hover:border-primary/50 transition-colors cursor-pointer group flex flex-col">
+                            <div className="h-40 bg-bg-input flex items-center justify-center border-b border-bg-input">
+                                <FileText className="text-text-muted group-hover:text-primary transition-colors" size={48} />
+                            </div>
+                            <div className="p-4">
+                                <h4 className="font-bold text-text-main group-hover:text-primary transition-colors">Premium Brand Story Template {i}</h4>
+                                <div className="flex justify-between items-center mt-4">
+                                    <span className="text-xs text-text-muted">6 Modules</span>
+                                    <span className="text-xs bg-bg-input px-2 py-1 rounded text-text-main">Global</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
+        )}
 
-            <div>
-              <label className="block text-sm text-text-muted mb-2">Target Amazon Drafts URL</label>
-              <input
-                type="text"
-                placeholder="e.g., https://vendorcentral.amazon.co.uk/aplus/..."
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
-              />
+        {activeTab === "import" && (
+            <div className="bg-bg-card border border-bg-input rounded-xl p-8 space-y-8">
+                <div>
+                    <h3 className="text-xl font-bold mb-4">Excel Bulk Import</h3>
+                    <p className="text-text-muted mb-6">Import Excel files mapping ASINs to specific text strings and image URLs.</p>
+                </div>
+
+                <div className="border-2 border-dashed border-primary/50 rounded-xl p-16 text-center bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
+                    <Upload className="mx-auto text-primary mb-4" size={48} />
+                    <h4 className="text-lg font-bold text-text-main mb-2">Drag and drop your Excel file here</h4>
+                    <p className="text-text-muted mb-6">Supports .xlsx and .csv files formatted for BlueOps A+ Studio</p>
+                    <button className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-bold">
+                        Browse Files
+                    </button>
+                </div>
+                
+                <div className="mt-8 border border-bg-input rounded-xl overflow-hidden">
+                    <div className="bg-bg-dark p-4 border-b border-bg-input font-bold">
+                        Data Preview (Example mapping)
+                    </div>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-bg-main border-b border-bg-input">
+                                <th className="p-4 font-semibold text-text-muted text-sm">ASIN</th>
+                                <th className="p-4 font-semibold text-text-muted text-sm">Template</th>
+                                <th className="p-4 font-semibold text-text-muted text-sm">Module 1 Header</th>
+                                <th className="p-4 font-semibold text-text-muted text-sm">Module 1 Image</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="border-b border-bg-input text-sm">
+                                <td className="p-4 font-mono">B08XXXXX</td>
+                                <td className="p-4">Premium Brand Story Template 1</td>
+                                <td className="p-4 line-clamp-1">Discover the new standard...</td>
+                                <td className="p-4 text-primary">https://...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-text-muted mb-2">Portal</label>
-                <select value={portal} onChange={e => setPortal(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
-                  <option value="vendor">Vendor Central</option>
-                  <option value="seller">Seller Central</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-text-muted mb-2">Marketplace</label>
-                <select value={domain} onChange={e => setDomain(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
-                  {MARKETPLACES.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
+        {activeTab === "queue" && (
+            <div className="bg-bg-card border border-bg-input rounded-xl p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold">Publish Queue</h3>
+                        <p className="text-text-muted mt-1">Manage jobs orchestrated to the headless extension.</p>
+                    </div>
+                </div>
+                
+                <div className="space-y-4">
+                    <div className="border border-green-500/30 rounded-xl overflow-hidden">
+                        <div className="px-6 py-3 flex justify-between items-center bg-green-500/10">
+                            <div className="flex gap-4 items-center">
+                                <span className="font-bold text-lg">Batch Job #4092</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle size={18} className="text-green-500" />
+                                <span className="font-bold text-green-500">Completed</span>
+                            </div>
+                        </div>
+                        <div className="p-6 bg-bg-dark flex justify-between">
+                            <div>
+                                <div className="text-sm text-text-muted mb-1">Target Portal</div>
+                                <div className="font-bold">Vendor Central (UK)</div>
+                            </div>
+                            <div>
+                                <div className="text-sm text-text-muted mb-1">ASINs Processed</div>
+                                <div className="font-bold">45 / 45</div>
+                            </div>
+                            <div>
+                                <div className="text-sm text-text-muted mb-1">Completed At</div>
+                                <div className="font-bold">Oct 24, 2:30 PM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <button
-              onClick={startTask}
-              disabled={running}
-              className="w-full mt-4 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all"
-            >
-              {running ? "Sending Command to Extension..." : "Start Headless Sync"}
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

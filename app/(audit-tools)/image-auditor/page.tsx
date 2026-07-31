@@ -1,184 +1,112 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PageHeader from "@/app/components/PageHeader";
-import FeatureHistory from "@/app/components/FeatureHistory";
-import { api } from "@/app/lib/api";
+import Link from "next/link";
+import { Plus, Settings, Play, Image as ImageIcon } from "lucide-react";
 
-const MARKETPLACES = [
-  { label: "amazon.com (US)", value: "com" },
-  { label: "amazon.co.uk (UK)", value: "co.uk" },
-  { label: "amazon.de (Germany)", value: "de" },
-];
+export default function ImageAuditorDashboard() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function ImageAuditorPage() {
-  const [activeTab, setActiveTab] = useState<"process" | "history">("process");
-  
-  // Headless Extension State
-  const [name, setName] = useState("");
-  const [portal, setPortal] = useState("vendor");
-  const [domain, setDomain] = useState("com");
-  const [mode, setMode] = useState("Audit");
-  const [url, setUrl] = useState("");
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
-  const startTask = async () => {
-    if (!name.trim()) return setError("Session name is required.");
-    if (!url.trim()) return setError("Target Amazon URL is required.");
-    setError(null);
-    setRunning(true);
-
+  const fetchProjects = async () => {
     try {
-      // 1. Automatically create the session in the backend
-      const res = await fetch("/api/image-audit/sessions", {
+      const res = await fetch("/api/image-audit/projects");
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data.projects);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createProject = async () => {
+    const name = prompt("Enter Project Name (e.g., Q4 Image Audit):");
+    if (!name) return;
+    try {
+      const res = await fetch("/api/image-audit/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": "" },
-        body: JSON.stringify({ name, portal, domain, mode, total_asins: 0 }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, marketplaces: ["com"] })
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      const sessionId = data.session_id;
-
-      // 2. Command the Headless Chrome Extension to begin the scrape task
-      window.postMessage(
-        {
-          source: "BLUEOPS_WEB_APP",
-          type: "START_TASK",
-          taskDetails: {
-            taskType: "image_audit",
-            sessionId: sessionId,
-            url: url
-          },
-        },
-        window.location.origin
-      );
-
-      // Listen for acknowledgement from extension
-      const listener = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        if (event.data?.source === "BLUEOPS_EXTENSION" && event.data?.type === "TASK_ACK") {
-          console.log("Extension acknowledged task:", event.data.payload);
-          window.removeEventListener("message", listener);
-          // Auto-switch to history tab so the user can watch results flow in!
-          setActiveTab("history");
-          setRunning(false);
-        }
-      };
-      window.addEventListener("message", listener);
-
-      // Fallback timeout in case extension isn't installed or fails to reply
-      setTimeout(() => {
-        window.removeEventListener("message", listener);
-        setRunning(false);
-        setError("Extension did not respond. Is the BlueOps Chrome Extension installed and enabled?");
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.message);
-      setRunning(false);
+      if (res.ok) {
+        fetchProjects();
+      }
+    } catch (e) {
+      console.error("Failed to create project", e);
     }
   };
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
-        title="Image Auditor"
-        subtitle="Compare portal images vs live PDP images for Vendor/Seller Central."
-        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "Image Auditor" }]}
+        title="Image Intelligence"
+        subtitle="Manage persistent Golden Record libraries and track live image compliance."
+        breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "Image Intelligence" }]}
       />
 
-      {/* Tab Switcher */}
-      <div className="flex border-b border-bg-input px-8 mt-2">
-        <button
-          onClick={() => setActiveTab("process")}
-          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
-            activeTab === "process"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-muted hover:text-text-main"
-          }`}
-        >
-          New Audit
-        </button>
-        <button
-          onClick={() => setActiveTab("history")}
-          className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
-            activeTab === "history"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-muted hover:text-text-main"
-          }`}
-        >
-          Dashboard & History
-        </button>
-      </div>
-
-      {activeTab === "history" && (
-        <div className="p-8 max-w-6xl mx-auto w-full flex-1 overflow-y-auto">
-          <FeatureHistory toolType="image_audit" />
-        </div>
-      )}
-
-      {activeTab === "process" && (
-        <div className="p-8 max-w-2xl mx-auto w-full flex-1 space-y-6 overflow-y-auto">
-          <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl text-sm text-purple-300">
-            <strong>Headless Automation Active:</strong> Enter your target URL below. The BlueOps Chrome Extension will automatically open Amazon in the background and pipe results directly into your History Dashboard. You do not need to click anything in the extension.
+      <div className="p-8 max-w-7xl mx-auto w-full flex-1">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-text-main">Your Projects</h2>
+            <p className="text-text-muted mt-1">Organize your Image Audits by brand, category, or region.</p>
           </div>
+          <button 
+            onClick={createProject}
+            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+          >
+            <Plus size={20} /> New Project
+          </button>
+        </div>
 
-          <div className="bg-bg-card border border-bg-input rounded-xl p-8 space-y-6">
-            {error && (
-              <div className="p-3 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg text-sm">{error}</div>
-            )}
-
-            <div>
-              <label className="block text-sm text-text-muted mb-2">Session Name</label>
-              <input
-                type="text"
-                placeholder="e.g., Q3 Vendor Central Image Audit"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-muted mb-2">Target Amazon URL</label>
-              <input
-                type="text"
-                placeholder="e.g., https://vendorcentral.amazon.co.uk/..."
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-text-muted mb-2">Portal</label>
-                <select value={portal} onChange={e => setPortal(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
-                  <option value="vendor">Vendor Central</option>
-                  <option value="seller">Seller Central</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-text-muted mb-2">Marketplace</label>
-                <select value={domain} onChange={e => setDomain(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
-                  {MARKETPLACES.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={startTask}
-              disabled={running}
-              className="w-full mt-4 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all"
-            >
-              {running ? "Sending Command to Extension..." : "Start Headless Audit"}
+        {loading ? (
+          <div className="text-center py-20 text-text-muted">Loading projects...</div>
+        ) : projects.length === 0 ? (
+          <div className="bg-bg-card border border-dashed border-bg-input rounded-2xl p-16 text-center">
+            <ImageIcon className="mx-auto text-text-muted mb-4" size={48} />
+            <h3 className="text-xl font-bold text-text-main mb-2">No Projects Yet</h3>
+            <p className="text-text-muted max-w-md mx-auto mb-6">
+              Create your first project to start tracking your Golden Record images against live Amazon data.
+            </p>
+            <button onClick={createProject} className="bg-bg-input hover:bg-bg-dark text-text-main px-6 py-2 rounded-lg font-medium transition-colors">
+              Create Project
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map(p => (
+              <Link href={`/image-auditor/${p.id}`} key={p.id}>
+                <div className="bg-bg-card border border-bg-input hover:border-primary/50 transition-all rounded-xl p-6 group cursor-pointer h-full flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-bold text-text-main group-hover:text-primary transition-colors">{p.name}</h3>
+                    <div className="bg-bg-input text-xs text-text-muted px-2 py-1 rounded uppercase font-bold">
+                      {p.marketplaces.join(", ")}
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <p className="text-sm text-text-muted">
+                      Created: {new Date(p.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-bg-input flex justify-between items-center text-sm">
+                    <span className="text-text-muted flex items-center gap-1"><Settings size={14} /> Configure</span>
+                    <span className="text-primary font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">Open Workspace &rarr;</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

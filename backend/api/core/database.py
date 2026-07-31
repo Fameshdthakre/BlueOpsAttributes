@@ -275,6 +275,122 @@ def init_db():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    -- ── Enterprise: Job Engine Core ───────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS jobs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        task_type TEXT NOT NULL,
+        project_id UUID,
+        payload JSONB,
+        status TEXT DEFAULT 'queued',
+        error_message TEXT,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── Enterprise: Listing Intelligence ──────────────────────────────────
+    CREATE TABLE IF NOT EXISTS listing_projects (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        marketplaces JSONB DEFAULT '["com"]',
+        attribute_config JSONB DEFAULT '[]',
+        schedule JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS listing_catalogue (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES listing_projects(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        tags JSONB,
+        added_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS listing_runs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES listing_projects(id) ON DELETE CASCADE,
+        job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
+        status TEXT DEFAULT 'queued',
+        total_asins INT DEFAULT 0,
+        completed_asins INT DEFAULT 0,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS listing_run_results (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        run_id UUID REFERENCES listing_runs(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        marketplace TEXT NOT NULL,
+        scraped_data JSONB,
+        change_detected BOOLEAN DEFAULT FALSE,
+        prev_run_id UUID,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── Enterprise: Image Intelligence ──────────────────────────────────
+    CREATE TABLE IF NOT EXISTS image_projects (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        marketplaces JSONB DEFAULT '["com"]',
+        schedule JSONB,
+        alert_threshold FLOAT DEFAULT 0.90,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS image_golden_record (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES image_projects(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        image_url TEXT,
+        image_hash TEXT,
+        uploaded_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS image_runs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id UUID REFERENCES image_projects(id) ON DELETE CASCADE,
+        job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
+        status TEXT DEFAULT 'queued',
+        total_asins INT DEFAULT 0,
+        completed_asins INT DEFAULT 0,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS image_run_results (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        run_id UUID REFERENCES image_runs(id) ON DELETE CASCADE,
+        asin TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        live_url TEXT,
+        similarity_score FLOAT,
+        status TEXT,
+        golden_record_id UUID REFERENCES image_golden_record(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- ── Enterprise: Product Intelligence (Phase P3) ───────────────────────
+    CREATE TABLE IF NOT EXISTS product_projects (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        listing_project_id UUID REFERENCES listing_projects(id) ON DELETE SET NULL,
+        image_project_id UUID REFERENCES image_projects(id) ON DELETE SET NULL,
+        webhook_url TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     -- ── Unified History View ──────────────────────────────────────────────
     CREATE OR REPLACE VIEW unified_sessions AS
       SELECT session_id AS id, user_id, 'attr_master' AS tool_type, input_file AS name,

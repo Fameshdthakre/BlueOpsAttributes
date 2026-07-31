@@ -171,6 +171,12 @@ const groups = [
     label: "CONTENT TOOLS",
     items: [
       {
+        name: "Product Intelligence",
+        href: "/product-intelligence",
+        icon: <SparklesIcon />,
+        isNew: true,
+      },
+      {
         name: "Attribute Master",
         href: "/attribute-master",
         icon: <DatabaseIcon />,
