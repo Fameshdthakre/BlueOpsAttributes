@@ -68,7 +68,7 @@ const groups = [
       { name: "Attribute Master", href: "/attribute-master", icon: <DatabaseIcon />, isNew: false },
       { name: "A+ Publisher", href: "/aplus-publisher", icon: <LayersIcon />, isNew: true },
       { name: "AI Studio", href: "/ai-studio", icon: <SparklesIcon />, isNew: true },
-      { name: "Mapper", href: "/mapper", icon: <MapIcon />, isNew: true },
+      { name: "Images Mapper", href: "/images-mapper", icon: <MapIcon />, isNew: true },
     ],
   },
   {

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from backend.api.core.auth import verify_token
 from backend.api.core.config import load_config
+from backend.api.core.database import db_transaction, get_connection
 from backend.api.aplus_publisher.aplus_prompts import GENERATE_CHART, GENERATE_MODULE_CONTENT, STRATEGY_BLOCKS
 from backend.api.aplus_publisher.aplus_modules import MODULE_REGISTRY
 
@@ -16,6 +17,10 @@ class AIRequest(BaseModel):
     provider: Optional[str] = None # e.g. "Gemini", "OpenAI", "Claude"
     model: Optional[str] = None
     temperature: Optional[float] = 0.7
+
+class ImageRequest(BaseModel):
+    prompt: str
+    provider: Optional[str] = None # e.g. "Gemini", "OpenAI"
 
 def _build_field_spec(mod):
     lines = [f"Module: {mod['name']}", "Fields to generate content for:"]
@@ -83,6 +88,39 @@ def _call_claude(prompt: str, config: dict, req: AIRequest):
     )
     return response.content[0].text
 
+def _call_gemini_image(prompt: str, config: dict):
+    from google import genai
+    from google.genai import types
+    import base64
+    api_key = config["providers"]["Gemini"].get("api_key")
+    if not api_key: raise ValueError("Gemini API key is missing")
+    client = genai.Client(api_key=api_key)
+    result = client.models.generate_images(
+        model='imagen-3.0-generate-001',
+        prompt=prompt,
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            output_mime_type="image/jpeg",
+        )
+    )
+    b64 = base64.b64encode(result.generated_images[0].image.image_bytes).decode('utf-8')
+    return f"data:image/jpeg;base64,{b64}"
+
+def _call_openai_image(prompt: str, config: dict):
+    import openai
+    api_key = config["providers"]["OpenAI"].get("api_key")
+    if not api_key: raise ValueError("OpenAI API key is missing")
+    client = openai.OpenAI(api_key=api_key)
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size="1024x1024",
+        quality="standard",
+        n=1,
+        response_format="b64_json"
+    )
+    return f"data:image/png;base64,{response.data[0].b64_json}"
+
 @router.post("/api/aplus/ai/generate")
 def generate_aplus_ai(req: AIRequest, x_user_id: int = Header(None), x_blueops_token: str = Header(None)):
     user_id = verify_token(x_user_id, x_blueops_token)
@@ -127,3 +165,64 @@ def generate_aplus_ai(req: AIRequest, x_user_id: int = Header(None), x_blueops_t
         return {"data": parsed}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/aplus/ai/images/generate")
+def generate_ai_image(req: ImageRequest, x_user_id: int = Header(None), x_blueops_token: str = Header(None)):
+    user_id = verify_token(x_user_id, x_blueops_token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    config = load_config(user_id)
+    provider_name = req.provider or config.get("primary_provider", "OpenAI")
+
+    try:
+        if provider_name == "Gemini":
+            image_url = _call_gemini_image(req.prompt, config)
+        elif provider_name == "OpenAI":
+            image_url = _call_openai_image(req.prompt, config)
+        else:
+            raise ValueError(f"Unsupported provider for images: {provider_name}")
+            
+        with db_transaction() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO ai_studio_images (user_id, prompt, image_url, provider)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id, created_at
+                """, (user_id, req.prompt, image_url, provider_name))
+                row = cur.fetchone()
+                
+        return {
+            "id": row["id"],
+            "prompt": req.prompt,
+            "image_url": image_url,
+            "provider": provider_name,
+            "created_at": row["created_at"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/aplus/ai/images")
+def get_ai_images(x_user_id: int = Header(None), x_blueops_token: str = Header(None)):
+    user_id = verify_token(x_user_id, x_blueops_token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        conn = get_connection()
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, prompt, image_url, provider, created_at
+                FROM ai_studio_images
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT 50
+            """, (user_id,))
+            rows = cur.fetchall()
+            
+        return {"images": [dict(r) for r in rows]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'conn' in locals() and conn:
+            conn.close()

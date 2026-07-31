@@ -265,6 +265,16 @@ def init_db():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    -- ── AI Studio Images ──────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS ai_studio_images (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        prompt TEXT NOT NULL,
+        image_url TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     -- ── Unified History View ──────────────────────────────────────────────
     CREATE OR REPLACE VIEW unified_sessions AS
       SELECT session_id AS id, user_id, 'attr_master' AS tool_type, input_file AS name,
