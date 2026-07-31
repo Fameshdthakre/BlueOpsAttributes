@@ -1,6 +1,6 @@
 import asyncio
 import json
-import requests
+import urllib.request
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -172,8 +172,14 @@ async def report_progress(job_id: str, progress: JobProgress):
                         for row in cur.fetchall():
                             if row["webhook_url"]:
                                 try:
-                                    requests.post(row["webhook_url"], json={"event": "change_detected", "asin": progress.asin, "project": project_id})
-                                except: pass
+                                    req = urllib.request.Request(
+                                        row["webhook_url"], 
+                                        data=json.dumps({"event": "change_detected", "asin": progress.asin, "project": project_id}).encode('utf-8'),
+                                        headers={'Content-Type': 'application/json'}
+                                    )
+                                    urllib.request.urlopen(req, timeout=5)
+                                except Exception as e:
+                                    print(f"Webhook failed: {e}")
                 
                 # Check for image runs
                 cur.execute("SELECT id, project_id FROM image_runs WHERE job_id = %s", (job_id,))
@@ -206,8 +212,14 @@ async def report_progress(job_id: str, progress: JobProgress):
                         for row in cur.fetchall():
                             if row["webhook_url"]:
                                 try:
-                                    requests.post(row["webhook_url"], json={"event": "image_mismatch", "asin": progress.asin, "slot": progress.data.get('slot'), "project": project_id})
-                                except: pass
+                                    req = urllib.request.Request(
+                                        row["webhook_url"], 
+                                        data=json.dumps({"event": "image_mismatch", "asin": progress.asin, "slot": progress.data.get('slot'), "project": project_id}).encode('utf-8'),
+                                        headers={'Content-Type': 'application/json'}
+                                    )
+                                    urllib.request.urlopen(req, timeout=5)
+                                except Exception as e:
+                                    print(f"Webhook failed: {e}")
 
             if progress.status in ["complete", "error"]:
                 cur.execute(
