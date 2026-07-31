@@ -7,12 +7,14 @@ const nextConfig: NextConfig = {
     },
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: '/api/index',
-      },
-    ]
+    return {
+      fallback: [
+        {
+          source: '/api/:path*',
+          destination: '/api/index',
+        },
+      ],
+    }
   }
 };
 
