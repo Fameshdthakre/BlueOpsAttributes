@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import ImageMapper from "../_components/ImageMapper";
+import ImageMapper from "@/app/(audit-tools)/image-auditor/_components/ImageMapper";
 
 export default function StandaloneMapperPage() {
   const [asin, setAsin] = useState("");
