@@ -12,3 +12,5 @@ rapidfuzz==3.6.2
 loguru==0.7.2
 python-multipart==0.0.9
 tenacity==8.2.3
+pytest
+pytest-asyncio
