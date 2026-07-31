@@ -1,12 +1,83 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import PageHeader from "@/app/components/PageHeader";
 import FeatureHistory from "@/app/components/FeatureHistory";
+import { api } from "@/app/lib/api";
+
+const MARKETPLACES = [
+  { label: "amazon.com (US)", value: "com" },
+  { label: "amazon.co.uk (UK)", value: "co.uk" },
+  { label: "amazon.de (Germany)", value: "de" },
+];
 
 export default function AplusPublisherPage() {
   const [activeTab, setActiveTab] = useState<"process" | "history">("process");
+  
+  // Headless Extension State
+  const [name, setName] = useState("");
+  const [portal, setPortal] = useState("vendor");
+  const [domain, setDomain] = useState("com");
+  const [url, setUrl] = useState("");
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startTask = async () => {
+    if (!name.trim()) return setError("Session name is required.");
+    if (!url.trim()) return setError("Target Amazon URL is required.");
+    setError(null);
+    setRunning(true);
+
+    try {
+      // 1. Automatically create the session in the backend
+      const res = await fetch("/api/aplus/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-id": "" },
+        body: JSON.stringify({ name, portal, domain }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const sessionId = data.session_id;
+
+      // 2. Command the Headless Chrome Extension to begin the scrape task
+      window.postMessage(
+        {
+          source: "BLUEOPS_WEB_APP",
+          type: "START_TASK",
+          taskDetails: {
+            taskType: "aplus_publisher",
+            sessionId: sessionId,
+            url: url
+          },
+        },
+        window.location.origin
+      );
+
+      // Listen for acknowledgement from extension
+      const listener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.source === "BLUEOPS_EXTENSION" && event.data?.type === "TASK_ACK") {
+          console.log("Extension acknowledged task:", event.data.payload);
+          window.removeEventListener("message", listener);
+          // Auto-switch to history tab so the user can watch results flow in!
+          setActiveTab("history");
+          setRunning(false);
+        }
+      };
+      window.addEventListener("message", listener);
+
+      // Fallback timeout in case extension isn't installed or fails to reply
+      setTimeout(() => {
+        window.removeEventListener("message", listener);
+        setRunning(false);
+        setError("Extension did not respond. Is the BlueOps Chrome Extension installed and enabled?");
+      }, 3000);
+
+    } catch (err: any) {
+      setError(err.message);
+      setRunning(false);
+    }
+  };
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">
@@ -14,17 +85,7 @@ export default function AplusPublisherPage() {
         title="A+ Publisher"
         subtitle="Manage A+ Content drafts across Vendor and Seller Central portals."
         breadcrumbs={[{ label: "BlueOps Hub", href: "/dashboard" }, { label: "A+ Publisher" }]}
-      >
-        <Link
-          href="/aplus-publisher/new"
-          className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Session
-        </Link>
-      </PageHeader>
+      />
 
       {/* Tab Switcher */}
       <div className="flex border-b border-bg-input px-8 mt-2">
@@ -36,7 +97,7 @@ export default function AplusPublisherPage() {
               : "border-transparent text-text-muted hover:text-text-main"
           }`}
         >
-          Sessions
+          New Sync
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -46,7 +107,7 @@ export default function AplusPublisherPage() {
               : "border-transparent text-text-muted hover:text-text-main"
           }`}
         >
-          History
+          Dashboard & History
         </button>
       </div>
 
@@ -57,22 +118,63 @@ export default function AplusPublisherPage() {
       )}
 
       {activeTab === "process" && (
-        <div className="p-8 max-w-6xl mx-auto w-full flex-1 space-y-6 overflow-y-auto">
-          {/* Info Banner */}
+        <div className="p-8 max-w-2xl mx-auto w-full flex-1 space-y-6 overflow-y-auto">
           <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-sm text-orange-300">
-            <strong>How it works:</strong> Create a session in BlueOps → install the A+ Publisher Chrome Extension →
-            paste your API token (Settings → Integrations) → the extension will sync and execute drafts automatically.
+            <strong>Headless Automation Active:</strong> Enter your target URL below. The BlueOps Chrome Extension will automatically open Amazon in the background and pipe drafts directly into your History Dashboard. You do not need to click anything in the extension.
           </div>
 
-          <div className="flex flex-col items-center justify-center py-24 bg-bg-card border border-bg-input rounded-xl">
-            <svg className="w-16 h-16 text-text-muted mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            <h3 className="text-xl font-bold text-text-main mb-2">Create a new A+ session</h3>
-            <p className="text-text-muted mb-6">Set up a new session to start syncing A+ drafts via the extension.</p>
-            <Link href="/aplus-publisher/new" className="bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-semibold transition-colors">
-              Create Session
-            </Link>
+          <div className="bg-bg-card border border-bg-input rounded-xl p-8 space-y-6">
+            {error && (
+              <div className="p-3 bg-status-error/10 border border-status-error/20 text-status-error rounded-lg text-sm">{error}</div>
+            )}
+
+            <div>
+              <label className="block text-sm text-text-muted mb-2">Session Name</label>
+              <input
+                type="text"
+                placeholder="e.g., Q3 A+ Content Sync"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-muted mb-2">Target Amazon Drafts URL</label>
+              <input
+                type="text"
+                placeholder="e.g., https://vendorcentral.amazon.co.uk/aplus/..."
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-text-muted mb-2">Portal</label>
+                <select value={portal} onChange={e => setPortal(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
+                  <option value="vendor">Vendor Central</option>
+                  <option value="seller">Seller Central</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-text-muted mb-2">Marketplace</label>
+                <select value={domain} onChange={e => setDomain(e.target.value)} className="w-full bg-bg-input border-none rounded-lg p-3 text-text-main">
+                  {MARKETPLACES.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={startTask}
+              disabled={running}
+              className="w-full mt-4 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              {running ? "Sending Command to Extension..." : "Start Headless Sync"}
+            </button>
           </div>
         </div>
       )}
