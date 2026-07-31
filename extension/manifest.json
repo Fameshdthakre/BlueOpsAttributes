@@ -3,33 +3,34 @@
   "name": "BlueOps Enterprise Toolkit",
   "version": "2.0.0",
   "description": "Headless browser automation and scraping engine for BlueOps Features (A+, Image Auditor, Listing Auditor).",
+
   "permissions": [
     "storage",
     "tabs",
     "scripting",
     "webRequest"
   ],
+
   "host_permissions": [
     "*://*.amazon.com/*",
     "*://*.amazon.co.uk/*",
     "*://*.amazon.ca/*",
-    "*://vendorcentral.amazon.com/*",
-    "*://sellercentral.amazon.com/*",
     "*://blue-ops-attributes.vercel.app/*",
-    "*://localhost/*"
+    "http://localhost/*"
   ],
+
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
+
   "content_scripts": [
     {
       "matches": [
         "*://blue-ops-attributes.vercel.app/*",
-        "*://localhost/*"
+        "http://localhost/*"
       ],
       "js": ["content/blueops.js"],
-      "run_at": "document_start"
+      "run_at": "document_idle"
     },
     {
       "matches": [
@@ -37,19 +38,22 @@
         "*://*.amazon.co.uk/dp/*",
         "*://*.amazon.ca/dp/*"
       ],
-      "js": ["content/amazon-pdp.js"]
+      "js": ["content/amazon-pdp.js"],
+      "run_at": "document_idle"
     },
     {
       "matches": [
         "*://vendorcentral.amazon.com/*"
       ],
-      "js": ["content/vendor-central.js"]
+      "js": ["content/vendor-central.js"],
+      "run_at": "document_idle"
     },
     {
       "matches": [
         "*://sellercentral.amazon.com/*"
       ],
-      "js": ["content/seller-central.js"]
+      "js": ["content/seller-central.js"],
+      "run_at": "document_idle"
     }
   ]
 }
