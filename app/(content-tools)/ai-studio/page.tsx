@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getToken } from "@/app/lib/api";
-import ModuleSelector from "../_components/ModuleSelector";
+import ModuleSelector from "@/app/(content-tools)/aplus-publisher/_components/ModuleSelector";
 
 type Tab = "text" | "image" | "history";
 
@@ -180,7 +180,7 @@ export default function AIStudioPage() {
             <div className="flex flex-col gap-6">
               <div className="bg-white dark:bg-[#1a1d21] p-6 rounded-lg border border-[var(--border-color)]">
                 <h2 className="text-lg font-semibold mb-4">1. Select Target Module</h2>
-                <ModuleSelector selectedModules={selectedModules} onChange={(ids) => setSelectedModules(ids.slice(-1))} multiSelect={true} />
+                <ModuleSelector selectedModules={selectedModules} onChange={(ids: string[]) => setSelectedModules(ids.slice(-1))} multiSelect={true} />
               </div>
               <div className="bg-white dark:bg-[#1a1d21] p-6 rounded-lg border border-[var(--border-color)] flex flex-col gap-4">
                 <h2 className="text-lg font-semibold">2. Input Product Data</h2>
