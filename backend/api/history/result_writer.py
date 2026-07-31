@@ -16,7 +16,7 @@ def generate_excel_from_session(session_id: str) -> bytes:
                 asin, attribute_id, product_type, brand, title,
                 final_value, match_status, provider_used, confidence,
                 raw_ai_value, extra_data, validated_product_type, validated_allowed_options
-            FROM job_results
+            FROM attribute_master_results
             WHERE session_id = %s
             ORDER BY id ASC
         """
@@ -96,7 +96,7 @@ def generate_wide_excel_from_session(session_id: str) -> bytes:
             SELECT 
                 asin, attribute_id, product_type, brand, title,
                 final_value, extra_data
-            FROM job_results
+            FROM attribute_master_results
             WHERE session_id = %s
             ORDER BY id ASC
         """

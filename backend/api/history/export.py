@@ -22,14 +22,14 @@ def export_session(session_id: str, user_id: int, format: str = "long"):
                 # Get unique ASIN count
                 cur.execute("""
                     SELECT COUNT(DISTINCT jr.asin) 
-                    FROM job_results jr
-                    JOIN sessions s ON jr.session_id = s.session_id
+                    FROM attribute_master_results jr
+                    JOIN attribute_master_sessions s ON jr.session_id = s.session_id
                     WHERE jr.session_id = %s AND s.user_id = %s
                 """, (session_id, user_id))
                 asin_count = cur.fetchone()[0]
                 
                 # Get session timestamp and verify user ownership
-                cur.execute("SELECT timestamp FROM sessions WHERE session_id = %s AND user_id = %s", (session_id, user_id))
+                cur.execute("SELECT timestamp FROM attribute_master_sessions WHERE session_id = %s AND user_id = %s", (session_id, user_id))
                 row = cur.fetchone()
                 if not row:
                     raise HTTPException(status_code=404, detail="Session not found or unauthorized")

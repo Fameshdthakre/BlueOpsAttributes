@@ -15,8 +15,8 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
             if session_id:
                 # Get results for specific session (filtered by device ownership)
                 cur.execute(
-                    """SELECT jr.* FROM job_results jr
-                       JOIN sessions s ON jr.session_id = s.session_id
+                    """SELECT jr.* FROM attribute_master_results jr
+                       JOIN attribute_master_sessions s ON jr.session_id = s.session_id
                        WHERE jr.session_id = %s AND s.user_id = %s
                        ORDER BY jr.id ASC""", 
                     (session_id, x_user_id)
@@ -26,7 +26,7 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
                 # Fetch basic stats
                 cur.execute("""
                     SELECT match_status, count(*) 
-                    FROM job_results 
+                    FROM attribute_master_results 
                     WHERE session_id = %s 
                     GROUP BY match_status
                 """, (session_id,))
@@ -34,7 +34,7 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
                 
                 # We need to map stats per-ASIN usually, but this is fine per attribute too
                 
-                cur.execute("SELECT session_id, timestamp, input_file, status FROM sessions WHERE session_id = %s AND user_id = %s", (session_id, x_user_id))
+                cur.execute("SELECT session_id, timestamp, input_file, status FROM attribute_master_sessions WHERE session_id = %s AND user_id = %s", (session_id, x_user_id))
                 session_info = cur.fetchone()
 
                 return {
@@ -47,8 +47,8 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
                 cur.execute("""
                     SELECT s.session_id, s.timestamp, s.input_file, s.status, 
                            COUNT(DISTINCT j.asin) as asins_processed
-                    FROM sessions s
-                    LEFT JOIN job_results j ON s.session_id = j.session_id
+                    FROM attribute_master_sessions s
+                    LEFT JOIN attribute_master_results j ON s.session_id = j.session_id
                     WHERE s.user_id = %s
                     GROUP BY s.session_id
                     ORDER BY s.timestamp DESC
@@ -72,14 +72,14 @@ async def delete_sessions(request: Request, x_user_id: int = Header(...)):
         try:
             with conn.cursor() as cur:
                 if clear_all:
-                    cur.execute("DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE user_id = %s)", (x_user_id,))
-                    cur.execute("DELETE FROM sessions WHERE user_id = %s", (x_user_id,))
+                    cur.execute("DELETE FROM attribute_master_results WHERE session_id IN (SELECT session_id FROM attribute_master_sessions WHERE user_id = %s)", (x_user_id,))
+                    cur.execute("DELETE FROM attribute_master_sessions WHERE user_id = %s", (x_user_id,))
                 elif session_ids and isinstance(session_ids, list):
                     format_strings = ','.join(['%s'] * len(session_ids))
                     
                     # Ensure we only delete sessions owned by this user
-                    cur.execute(f"DELETE FROM job_results WHERE session_id IN (SELECT session_id FROM sessions WHERE session_id IN ({format_strings}) AND user_id = %s)", tuple(session_ids) + (x_user_id,))
-                    cur.execute(f"DELETE FROM sessions WHERE session_id IN ({format_strings}) AND user_id = %s", tuple(session_ids) + (x_user_id,))
+                    cur.execute(f"DELETE FROM attribute_master_results WHERE session_id IN (SELECT session_id FROM attribute_master_sessions WHERE session_id IN ({format_strings}) AND user_id = %s)", tuple(session_ids) + (x_user_id,))
+                    cur.execute(f"DELETE FROM attribute_master_sessions WHERE session_id IN ({format_strings}) AND user_id = %s", tuple(session_ids) + (x_user_id,))
                 else:
                     raise HTTPException(status_code=400, detail="Must provide session_ids list or clear_all=True")
                 

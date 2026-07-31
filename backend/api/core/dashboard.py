@@ -22,8 +22,8 @@ def get_dashboard_stats(user_id: int = Depends(verify_token)):
                     COUNT(jr.id) as total_jobs,
                     SUM(CASE WHEN jr.match_status = 'Validated' THEN 1 ELSE 0 END) as validated,
                     SUM(CASE WHEN jr.match_status = 'Failed' THEN 1 ELSE 0 END) as failed
-                FROM sessions s
-                LEFT JOIN job_results jr ON s.session_id = jr.session_id
+                FROM attribute_master_sessions s
+                LEFT JOIN attribute_master_results jr ON s.session_id = jr.session_id
                 WHERE s.user_id = %s
             """, (user_id,))
             row = cur.fetchone()

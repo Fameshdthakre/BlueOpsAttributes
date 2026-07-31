@@ -74,7 +74,7 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
             with conn.cursor() as cur:
                 for ar in result.attribute_results:
                     cur.execute("""
-                        INSERT INTO job_results (
+                        INSERT INTO attribute_master_results (
                             session_id, asin, attribute_id, product_type, brand, title,
                             final_value, match_status, provider_used, confidence,
                             raw_ai_value, extra_data, validated_product_type, validated_allowed_options

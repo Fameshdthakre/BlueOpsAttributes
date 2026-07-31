@@ -17,7 +17,7 @@ def create_session(req: CreateSessionRequest, x_user_id: int = Header(...)):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO sessions (session_id, user_id, input_file, status) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO attribute_master_sessions (session_id, user_id, input_file, status) VALUES (%s, %s, %s, %s)",
                 (session_id, x_user_id, req.input_file, "Running")
             )
         conn.commit()
@@ -39,7 +39,7 @@ def update_session(req: UpdateSessionRequest, x_user_id: int = Header(...)):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE sessions SET status = %s WHERE session_id = %s AND user_id = %s",
+                "UPDATE attribute_master_sessions SET status = %s WHERE session_id = %s AND user_id = %s",
                 (req.status, req.session_id, x_user_id)
             )
         conn.commit()

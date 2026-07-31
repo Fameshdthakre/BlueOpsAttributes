@@ -119,7 +119,7 @@ def init_db():
     );
 
     -- Batch processing sessions per user
-    CREATE TABLE IF NOT EXISTS sessions (
+    CREATE TABLE IF NOT EXISTS attribute_master_sessions (
         session_id TEXT PRIMARY KEY,
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
         timestamp TIMESTAMPTZ DEFAULT NOW(),
@@ -158,7 +158,7 @@ def init_db():
     END $$;
 
     -- Individual attribute results
-    CREATE TABLE IF NOT EXISTS job_results (
+    CREATE TABLE IF NOT EXISTS attribute_master_results (
         id BIGSERIAL PRIMARY KEY,
         session_id TEXT REFERENCES sessions(session_id) ON DELETE CASCADE,
         asin TEXT,
@@ -269,7 +269,7 @@ def init_db():
     CREATE OR REPLACE VIEW unified_sessions AS
       SELECT session_id AS id, user_id, 'attr_master' AS tool_type, input_file AS name,
              status, 0 AS total_asins, 0 AS processed_asins, timestamp AS created_at
-      FROM sessions
+      FROM attribute_master_sessions
     UNION ALL
       SELECT id::TEXT, user_id, 'aplus' AS tool_type, name,
              status, total_drafts AS total_asins, completed_drafts AS processed_asins, created_at
@@ -284,10 +284,10 @@ def init_db():
       FROM listing_audit_sessions;
 
     -- Indexes
-    CREATE INDEX IF NOT EXISTS idx_sessions_timestamp ON sessions(timestamp);
-    CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_job_results_session ON job_results(session_id);
-    CREATE INDEX IF NOT EXISTS idx_job_results_status ON job_results(match_status);
+    CREATE INDEX IF NOT EXISTS idx_attribute_master_sessions_timestamp ON attribute_master_sessions(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_attribute_master_sessions_user_id ON attribute_master_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_attribute_master_results_session ON attribute_master_results(session_id);
+    CREATE INDEX IF NOT EXISTS idx_attribute_master_results_status ON attribute_master_results(match_status);
 
     -- Trigger Function for updated_at
     CREATE OR REPLACE FUNCTION update_updated_at_column()
