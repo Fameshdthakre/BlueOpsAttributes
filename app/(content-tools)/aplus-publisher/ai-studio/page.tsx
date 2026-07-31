@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { getToken } from "@/app/lib/api";
-import ModuleSelector from "@/app/components/ModuleSelector";
+import ModuleSelector from "../_components/ModuleSelector";
 
 export default function AIStudioPage() {
   const [selectedModules, setSelectedModules] = useState<string[]>([]);

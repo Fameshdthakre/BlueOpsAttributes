@@ -55,7 +55,7 @@ const groups = [
     id: "content",
     label: "CONTENT TOOLS",
     items: [
-      { name: "Attribute Master", href: "/input", icon: <DatabaseIcon />, isNew: false },
+      { name: "Attribute Master", href: "/attribute-master", icon: <DatabaseIcon />, isNew: false },
       { name: "A+ Publisher", href: "/aplus-publisher", icon: <LayersIcon />, isNew: true },
     ],
   },
@@ -167,8 +167,8 @@ export default function Sidebar() {
               {(isExpanded ? openGroups[group.id] : true) &&
                 group.items.map((item) => {
                   const isActive =
-                    item.href === "/input"
-                      ? pathname.startsWith("/input") || pathname.startsWith("/run")
+                    item.href === "/attribute-master"
+                      ? pathname.startsWith("/attribute-master") || pathname.startsWith("/run")
                       : pathname.startsWith(item.href);
                   return (
                     <Link
