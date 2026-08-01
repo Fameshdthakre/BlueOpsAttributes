@@ -151,16 +151,16 @@ def init_db():
             ALTER TABLE custom_models ADD PRIMARY KEY (user_id, provider, model_name);
         END IF;
 
-        -- sessions
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='user_id') THEN
-            ALTER TABLE sessions ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
+        -- attribute_master_sessions
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='attribute_master_sessions' AND column_name='user_id') THEN
+            ALTER TABLE attribute_master_sessions ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
         END IF;
     END $$;
 
     -- Individual attribute results
     CREATE TABLE IF NOT EXISTS attribute_master_results (
         id BIGSERIAL PRIMARY KEY,
-        session_id TEXT REFERENCES sessions(session_id) ON DELETE CASCADE,
+        session_id TEXT REFERENCES attribute_master_sessions(session_id) ON DELETE CASCADE,
         asin TEXT,
         attribute_id TEXT,
         product_type TEXT,
