@@ -193,6 +193,60 @@ export default function SettingsPage() {
       });
       setConfig({ ...cfg });
       setLoading(false);
+    }).catch(err => {
+      toast.error("Failed to load settings from server.");
+
+      // Load default configuration
+      const defaultConfig: AppConfig = {
+        primary_provider: "Gemini",
+        fallback_order: ["OpenAI", "Claude"],
+        custom_models: {
+            "Gemini": [],
+            "OpenAI": [],
+            "Claude": [],
+        },
+        providers: {
+            "Gemini": {
+                enabled: true,
+                api_key: "",
+                model: "gemini-2.5-flash",
+                max_retries: 3,
+                timeout: 60,
+                rpm_limit: 15,
+                temperature: 0.1,
+                top_k: 40,
+                top_p: 0.95,
+                enable_web_search: true,
+            },
+            "OpenAI": {
+                enabled: true,
+                api_key: "",
+                model: "gpt-4o-2024-08-06",
+                max_retries: 3,
+                timeout: 60,
+                rpm_limit: 20,
+                temperature: 0.1,
+                top_k: 40,
+                top_p: 0.95,
+                enable_web_search: true,
+            },
+            "Claude": {
+                enabled: true,
+                api_key: "",
+                model: "claude-haiku-4-5",
+                max_retries: 3,
+                timeout: 60,
+                rpm_limit: 10,
+                temperature: 0.1,
+                top_k: 40,
+                top_p: 0.95,
+                enable_web_search: true,
+            },
+        },
+      };
+
+      setConfig(defaultConfig);
+      setLoading(false);
     });
   }, []);
 
