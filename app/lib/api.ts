@@ -17,7 +17,7 @@ const getUserId = async () => {
 };
 
 // Wrapper for fetch to inject user_id header
-const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers || {});
   headers.set("x-user-id", await getUserId());
 

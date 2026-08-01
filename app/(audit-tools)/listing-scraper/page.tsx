@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/app/lib/api";
 import PageHeader from "@/app/components/PageHeader";
 import Link from "next/link";
 import { Plus, Settings, Play, Database } from "lucide-react";
@@ -17,7 +18,7 @@ export default function ListingScraperDashboard() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch("/api/listing-scrape/projects");
+      const res = await fetchWithAuth("/api/listing-scrape/projects");
       if (res.ok) {
         const data = await res.json();
         setProjects(data.projects);
@@ -32,7 +33,7 @@ export default function ListingScraperDashboard() {
   const createProject = async () => {
     if (!newName.trim()) return;
     try {
-      const res = await fetch("/api/listing-scrape/projects", {
+      const res = await fetchWithAuth("/api/listing-scrape/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName, marketplaces: ["com"] })

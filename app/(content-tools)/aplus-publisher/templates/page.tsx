@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { fetchWithAuth } from "@/app/lib/api";
 import Link from "next/link";
 import { getToken } from "@/app/lib/api";
 import ModuleSelector from "../_components/ModuleSelector";
@@ -18,7 +19,7 @@ export default function TemplatesPage() {
     try {
       setLoading(true);
       const token = await getToken();
-      const res = await fetch("/api/aplus/template", {
+      const res = await fetchWithAuth("/api/aplus/template", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/app/lib/api";
 import Link from "next/link";
 import { getToken } from "@/app/lib/api";
 import ModuleSelector from "@/app/(content-tools)/aplus-publisher/_components/ModuleSelector";
@@ -51,7 +52,7 @@ export default function AIStudioPage() {
     
     try {
       const token = await getToken();
-      const res = await fetch("/api/aplus/ai/generate", {
+      const res = await fetchWithAuth("/api/aplus/ai/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +86,7 @@ export default function AIStudioPage() {
 
     try {
       const token = await getToken();
-      const res = await fetch("/api/aplus/ai/images/generate", {
+      const res = await fetchWithAuth("/api/aplus/ai/images/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,7 +109,7 @@ export default function AIStudioPage() {
     setLoadingHistory(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/aplus/ai/images", {
+      const res = await fetchWithAuth("/api/aplus/ai/images", {
         headers: { ...(token && { "X-BlueOps-Token": token }) },
       });
       if (!res.ok) throw new Error("Failed to load history");

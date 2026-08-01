@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/app/lib/api";
 import PageHeader from "@/app/components/PageHeader";
 import Link from "next/link";
 import { Plus, Settings, Play, Database, Link as LinkIcon, AlertTriangle } from "lucide-react";
@@ -25,9 +26,9 @@ export default function ProductIntelligenceDashboard() {
   const fetchData = async () => {
     try {
       const [prodRes, listRes, imgRes] = await Promise.all([
-        fetch("/api/product-intelligence/projects"),
-        fetch("/api/listing-scraper/projects"),
-        fetch("/api/image-audit/projects")
+        fetchWithAuth("/api/product-intelligence/projects"),
+        fetchWithAuth("/api/listing-scraper/projects"),
+        fetchWithAuth("/api/image-audit/projects")
       ]);
       
       if (prodRes.ok) setProjects((await prodRes.json()).projects);
@@ -44,7 +45,7 @@ export default function ProductIntelligenceDashboard() {
     if (!newName) return alert("Please enter a name for the unified project");
     
     try {
-      const res = await fetch("/api/product-intelligence/projects", {
+      const res = await fetchWithAuth("/api/product-intelligence/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
