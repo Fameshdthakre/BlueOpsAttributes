@@ -10,7 +10,6 @@ from backend.api.aplus_publisher.aplus_jobs import router as aplus_jobs_router
 from backend.api.aplus_publisher.aplus_session import router as aplus_session_router
 from backend.api.aplus_publisher.aplus_template import router as aplus_template_router
 from backend.api.aplus_publisher.aplus_ai import router as aplus_ai_router
-from backend.api.core.auth import router as auth_router
 from backend.api.core.dashboard import router as dashboard_router
 from backend.api.core.jobs import router as jobs_router
 from backend.api.history.export import router as export_router
@@ -59,7 +58,6 @@ app.include_router(aplus_jobs_router)
 app.include_router(aplus_session_router)
 app.include_router(aplus_template_router)
 app.include_router(aplus_ai_router)
-app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(jobs_router)
 app.include_router(export_router)

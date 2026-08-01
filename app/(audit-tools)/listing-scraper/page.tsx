@@ -8,6 +8,8 @@ import { Plus, Settings, Play, Database } from "lucide-react";
 export default function ListingScraperDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     fetchProjects();
@@ -28,15 +30,16 @@ export default function ListingScraperDashboard() {
   };
 
   const createProject = async () => {
-    const name = prompt("Enter Project Name (e.g., Q3 ASIN Catalogue):");
-    if (!name) return;
+    if (!newName.trim()) return;
     try {
       const res = await fetch("/api/listing-scrape/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, marketplaces: ["com"] })
+        body: JSON.stringify({ name: newName, marketplaces: ["com"] })
       });
       if (res.ok) {
+        setIsCreating(false);
+        setNewName("");
         fetchProjects();
       }
     } catch (e) {
@@ -66,16 +69,37 @@ export default function ListingScraperDashboard() {
           </button>
         </div>
 
+        {isCreating && (
+          <div className="bg-bg-card border border-bg-input rounded-xl p-8 mb-8 animate-in fade-in slide-in-from-top-4">
+            <h3 className="text-xl font-bold mb-6 text-text-main">Create Listing Project</h3>
+            <div className="space-y-4 max-w-lg">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-text-main">Project Name</label>
+                <input 
+                  type="text" value={newName} onChange={e => setNewName(e.target.value)}
+                  placeholder="e.g. Q3 ASIN Catalogue"
+                  className="w-full bg-bg-dark border border-bg-input rounded-lg p-3 text-text-main focus:border-primary outline-none"
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button onClick={() => setIsCreating(false)} className="px-6 py-3 font-semibold text-text-muted hover:text-text-main transition-colors">Cancel</button>
+                <button onClick={createProject} className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-bold transition-all shadow-lg shadow-primary/20">Create Project</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-20 text-text-muted">Loading projects...</div>
-        ) : projects.length === 0 ? (
+        ) : projects.length === 0 && !isCreating ? (
           <div className="bg-bg-card border border-dashed border-bg-input rounded-2xl p-16 text-center">
             <Database className="mx-auto text-text-muted mb-4" size={48} />
             <h3 className="text-xl font-bold text-text-main mb-2">No Projects Yet</h3>
             <p className="text-text-muted max-w-md mx-auto mb-6">
               Create your first project to start tracking your ASIN catalogue against live Amazon data.
             </p>
-            <button onClick={createProject} className="bg-bg-input hover:bg-bg-dark text-text-main px-6 py-2 rounded-lg font-medium transition-colors">
+            <button onClick={() => setIsCreating(true)} className="bg-bg-input hover:bg-bg-dark text-text-main px-6 py-2 rounded-lg font-medium transition-colors">
               Create Project
             </button>
           </div>

@@ -31,7 +31,7 @@ export default function PageHeader({
               className="h-6 w-px bg-bg-input mx-2 hidden sm:block"
               aria-hidden="true"
             ></div>
-            <span className="text-sm text-text-muted hidden sm:block truncate max-w-md">
+            <span className="text-sm text-text-muted hidden sm:block truncate max-w-2xl lg:max-w-4xl">
               {subtitle}
             </span>
           </>

@@ -10,6 +10,7 @@ interface ImageMapperProps {
 
 export default function ImageMapper({ asin, images, onSave }: ImageMapperProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const slots = [
     { id: "main", label: "Main Image" },
@@ -30,6 +31,13 @@ export default function ImageMapper({ asin, images, onSave }: ImageMapperProps) 
     const imgUrl = e.dataTransfer.getData("text/plain");
     if (imgUrl) {
       setMapping((prev) => ({ ...prev, [slotId]: imgUrl }));
+    }
+  };
+
+  const handleSlotClick = (slotId: string) => {
+    if (selectedImage) {
+      setMapping((prev) => ({ ...prev, [slotId]: selectedImage }));
+      setSelectedImage(null);
     }
   };
 
@@ -58,9 +66,14 @@ export default function ImageMapper({ asin, images, onSave }: ImageMapperProps) 
               key={idx}
               draggable
               onDragStart={(e) => handleDragStart(e, img)}
-              className="w-24 h-24 border border-bg-input rounded-lg p-1 cursor-grab active:cursor-grabbing bg-bg-dark hover:border-primary/50 transition-colors"
+              onClick={() => setSelectedImage(selectedImage === img ? null : img)}
+              className={`w-24 h-24 border rounded-lg p-1 cursor-grab active:cursor-grabbing transition-colors ${
+                selectedImage === img 
+                  ? "border-primary bg-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.5)]" 
+                  : "border-bg-input bg-bg-dark hover:border-primary/50"
+              }`}
             >
-              <img src={img} alt={`Img ${idx}`} className="w-full h-full object-contain pointer-events-none" />
+              <img src={img} alt={`Img ${idx}`} className="w-full h-full object-contain pointer-events-none" referrerPolicy="no-referrer" />
             </div>
           ))}
           {images.length === 0 && (
@@ -78,10 +91,11 @@ export default function ImageMapper({ asin, images, onSave }: ImageMapperProps) 
             key={slot.id}
             onDrop={(e) => handleDrop(e, slot.id)}
             onDragOver={handleDragOver}
-            className={`flex flex-col border-2 border-dashed rounded-xl p-2 h-40 transition-colors ${
+            onClick={() => handleSlotClick(slot.id)}
+            className={`flex flex-col border-2 border-dashed rounded-xl p-2 h-40 transition-colors cursor-pointer ${
               mapping[slot.id]
                 ? "border-primary bg-primary/5"
-                : "border-bg-input bg-bg-card hover:border-primary/40"
+                : selectedImage ? "border-primary/50 bg-primary/10 animate-pulse" : "border-bg-input bg-bg-card hover:border-primary/40"
             }`}
           >
             <div className="flex justify-between items-center mb-2">
@@ -104,10 +118,11 @@ export default function ImageMapper({ asin, images, onSave }: ImageMapperProps) 
                   src={mapping[slot.id]}
                   alt={slot.label}
                   className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
-                <span className="text-text-muted text-xs text-center">
-                  Drag image here
+                <span className="text-text-muted text-xs text-center px-2">
+                  {selectedImage ? "Click to map selected image" : "Drag image here or click image to select"}
                 </span>
               )}
             </div>
