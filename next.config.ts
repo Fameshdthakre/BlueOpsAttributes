@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
       fallback: [
         {
           source: '/api/:path*',
-          destination: 'http://127.0.0.1:8000/api/:path*', // proxy to fastAPI running locally
+          destination: process.env.NODE_ENV === 'development'
+            ? 'http://127.0.0.1:8000/api/:path*' // proxy to fastAPI running locally
+            : '/api/index', // Vercel serverless function
         },
       ]
     }

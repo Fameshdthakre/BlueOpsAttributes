@@ -135,7 +135,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ToolCard
                   title="Attribute Master"
-                  href="/input"
+                  href="/attribute-master"
                   color="bg-blue-500/10 text-blue-400"
                   icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582 4 8 4" /></svg>}
                   stats={[
@@ -193,17 +193,17 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <QuickAction
                   label="New Attribute Extraction"
-                  href="/input"
+                  href="/attribute-master"
                   icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
                 />
                 <QuickAction
                   label="New A+ Session"
-                  href="/aplus-publisher/new"
+                  href="/aplus-publisher/templates"
                   icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
                 />
                 <QuickAction
                   label="New Image Audit"
-                  href="/image-auditor/new"
+                  href="/image-auditor"
                   icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
                 />
                 <QuickAction
