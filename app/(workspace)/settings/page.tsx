@@ -164,13 +164,17 @@ export default function SettingsPage() {
     if (draft) {
       try {
         const parsed = JSON.parse(draft) as AppConfig;
-        setTimeout(() => {
-          setConfig(parsed);
-          setLoading(false);
-        }, 0);
-        return;
+        if (parsed && parsed.providers && parsed.providers["Gemini"] && parsed.providers["Gemini"].enabled !== undefined) {
+          setTimeout(() => {
+            setConfig(parsed);
+            setLoading(false);
+          }, 0);
+          return;
+        } else {
+          localStorage.removeItem("blueops_settings_draft");
+        }
       } catch (err) {
-        // ignore parse error
+        localStorage.removeItem("blueops_settings_draft");
       }
     }
 
