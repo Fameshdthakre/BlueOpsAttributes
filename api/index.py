@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import sys
+
+# Add project root to sys.path so 'backend' module is discoverable on Vercel
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.api.core.api_tokens import router as api_tokens_router
 from backend.api.aplus_publisher.aplus_jobs import router as aplus_jobs_router
 from backend.api.aplus_publisher.aplus_session import router as aplus_session_router
