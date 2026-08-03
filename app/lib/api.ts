@@ -59,6 +59,24 @@ export const api = {
     return res.json();
   },
 
+  buildJobs: async (payload: any) => {
+    const res = await fetchWithAuth("/api/build_jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  getDashboardStats: async () => {
+    const res = await fetchWithAuth("/api/dashboard/stats", {
+      method: "GET",
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   createSession: async (inputFile: string) => {
     const res = await fetchWithAuth("/api/session", {
       method: "POST",
