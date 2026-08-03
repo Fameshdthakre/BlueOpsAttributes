@@ -73,40 +73,54 @@ def process_single_asin(
             from tavily import TavilyClient
             client = TavilyClient(api_key=tavily_cfg.get("api_key"))
             
-            attr_str = "|".join(job.attributes)
+            attr_details = []
+            for attr_id in job.attributes:
+                val_entry = validation_map.get(attr_id)
+                if val_entry and val_entry.is_validation_list and val_entry.allowed_values:
+                    opts = val_entry.allowed_values[:10]
+                    opts_str = ", ".join(opts) + (", ..." if len(val_entry.allowed_values) > 10 else "")
+                    attr_details.append(f"{attr_id} (Allowed: {opts_str})")
+                elif val_entry and val_entry.tooltip:
+                    attr_details.append(f"{attr_id} (Info: {val_entry.tooltip})")
+                else:
+                    attr_details.append(attr_id)
+                    
+            attr_str = " | ".join(attr_details)
             product_desc = f"{job.asin}; {job.title or job.brand or ''}"
-            search_query = f'find missing attributes: "{attr_str}" for \n{product_desc}.\n'
-            
-            logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
-            response = client.search(
-                query=search_query,
-                include_answer="advanced",
-                search_depth=tavily_cfg.get("search_depth", "advanced"),
-                include_raw_content="markdown",
-                chunks_per_source=4,
-                max_results=tavily_cfg.get("max_results", 5)
-            )
+            search_query = f'Find detailed specifications and missing attributes for product: {product_desc}.\nTarget attributes to find: {attr_str}'
             
             contexts = []
-            answer = response.get("answer")
-            if answer:
-                contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
+            urls = [f"https://www.amazon.com/dp/{job.asin}"]
             
-            urls = []
-            for res in response.get("results", []):
-                url = res.get("url")
-                if url:
-                    urls.append(url)
-                content = res.get("raw_content") or res.get("content")
-                if content:
-                    contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
+            if tavily_cfg.get("enable_search", True):
+                logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
+                response = client.search(
+                    query=search_query,
+                    include_answer="advanced",
+                    search_depth=tavily_cfg.get("search_depth", "advanced"),
+                    include_raw_content="markdown",
+                    chunks_per_source=4,
+                    max_results=tavily_cfg.get("max_results", 5)
+                )
+                
+                answer = response.get("answer")
+                if answer:
+                    contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
+                
+                for res in response.get("results", []):
+                    url = res.get("url")
+                    if url and url not in urls:
+                        urls.append(url)
+                    content = res.get("raw_content") or res.get("content")
+                    if content:
+                        contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
 
-            if urls and tavily_cfg.get("enable_extract", True):
+            if tavily_cfg.get("enable_extract", True):
                 try:
                     logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
                     extract_res = client.extract(
                         urls=urls[:3],
-                        query=f'find missing attributes: "{attr_str}".',
+                        query=search_query,
                         chunks_per_source=4,
                         extract_depth=tavily_cfg.get("extract_depth", "advanced")
                     )

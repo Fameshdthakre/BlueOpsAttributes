@@ -29,6 +29,7 @@ interface AppConfig {
       max_results?: number;
       extract_depth?: string;
       enable_extract?: boolean;
+      enable_search?: boolean;
     }
   >;
 }
@@ -161,6 +162,7 @@ export default function SettingsPage() {
           max_results: 5,
           extract_depth: "advanced",
           enable_extract: true,
+          enable_search: true,
         };
       }
 
@@ -841,6 +843,7 @@ export default function SettingsPage() {
             max_results: 5,
             extract_depth: "advanced",
             enable_extract: true,
+            enable_search: true,
           };
 
           return (
@@ -948,7 +951,7 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
                   Deep Research & Extraction Options
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div>
                     <label className="block text-xs text-text-muted mb-1">
                       Max Search Results
@@ -1000,6 +1003,31 @@ export default function SettingsPage() {
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
+                        checked={tCfg.enable_search ?? true}
+                        onChange={(e) =>
+                          updateConfig({
+                            ...config,
+                            providers: {
+                              ...config.providers,
+                              Tavily: {
+                                ...tCfg,
+                                enable_search: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
+                      />
+                      <span className="text-sm text-text-main font-medium">
+                        Enable Web Search
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
                         checked={tCfg.enable_extract ?? true}
                         onChange={(e) =>
                           updateConfig({
@@ -1016,7 +1044,7 @@ export default function SettingsPage() {
                         className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
                       />
                       <span className="text-sm text-text-main font-medium">
-                        Enable Deep URL Extraction
+                        Enable URL Extraction
                       </span>
                     </label>
                   </div>

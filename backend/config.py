@@ -76,6 +76,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "max_results": 5,
             "extract_depth": "advanced",
             "enable_extract": True,
+            "enable_search": True,
         },
     },
 }
