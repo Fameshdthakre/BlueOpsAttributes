@@ -104,7 +104,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## ☁️ Deployment
 
-This project is optimized for deployment on **Vercel**.
+This project is optimised for deployment on **Vercel**.
 
 1. Push your code to a Git repository (GitHub/GitLab).
 2. Import the project into Vercel.
