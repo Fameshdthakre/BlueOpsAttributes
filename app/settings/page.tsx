@@ -17,14 +17,18 @@ interface AppConfig {
     {
       enabled: boolean;
       api_key: string;
-      model: string;
-      max_retries: number;
-      timeout: number;
-      rpm_limit: number;
-      temperature: number;
-      top_k: number;
-      top_p: number;
+      model?: string;
+      max_retries?: number;
+      timeout?: number;
+      rpm_limit?: number;
+      temperature?: number;
+      top_k?: number;
+      top_p?: number;
       enable_web_search?: boolean;
+      search_depth?: string;
+      max_results?: number;
+      extract_depth?: string;
+      enable_extract?: boolean;
     }
   >;
 }
@@ -196,7 +200,7 @@ export default function SettingsPage() {
     }
     setTestResult({ provider, ok: true, msg: "Testing..." });
     try {
-      const res = await api.testConnection(provider, pCfg.api_key, pCfg.model);
+      const res = await api.testConnection(provider, pCfg.api_key || "", pCfg.model || "");
       setTestResult({ provider, ok: res.ok, msg: res.message });
     } catch (err: unknown) {
       const e = err as Error;
