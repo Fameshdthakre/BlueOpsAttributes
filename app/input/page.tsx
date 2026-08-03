@@ -72,7 +72,7 @@ export default function InputPage() {
     cancelProcessing,
   } = useApp();
 
-  const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol } = mappings;
+  const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
   const { valAttrCol, valPtypeCol, valDdCol } = valMappings;
 
   const handleAsinUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +93,7 @@ export default function InputPage() {
       const titleMatch = findHeader(h_lower, "title", "name");
       const barcodeMatch = findHeader(h_lower, "barcode", "upc", "ean");
       const descMatch = findHeader(h_lower, "description", "desc");
+      const urlsMatch = findHeader(h_lower, "url", "link");
 
       setMappings({
         asinCol: asinMatch ? res.headers[h_lower.indexOf(asinMatch)] : "",
@@ -102,6 +103,7 @@ export default function InputPage() {
         titleCol: titleMatch ? res.headers[h_lower.indexOf(titleMatch)] : "",
         barcodeCol: barcodeMatch ? res.headers[h_lower.indexOf(barcodeMatch)] : "",
         descCol: descMatch ? res.headers[h_lower.indexOf(descMatch)] : "",
+        urlsCol: urlsMatch ? res.headers[h_lower.indexOf(urlsMatch)] : "",
       });
 
       // Store raw data in session storage for the process page
@@ -207,7 +209,7 @@ export default function InputPage() {
       const jobMap: Record<string, any> = {};
       
       // PRE-COMPUTE: Find exactly which columns are "extra" to avoid `{...row}` and `delete` inside the loop (which is O(N) and deoptimizes V8 hidden classes)
-      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol].filter(Boolean));
+      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol].filter(Boolean));
       const allCols = asinData.length > 0 ? Object.keys(asinData[0]) : [];
       const extraCols = allCols.filter(c => !excludeCols.has(c));
 
@@ -235,6 +237,7 @@ export default function InputPage() {
             title: titleCol ? row[titleCol]?.toString().trim() : "",
             barcode: barcodeCol ? row[barcodeCol]?.toString().trim() : "",
             description: descCol ? row[descCol]?.toString().trim() : "",
+            custom_urls: urlsCol && row[urlsCol] ? row[urlsCol].toString().split("|").map((u: string) => u.trim()).filter(Boolean) : undefined,
             extra_data: extra,
           };
         }
@@ -551,6 +554,30 @@ export default function InputPage() {
                               setMappings({
                                 ...mappings,
                                 descCol: e.target.value,
+                              })
+                            }
+                            className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"
+                          >
+                            <option value="">-- Optional --</option>
+                            {asinHeaders.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 text-text-main font-medium flex items-center gap-2">
+                          Target URLs (Tavily)
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={urlsCol}
+                            onChange={(e) =>
+                              setMappings({
+                                ...mappings,
+                                urlsCol: e.target.value,
                               })
                             }
                             className="w-full bg-bg-card border-none rounded p-2 text-text-main outline-none focus:ring-1 focus:ring-primary transition-all"

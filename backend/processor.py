@@ -92,6 +92,11 @@ def process_single_asin(
             contexts = []
             urls = [f"https://www.amazon.com/dp/{job.asin}"]
             
+            if job.custom_urls:
+                for cu in job.custom_urls:
+                    if cu and cu not in urls:
+                        urls.append(cu)
+            
             if tavily_cfg.get("enable_search", True):
                 logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
                 response = client.search(
