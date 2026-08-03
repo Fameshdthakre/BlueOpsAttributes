@@ -13,3 +13,4 @@ loguru==0.7.3
 python-multipart==0.0.20
 pyarrow==16.0.0
 tenacity==8.2.3
+tavily-python==0.7.27
