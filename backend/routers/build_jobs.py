@@ -1,12 +1,12 @@
 import os
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import traceback
 from loguru import logger
 
-app = FastAPI()
+router = APIRouter()
 
 class Mappings(BaseModel):
     asinCol: str
@@ -26,7 +26,7 @@ class BuildJobsRequest(BaseModel):
     val_ptype_col: Optional[str] = ""
     val_dd_col: Optional[str] = ""
 
-@app.post("/api/build_jobs")
+@router.post("/api/build_jobs")
 def build_jobs(req: BuildJobsRequest):
     """
     Builds the job list entirely server-side from the uploaded parquet file.

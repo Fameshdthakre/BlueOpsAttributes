@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Dict, Any, List
 import traceback
 from loguru import logger
 from backend.database import get_connection
 
-app = FastAPI()
+router = APIRouter()
 
-@app.get("/api/dashboard/stats")
+@router.get("/api/dashboard/stats")
 def get_dashboard_stats(x_user_id: int = Header(...)):
     """
     Returns aggregated stats for the dashboard:

@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException, Query, Request, Header
+from fastapi import APIRouter, HTTPException, Query, Request, Header
 from typing import Optional
 from psycopg2.extras import RealDictCursor
 from backend.database import get_connection
 import json
 
-app = FastAPI()
+router = APIRouter()
 
-@app.get("/api/history")
+@router.get("/api/history")
 def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
     """Fetch session history or details of a specific session."""
     conn = get_connection()
@@ -56,7 +56,7 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
     finally:
         conn.close()
 
-@app.delete("/api/history")
+@router.delete("/api/history")
 async def delete_sessions(request: Request, x_user_id: int = Header(...)):
     """Delete specific sessions or all sessions."""
     try:

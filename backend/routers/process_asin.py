@@ -1,6 +1,6 @@
 import json
 import traceback
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 
@@ -9,7 +9,7 @@ from backend.config import load_config
 from backend.database import get_connection
 from backend.processor import process_single_asin
 
-app = FastAPI()
+router = APIRouter()
 
 class ProcessRequest(BaseModel):
     session_id: str
@@ -23,7 +23,7 @@ class ProcessRequest(BaseModel):
     extra_data: Dict[str, Any] = {}
     validation_map: Dict[str, Any] = {}
 
-@app.post("/api/process_asin")
+@router.post("/api/process_asin")
 def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
     """
     Process a single ASIN and store the result in Postgres.

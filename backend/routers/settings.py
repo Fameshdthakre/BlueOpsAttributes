@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 from backend.config import load_config, save_config
 
-app = FastAPI()
+router = APIRouter()
 
 class ConfigPayload(BaseModel):
     config: Dict[str, Any]
 
-@app.get("/api/settings")
+@router.get("/api/settings")
 def get_settings(x_user_id: int = Header(...)):
     """Load configuration including decrypted API keys."""
     try:
@@ -17,7 +17,7 @@ def get_settings(x_user_id: int = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/settings")
+@router.post("/api/settings")
 def update_settings(payload: ConfigPayload, x_user_id: int = Header(...)):
     """Save configuration (encrypts API keys)."""
     try:

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 from backend.providers.gemini_provider import GeminiProvider
@@ -6,7 +6,7 @@ from backend.providers.openai_provider import OpenAIProvider
 from backend.providers.claude_provider import ClaudeProvider
 from backend.config import load_config
 
-app = FastAPI()
+router = APIRouter()
 
 class TestConnectionRequest(BaseModel):
     provider_name: str
@@ -19,7 +19,7 @@ PROVIDERS = {
     "Claude": ClaudeProvider,
 }
 
-@app.post("/api/test_connection")
+@router.post("/api/test_connection")
 def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
     """Test AI provider connection."""
     config = load_config(x_user_id)

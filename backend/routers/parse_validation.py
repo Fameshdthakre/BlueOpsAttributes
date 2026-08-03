@@ -1,12 +1,12 @@
 import io
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 import json
 
-app = FastAPI()
+router = APIRouter()
 
-@app.post("/api/parse_validation")
+@router.post("/api/parse_validation")
 async def parse_validation(
     file: UploadFile = File(...),
     attribute_col: str = Form(...),

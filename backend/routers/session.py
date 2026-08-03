@@ -1,15 +1,15 @@
 import uuid
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 from backend.database import get_connection
 
-app = FastAPI()
+router = APIRouter()
 
 class CreateSessionRequest(BaseModel):
     input_file: str
 
-@app.post("/api/session")
+@router.post("/api/session")
 def create_session(req: CreateSessionRequest, x_user_id: int = Header(...)):
     """Create a new batch processing session."""
     session_id = str(uuid.uuid4())
@@ -32,7 +32,7 @@ class UpdateSessionRequest(BaseModel):
     session_id: str
     status: str
 
-@app.patch("/api/session")
+@router.patch("/api/session")
 def update_session(req: UpdateSessionRequest, x_user_id: int = Header(...)):
     """Update session status (e.g., Complete, Cancelled)."""
     conn = get_connection()

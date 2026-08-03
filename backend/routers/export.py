@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from backend.result_writer import generate_excel_from_session, generate_wide_excel_from_session
 from backend.database import get_connection
 import datetime
 
-app = FastAPI()
+router = APIRouter()
 
-@app.get("/api/export")
+@router.get("/api/export")
 def export_session(session_id: str, user_id: int, format: str = "long"):
     """
     Generate an Excel file for the given session ID and return it as a download.

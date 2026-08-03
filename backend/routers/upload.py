@@ -2,12 +2,12 @@ import io
 import pandas as pd
 import os
 import uuid
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 
-app = FastAPI()
+router = APIRouter()
 
-@app.post("/api/upload")
+@router.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
     """
     Parse uploaded Excel file.

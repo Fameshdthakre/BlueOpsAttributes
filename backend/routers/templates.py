@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 import pandas as pd
 import io
 import zipfile
 
-app = FastAPI()
+router = APIRouter()
 
-@app.get("/api/templates")
+@router.get("/api/templates")
 def download_templates():
     try:
         # 1. ASIN Template
