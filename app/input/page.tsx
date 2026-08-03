@@ -189,7 +189,6 @@ function InputPage() {
       }
       
       setJobsAndMap(res.jobs, res.validation_map || {});
-      router.push("/process");
     } catch (err: any) {
       setError(err.message || "Failed to build jobs server-side.");
     } finally {
@@ -711,6 +710,31 @@ function InputPage() {
               </Link>
             </div>
           )}
+
+        {/* Load Jobs Button */}
+        {asinCol && attrCol && uploadId && totalJobsCount === 0 && (
+          <div className="flex justify-end mt-8 animate-in fade-in slide-in-from-bottom-4">
+            <button
+              onClick={handleStartProcessing}
+              disabled={isProcessing}
+              className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Building Jobs...
+                </>
+              ) : (
+                <>
+                  Build & Load Jobs
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* --- Processing Dashboard merged below --- */}
         <div
