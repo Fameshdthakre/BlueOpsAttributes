@@ -52,8 +52,7 @@ export default function InputPage() {
     setMappings,
     valMappings,
     setValMappings,
-    setJobs,
-    setValidationMap,
+    setJobsAndMap,
   } = useApp();
 
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
@@ -147,8 +146,7 @@ export default function InputPage() {
         return;
       }
       
-      setJobs(res.jobs);
-      setValidationMap(res.validation_map || {});
+      setJobsAndMap(res.jobs, res.validation_map || {});
       router.push("/process");
     } catch (err: any) {
       setError(err.message || "Failed to build jobs server-side.");
