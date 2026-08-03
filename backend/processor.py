@@ -84,7 +84,11 @@ def process_single_asin(
     if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
         try:
             from tavily import TavilyClient
-            client = TavilyClient(api_key=tavily_cfg.get("api_key"))
+            client = TavilyClient(
+                api_key=tavily_cfg.get("api_key"),
+                project_id=job.product_type if job.product_type else "General",
+                client_name="BlueOpsAttributes"
+            )
             
             attr_details = []
             for attr_id in job.attributes:
@@ -104,51 +108,87 @@ def process_single_asin(
             urls = []
             
             tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
+            tavily_mode = tavily_cfg.get("tavily_mode", "deep")
             
             if job.custom_urls:
                 for cu in job.custom_urls:
                     if cu and cu not in urls:
                         urls.append(cu)
             
-            if tavily_cfg.get("enable_search", True):
-                logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
-                response = client.search(
+            if tavily_mode == "fast":
+                logger.info(f"[Tavily] Performing Fast Q&A search for ASIN {job.asin}...")
+                answer = client.qna_search(
                     query=search_query,
-                    include_answer="advanced",
-                    search_depth=tavily_cfg.get("search_depth", "advanced"),
-                    include_raw_content=tavily_fmt,
-                    chunks_per_source=4,
-                    max_results=tavily_cfg.get("max_results", 5)
+                    search_depth=tavily_cfg.get("search_depth", "advanced")
                 )
-                
-                answer = response.get("answer")
-                if answer:
+                if isinstance(answer, str):
                     raw_contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
-                
-                for res in response.get("results", []):
-                    url = res.get("url")
-                    if url and url not in urls:
-                        urls.append(url)
-                    content = res.get("raw_content") or res.get("content")
-                    if content:
-                        raw_contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
-
-            if urls and tavily_cfg.get("enable_extract", True):
-                try:
-                    logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
-                    extract_res = client.extract(
-                        urls=urls[:3],
+                    
+            elif tavily_mode == "research":
+                logger.info(f"[Tavily] Starting Agentic Research for ASIN {job.asin}...")
+                res_resp = client.research(
+                    input=search_query,
+                    model="pro",
+                    citation_format="none"
+                )
+                request_id = res_resp.get("request_id")
+                if request_id:
+                    import time
+                    retries = 30
+                    while retries > 0:
+                        time.sleep(5)
+                        status_resp = client.get_research(request_id)
+                        if status_resp.get("status") == "completed":
+                            content = status_resp.get("content")
+                            if content:
+                                raw_contexts.append(f"TAVILY RESEARCH REPORT:\n{content}")
+                            break
+                        elif status_resp.get("status") == "failed":
+                            logger.error("[Tavily] Agentic research failed.")
+                            break
+                        retries -= 1
+                        
+            else:
+                # Deep Mode (Default)
+                if tavily_cfg.get("enable_search", True):
+                    logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
+                    response = client.search(
                         query=search_query,
+                        include_answer="advanced",
+                        search_depth=tavily_cfg.get("search_depth", "advanced"),
+                        include_raw_content=tavily_fmt,
                         chunks_per_source=4,
-                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
-                        format=tavily_fmt
+                        max_results=tavily_cfg.get("max_results", 5)
                     )
-                    for ext in extract_res.get("results", []):
-                        raw_ext = ext.get("raw_content")
-                        if raw_ext:
-                            raw_contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
-                except Exception as ext_err:
-                    logger.warning(f"[Tavily] URL extraction skipped/failed: {ext_err}")
+                    
+                    answer = response.get("answer")
+                    if answer:
+                        raw_contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
+                    
+                    for res in response.get("results", []):
+                        url = res.get("url")
+                        if url and url not in urls:
+                            urls.append(url)
+                        content = res.get("raw_content") or res.get("content")
+                        if content:
+                            raw_contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
+    
+                if urls and tavily_cfg.get("enable_extract", True):
+                    try:
+                        logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
+                        extract_res = client.extract(
+                            urls=urls[:3],
+                            query=search_query,
+                            chunks_per_source=4,
+                            extract_depth=tavily_cfg.get("extract_depth", "advanced"),
+                            format=tavily_fmt
+                        )
+                        for ext in extract_res.get("results", []):
+                            raw_ext = ext.get("raw_content")
+                            if raw_ext:
+                                raw_contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
+                    except Exception as ext_err:
+                        logger.warning(f"[Tavily] URL extraction skipped/failed: {ext_err}")
             
             logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks for {job.asin}.")
         except Exception as e:

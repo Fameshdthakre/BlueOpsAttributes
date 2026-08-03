@@ -80,6 +80,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "enable_extract": True,
             "enable_search": True,
             "tavily_format": "markdown",
+            "tavily_mode": "deep",
         },
     },
 }
