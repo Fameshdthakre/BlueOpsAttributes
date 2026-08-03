@@ -19,6 +19,7 @@ interface AppConfig {
       api_key: string;
       model?: string;
       max_retries?: number;
+      max_context_tokens?: number;
       timeout?: number;
       rpm_limit?: number;
       temperature?: number;
@@ -30,6 +31,7 @@ interface AppConfig {
       extract_depth?: string;
       enable_extract?: boolean;
       enable_search?: boolean;
+      tavily_format?: string;
     }
   >;
 }
@@ -152,6 +154,12 @@ export default function SettingsPage() {
           cfg.providers[p].temperature = 0.1;
         if (cfg.providers[p].top_k === undefined) cfg.providers[p].top_k = 40;
         if (cfg.providers[p].top_p === undefined) cfg.providers[p].top_p = 0.95;
+        if (cfg.providers[p].max_context_tokens === undefined) {
+          if (p === "Gemini") cfg.providers[p].max_context_tokens = 500000;
+          else if (p === "OpenAI") cfg.providers[p].max_context_tokens = 128000;
+          else if (p === "Claude") cfg.providers[p].max_context_tokens = 200000;
+          else cfg.providers[p].max_context_tokens = 8000;
+        }
       });
 
       if (!cfg.providers.Tavily) {
@@ -163,6 +171,7 @@ export default function SettingsPage() {
           extract_depth: "advanced",
           enable_extract: true,
           enable_search: true,
+          tavily_format: "markdown",
         };
       }
 
@@ -677,10 +686,35 @@ export default function SettingsPage() {
 
                 {/* Advanced Configurations */}
                 <div>
-                  <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
+                  <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4 mt-6">
                     Advanced Configurations
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                    <div>
+                      <label className="block text-xs text-text-muted mb-1">
+                        Max Tokens
+                      </label>
+                      <input
+                        type="number"
+                        min="1000"
+                        max="2000000"
+                        step="1000"
+                        value={pCfg.max_context_tokens || 8000}
+                        onChange={(e) =>
+                          updateConfig({
+                            ...config,
+                            providers: {
+                              ...config.providers,
+                              [provider]: {
+                                ...pCfg,
+                                max_context_tokens: Number(e.target.value),
+                              },
+                            },
+                          })
+                        }
+                        className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs text-text-muted mb-1">
                         Max Retries
@@ -951,7 +985,28 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
                   Deep Research & Extraction Options
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <div>
+                    <label className="block text-xs text-text-muted mb-1">
+                      Content Format
+                    </label>
+                    <select
+                      value={tCfg.tavily_format || "markdown"}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: { ...tCfg, tavily_format: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
+                    >
+                      <option value="markdown">Markdown</option>
+                      <option value="text">Raw Text</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-xs text-text-muted mb-1">
                       Max Search Results

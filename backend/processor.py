@@ -61,7 +61,20 @@ def process_single_asin(
     primary_name = config.get("primary_provider", "Gemini")
     fallback_order = config.get("fallback_order", ["OpenAI", "Claude"])
     
-    attempts = [primary_name] + [p for p in fallback_order if p != primary_name]
+    all_attempts = [primary_name] + [p for p in fallback_order if p != primary_name]
+    attempts = []
+    for p in all_attempts:
+        p_cfg = config.get("providers", {}).get(p, {})
+        if p_cfg.get("enabled", True) and p_cfg.get("api_key"):
+            attempts.append(p)
+            
+    if not attempts:
+        return ProcessingResult(
+            job=job,
+            attribute_results=[],
+            provider_used="None",
+            error_message="Skipping: No AI providers configured."
+        )
     
     last_error = None
     
@@ -89,8 +102,10 @@ def process_single_asin(
             product_desc = f"{job.asin}; {job.title or job.brand or ''}"
             search_query = f'Find detailed specifications and missing attributes for product: {product_desc}.\nTarget attributes to find: {attr_str}'
             
-            contexts = []
-            urls = [f"https://www.amazon.com/dp/{job.asin}"]
+            raw_contexts = []
+            urls = []
+            
+            tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
             
             if job.custom_urls:
                 for cu in job.custom_urls:
@@ -103,14 +118,14 @@ def process_single_asin(
                     query=search_query,
                     include_answer="advanced",
                     search_depth=tavily_cfg.get("search_depth", "advanced"),
-                    include_raw_content="markdown",
+                    include_raw_content=tavily_fmt,
                     chunks_per_source=4,
                     max_results=tavily_cfg.get("max_results", 5)
                 )
                 
                 answer = response.get("answer")
                 if answer:
-                    contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
+                    raw_contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
                 
                 for res in response.get("results", []):
                     url = res.get("url")
@@ -118,27 +133,26 @@ def process_single_asin(
                         urls.append(url)
                     content = res.get("raw_content") or res.get("content")
                     if content:
-                        contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
+                        raw_contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
 
-            if tavily_cfg.get("enable_extract", True):
+            if urls and tavily_cfg.get("enable_extract", True):
                 try:
                     logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
                     extract_res = client.extract(
                         urls=urls[:3],
                         query=search_query,
                         chunks_per_source=4,
-                        extract_depth=tavily_cfg.get("extract_depth", "advanced")
+                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
+                        format=tavily_fmt
                     )
                     for ext in extract_res.get("results", []):
                         raw_ext = ext.get("raw_content")
                         if raw_ext:
-                            contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
+                            raw_contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
                 except Exception as ext_err:
                     logger.warning(f"[Tavily] URL extraction skipped/failed: {ext_err}")
             
-            if contexts:
-                research_context = "\n\n---\n\n".join(contexts)
-                logger.info(f"[Tavily] Gathered {len(contexts)} context blocks for {job.asin}.")
+            logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks for {job.asin}.")
         except Exception as e:
             logger.error(f"[Tavily] Search failed for {job.asin}: {e}")
     # ----------------------------
@@ -170,8 +184,20 @@ def process_single_asin(
             top_p=p_cfg.get("top_p", 0.95),
         )
         
-        # (Note: Throttling is managed on the frontend via p-limit, 
-        # as an in-memory TokenBucket does not work across isolated Vercel serverless functions)
+        # Assemble smart context fitting the provider's token limit
+        max_tokens = p_cfg.get("max_context_tokens", 8000)
+        research_context = None
+        if raw_contexts:
+            current_tokens = 0
+            selected_contexts = []
+            for ctx in raw_contexts:
+                est_tokens = len(ctx) // 4
+                if current_tokens + est_tokens > max_tokens:
+                    break
+                selected_contexts.append(ctx)
+                current_tokens += est_tokens
+            if selected_contexts:
+                research_context = "\n\n---\n\n".join(selected_contexts)
         
         try:
             result = provider.query(job, validation_map, research_context)
@@ -246,6 +272,13 @@ def process_single_asin(
         except Exception as e:
             last_error = str(e)
             logger.error(f"Provider {provider_name} failed for ASIN {job.asin}: {e}")
+            
+            # Fast fail if the error implies a fundamental issue (like schema or token limit)
+            lower_err = last_error.lower()
+            if "400" in lower_err or "schema" in lower_err or "context" in lower_err or "token limit" in lower_err:
+                logger.error(f"Fundamental error encountered ({provider_name}). Aborting fallback loop.")
+                break
+                
             continue # Try next provider
             
     # All providers failed
