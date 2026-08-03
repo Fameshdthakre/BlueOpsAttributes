@@ -73,30 +73,53 @@ def process_single_asin(
             from tavily import TavilyClient
             client = TavilyClient(api_key=tavily_cfg.get("api_key"))
             
-            query_parts = [job.asin]
-            if job.title: query_parts.append(job.title)
-            if job.brand: query_parts.append(job.brand)
-            if job.product_type: query_parts.append(job.product_type)
-            query_parts.append("specifications features")
-            search_query = " ".join(query_parts)
+            attr_str = "|".join(job.attributes)
+            product_desc = f"{job.asin}; {job.title or job.brand or ''}"
+            search_query = f'find missing attributes: "{attr_str}" for \n{product_desc}.\n'
             
             logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
             response = client.search(
                 query=search_query,
+                include_answer="advanced",
                 search_depth=tavily_cfg.get("search_depth", "advanced"),
                 include_raw_content="markdown",
+                chunks_per_source=4,
                 max_results=tavily_cfg.get("max_results", 5)
             )
             
             contexts = []
+            answer = response.get("answer")
+            if answer:
+                contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
+            
+            urls = []
             for res in response.get("results", []):
+                url = res.get("url")
+                if url:
+                    urls.append(url)
                 content = res.get("raw_content") or res.get("content")
                 if content:
-                    contexts.append(f"Source: {res.get('url')}\n{content}")
+                    contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
+
+            if urls and tavily_cfg.get("enable_extract", True):
+                try:
+                    logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
+                    extract_res = client.extract(
+                        urls=urls[:3],
+                        query=f'find missing attributes: "{attr_str}".',
+                        chunks_per_source=4,
+                        extract_depth=tavily_cfg.get("extract_depth", "advanced")
+                    )
+                    for ext in extract_res.get("results", []):
+                        raw_ext = ext.get("raw_content")
+                        if raw_ext:
+                            contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
+                except Exception as ext_err:
+                    logger.warning(f"[Tavily] URL extraction skipped/failed: {ext_err}")
             
             if contexts:
                 research_context = "\n\n---\n\n".join(contexts)
-                logger.info(f"[Tavily] Gathered {len(contexts)} sources.")
+                logger.info(f"[Tavily] Gathered {len(contexts)} context blocks for {job.asin}.")
         except Exception as e:
             logger.error(f"[Tavily] Search failed for {job.asin}: {e}")
     # ----------------------------

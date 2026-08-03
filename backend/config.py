@@ -74,6 +74,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "api_key": "",
             "search_depth": "advanced",
             "max_results": 5,
+            "extract_depth": "advanced",
+            "enable_extract": True,
         },
     },
 }

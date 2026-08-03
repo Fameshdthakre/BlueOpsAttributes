@@ -23,6 +23,15 @@ PROVIDERS = {
 def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
     """Test AI provider connection."""
     config = load_config(x_user_id)
+    if req.provider_name == "Tavily":
+        try:
+            from tavily import TavilyClient
+            client = TavilyClient(api_key=req.api_key)
+            res = client.search(query="test", max_results=1)
+            return {"ok": True, "message": "Connected successfully to Tavily AI."}
+        except Exception as e:
+            return {"ok": False, "message": str(e)}
+
     provider_cls = PROVIDERS.get(req.provider_name)
     if not provider_cls:
         raise HTTPException(status_code=400, detail="Unknown provider")

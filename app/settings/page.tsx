@@ -148,6 +148,18 @@ export default function SettingsPage() {
         if (cfg.providers[p].top_k === undefined) cfg.providers[p].top_k = 40;
         if (cfg.providers[p].top_p === undefined) cfg.providers[p].top_p = 0.95;
       });
+
+      if (!cfg.providers.Tavily) {
+        cfg.providers.Tavily = {
+          enabled: true,
+          api_key: "",
+          search_depth: "advanced",
+          max_results: 5,
+          extract_depth: "advanced",
+          enable_extract: true,
+        };
+      }
+
       setConfig({ ...cfg });
       setLoading(false);
     });
@@ -815,6 +827,200 @@ export default function SettingsPage() {
             );
           })}
         </div>
+
+        {/* Tavily AI Card */}
+        {(() => {
+          const tCfg = config.providers.Tavily || {
+            enabled: true,
+            api_key: "",
+            search_depth: "advanced",
+            max_results: 5,
+            extract_depth: "advanced",
+            enable_extract: true,
+          };
+
+          return (
+            <div
+              className={`bg-bg-card p-6 rounded-xl border ${
+                tCfg.enabled ? "border-purple-500/40" : "border-bg-input/30 opacity-70"
+              } transition-opacity shadow-lg mt-6`}
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-bg-input">
+                <h2 className="text-xl font-semibold text-text-main flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></span>
+                  Tavily AI (Deep Research & Extraction)
+                </h2>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleTest("Tavily")}
+                    className="text-sm bg-bg-dark border border-purple-500/30 hover:bg-purple-900/20 text-purple-300 px-4 py-2 rounded transition-colors"
+                  >
+                    Test Connection
+                  </button>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-sm text-text-muted">Enabled</span>
+                    <input
+                      type="checkbox"
+                      checked={tCfg.enabled}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: {
+                              ...tCfg,
+                              enabled: e.target.checked,
+                            },
+                          },
+                        })
+                      }
+                      className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {testResult && testResult.provider === "Tavily" && (
+                <div
+                  className={`mb-6 p-3 rounded text-sm font-medium ${
+                    testResult.ok
+                      ? "bg-status-success/10 text-status-success border border-status-success/20"
+                      : "bg-status-error/10 text-status-error border border-status-error/20"
+                  }`}
+                >
+                  {testResult.msg}
+                </div>
+              )}
+
+              {/* API Key */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">
+                    Tavily API Key (Stored Encrypted)
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="tvly-dev-..."
+                    value={tCfg.api_key || ""}
+                    onChange={(e) =>
+                      updateConfig({
+                        ...config,
+                        providers: {
+                          ...config.providers,
+                          Tavily: { ...tCfg, api_key: e.target.value },
+                        },
+                      })
+                    }
+                    className="w-full bg-bg-dark border border-bg-input rounded p-3 text-text-main focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">
+                    Search Depth
+                  </label>
+                  <select
+                    value={tCfg.search_depth || "advanced"}
+                    onChange={(e) =>
+                      updateConfig({
+                        ...config,
+                        providers: {
+                          ...config.providers,
+                          Tavily: { ...tCfg, search_depth: e.target.value },
+                        },
+                      })
+                    }
+                    className="w-full bg-bg-input border-none rounded p-3 text-text-main"
+                  >
+                    <option value="advanced">Advanced (Deep Search + AI Answer)</option>
+                    <option value="basic">Basic (Fast Search)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Advanced Configurations */}
+              <div>
+                <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
+                  Deep Research & Extraction Options
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs text-text-muted mb-1">
+                      Max Search Results
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={tCfg.max_results || 5}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: {
+                              ...tCfg,
+                              max_results: Number(e.target.value),
+                            },
+                          },
+                        })
+                      }
+                      className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-text-muted mb-1">
+                      Extraction Depth
+                    </label>
+                    <select
+                      value={tCfg.extract_depth || "advanced"}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: { ...tCfg, extract_depth: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full bg-bg-input border-none rounded p-2 text-sm text-text-main"
+                    >
+                      <option value="advanced">Advanced Extraction</option>
+                      <option value="basic">Basic Extraction</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={tCfg.enable_extract ?? true}
+                        onChange={(e) =>
+                          updateConfig({
+                            ...config,
+                            providers: {
+                              ...config.providers,
+                              Tavily: {
+                                ...tCfg,
+                                enable_extract: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
+                      />
+                      <span className="text-sm text-text-main font-medium">
+                        Enable Deep URL Extraction
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
           </>
         )}
       </div>
