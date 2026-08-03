@@ -4,7 +4,8 @@ An AI-powered orchestration tool designed to automatically extract and validate 
 
 ## ✨ Features
 
-- **Multi-Model Support**: Dynamically route queries through OpenAI, Google Gemini, or Anthropic Claude.
+- **Multi-Model Support**: Dynamically route queries through OpenAI, Google Gemini, or Anthropic Claude (Updated to latest SDKs).
+- **Web Search Augmentation**: Optionally enable Tavily Web Search to allow AI models to research ASINs live before extraction.
 - **Fallback Logic**: Automatically fallback to secondary AI providers if the primary one fails or rate-limits.
 - **Batch Processing**: Upload Excel/CSV files containing thousands of ASINs and process them concurrently.
 - **Smart Validation**: Uses fuzzy matching (`rapidfuzz`) to validate extracted values against allowed dropdown options for specific product types.
@@ -21,19 +22,20 @@ An AI-powered orchestration tool designed to automatically extract and validate 
 
 **Backend (Serverless)**
 
-- Python 3
+- Python 3.12 (Strictly Pinned)
 - FastAPI
 - PostgreSQL (`psycopg2-binary`) for session tracking
-- `google-genai`, `openai`, `anthropic` SDKs
+- `google-genai` (1.1x), `openai`, `anthropic`, and `tavily-python` SDKs
 
 ## ⚙️ Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
 - **Node.js** (v20 or higher)
-- **Python** (v3.10 or higher)
+- **Python** (v3.12 or higher)
 - **PostgreSQL Database** (Local or cloud-hosted like Supabase/Neon)
 - **API Keys** for at least one AI provider (OpenAI, Gemini, or Anthropic)
+- **Tavily API Key** (Optional, for web search augmentation)
 
 ## 🔑 Environment Variables
 
@@ -51,6 +53,7 @@ ENCRYPTION_KEY="your-base64-fernet-key="
 OPENAI_API_KEY=your_openai_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
+TAVILY_API_KEY=your_tavily_api_key
 ```
 
 ## 🚀 Getting Started
