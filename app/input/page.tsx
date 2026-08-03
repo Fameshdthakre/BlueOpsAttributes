@@ -172,8 +172,23 @@ export default function InputPage() {
       router.push("/process");
     } catch (err: any) {
       setError(err.message || "Failed to build jobs server-side.");
+    } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleDownloadLogs = () => {
+    if (logs.length === 0) return;
+    const content = logs.map(l => `[${l.time}] [${l.level}] ${l.message}`).join("\n");
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `blueops-logs-${new Date().getTime()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
