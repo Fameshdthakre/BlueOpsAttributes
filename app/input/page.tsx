@@ -814,8 +814,9 @@ export default function InputPage() {
 
               <div className="flex gap-2 w-full md:w-auto">
                 {!running ? (
-                  <button
-                    id="tour-start-process"
+                  <>
+                    <button
+                      id="tour-start-process"
                     onClick={startProcessing}
                     className="flex-1 md:flex-none text-sm bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105"
                   >
@@ -844,6 +845,7 @@ export default function InputPage() {
                       View Results
                     </Link>
                   )}
+                  </>
                 ) : (
                   <>
                     {paused ? (
