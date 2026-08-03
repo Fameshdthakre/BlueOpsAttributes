@@ -23,7 +23,7 @@ class ProcessRequest(BaseModel):
     extra_data: Dict[str, Any] = {}
     validation_map: Dict[str, Any] = {}
 
-@router.post("/api/process_asin")
+@router.post("/api/py/process_asin")
 def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
     """
     Process a single ASIN and store the result in Postgres.

@@ -11,7 +11,7 @@ router = APIRouter()
 class RetryFailedRequest(BaseModel):
     session_id: str
 
-@router.post("/api/retry_failed")
+@router.post("/api/py/retry_failed")
 def get_failed_jobs(req: RetryFailedRequest, x_user_id: int = Header(...)):
     """
     Fetch all failed attributes for a given session and reconstruct them into Jobs

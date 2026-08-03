@@ -6,7 +6,7 @@ import zipfile
 
 router = APIRouter()
 
-@router.get("/api/templates")
+@router.get("/api/py/templates")
 def download_templates():
     try:
         # 1. ASIN Template

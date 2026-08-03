@@ -6,7 +6,7 @@ import datetime
 
 router = APIRouter()
 
-@router.get("/api/export")
+@router.get("/api/py/export")
 def export_session(session_id: str, user_id: int, format: str = "long"):
     """
     Generate an Excel file for the given session ID and return it as a download.

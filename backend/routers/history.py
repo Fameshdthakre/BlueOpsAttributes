@@ -6,7 +6,7 @@ import json
 
 router = APIRouter()
 
-@router.get("/api/history")
+@router.get("/api/py/history")
 def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
     """Fetch session history or details of a specific session."""
     conn = get_connection()
@@ -56,7 +56,7 @@ def get_history(session_id: str = Query(None), x_user_id: int = Header(...)):
     finally:
         conn.close()
 
-@router.delete("/api/history")
+@router.delete("/api/py/history")
 async def delete_sessions(request: Request, x_user_id: int = Header(...)):
     """Delete specific sessions or all sessions."""
     try:

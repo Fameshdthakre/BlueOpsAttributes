@@ -44,6 +44,6 @@ app.include_router(update_result.router)
 app.include_router(upload.router)
 app.include_router(retry_failed.router)
 
-@app.get("/api/health")
+@app.get("/api/py/health")
 def health_check():
     return {"status": "ok", "message": "Consolidated API is running."}

@@ -7,7 +7,7 @@ from backend.database import get_connection
 
 router = APIRouter()
 
-@router.get("/api/dashboard/stats")
+@router.get("/api/py/dashboard/stats")
 def get_dashboard_stats(x_user_id: int = Header(...)):
     """
     Returns aggregated stats for the dashboard:

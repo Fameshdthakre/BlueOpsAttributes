@@ -26,7 +26,7 @@ class BuildJobsRequest(BaseModel):
     val_ptype_col: Optional[str] = ""
     val_dd_col: Optional[str] = ""
 
-@router.post("/api/build_jobs")
+@router.post("/api/py/build_jobs")
 def build_jobs(req: BuildJobsRequest):
     """
     Builds the job list entirely server-side from the uploaded parquet file.

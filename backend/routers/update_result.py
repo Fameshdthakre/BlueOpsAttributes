@@ -12,7 +12,7 @@ class UpdateResultRequest(BaseModel):
     attribute_id: str
     final_value: str
 
-@router.post("/api/update_result")
+@router.post("/api/py/update_result")
 def update_result(req: UpdateResultRequest, x_user_id: int = Header(...)):
     """
     Instantly updates the final_value of a job_result in the database.

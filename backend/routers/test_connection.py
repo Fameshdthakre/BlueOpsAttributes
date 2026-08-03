@@ -19,7 +19,7 @@ PROVIDERS = {
     "Claude": ClaudeProvider,
 }
 
-@router.post("/api/test_connection")
+@router.post("/api/py/test_connection")
 def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
     """Test AI provider connection."""
     config = load_config(x_user_id)

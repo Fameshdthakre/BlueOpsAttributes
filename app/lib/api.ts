@@ -32,7 +32,7 @@ export const api = {
   uploadFile: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetchWithAuth("/api/upload", {
+    const res = await fetchWithAuth("/api/py/upload", {
       method: "POST",
       body: formData,
     });
@@ -51,7 +51,7 @@ export const api = {
     formData.append("attribute_col", attributeCol);
     formData.append("product_type_col", productTypeCol);
     formData.append("dropdown_col", dropdownCol);
-    const res = await fetchWithAuth("/api/parse_validation", {
+    const res = await fetchWithAuth("/api/py/parse_validation", {
       method: "POST",
       body: formData,
     });
@@ -60,7 +60,7 @@ export const api = {
   },
 
   buildJobs: async (payload: any) => {
-    const res = await fetchWithAuth("/api/build_jobs", {
+    const res = await fetchWithAuth("/api/py/build_jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -70,7 +70,7 @@ export const api = {
   },
 
   getDashboardStats: async () => {
-    const res = await fetchWithAuth("/api/dashboard/stats", {
+    const res = await fetchWithAuth("/api/py/dashboard/stats", {
       method: "GET",
     });
     if (!res.ok) throw new Error(await res.text());
@@ -78,7 +78,7 @@ export const api = {
   },
 
   createSession: async (inputFile: string, validationMap?: any) => {
-    const res = await fetchWithAuth("/api/session", {
+    const res = await fetchWithAuth("/api/py/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input_file: inputFile, validation_map: validationMap }),
@@ -88,7 +88,7 @@ export const api = {
   },
 
   updateSession: async (sessionId: string, status: string) => {
-    const res = await fetchWithAuth("/api/session", {
+    const res = await fetchWithAuth("/api/py/session", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId, status }),
@@ -102,7 +102,7 @@ export const api = {
     job: Job,
     validationMap: any,
   ): Promise<ProcessResult> => {
-    const res = await fetchWithAuth("/api/process_asin", {
+    const res = await fetchWithAuth("/api/py/process_asin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -122,13 +122,13 @@ export const api = {
   },
 
   getSessions: async (): Promise<{ sessions: SessionResult[] }> => {
-    const res = await fetchWithAuth("/api/history");
+    const res = await fetchWithAuth("/api/py/history");
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   deleteSessions: async (sessionIds?: string[], clearAll: boolean = false) => {
-    const res = await fetchWithAuth("/api/history", {
+    const res = await fetchWithAuth("/api/py/history", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_ids: sessionIds, clear_all: clearAll }),
@@ -140,19 +140,19 @@ export const api = {
   getSessionDetails: async (
     sessionId: string,
   ): Promise<DetailedSessionResult> => {
-    const res = await fetchWithAuth(`/api/history?session_id=${sessionId}`);
+    const res = await fetchWithAuth(`/api/py/history?session_id=${sessionId}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   getSettings: async () => {
-    const res = await fetchWithAuth("/api/settings");
+    const res = await fetchWithAuth("/api/py/settings");
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   saveSettings: async (config: any) => {
-    const res = await fetchWithAuth("/api/settings", {
+    const res = await fetchWithAuth("/api/py/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ config }),
@@ -162,7 +162,7 @@ export const api = {
   },
 
   testConnection: async (provider: string, apiKey: string, model: string) => {
-    const res = await fetchWithAuth("/api/test_connection", {
+    const res = await fetchWithAuth("/api/py/test_connection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider_name: provider, api_key: apiKey, model }),
@@ -172,15 +172,15 @@ export const api = {
   },
 
   exportSessionUrl: async (sessionId: string, format: "long" | "wide" = "long") => {
-    return `/api/export?session_id=${sessionId}&user_id=${await getUserId()}&format=${format}`;
+    return `/api/py/export?session_id=${sessionId}&user_id=${await getUserId()}&format=${format}`;
   },
 
   downloadTemplatesUrl: () => {
-    return `/api/templates`;
+    return `/api/py/templates`;
   },
 
   updateResult: async (payload: any) => {
-    const res = await fetchWithAuth("/api/update_result", {
+    const res = await fetchWithAuth("/api/py/update_result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -190,7 +190,7 @@ export const api = {
   },
 
   getFailedJobs: async (sessionId: string) => {
-    const res = await fetchWithAuth("/api/retry_failed", {
+    const res = await fetchWithAuth("/api/py/retry_failed", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId }),

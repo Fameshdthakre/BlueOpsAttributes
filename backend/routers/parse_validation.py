@@ -6,7 +6,7 @@ import json
 
 router = APIRouter()
 
-@router.post("/api/parse_validation")
+@router.post("/api/py/parse_validation")
 async def parse_validation(
     file: UploadFile = File(...),
     attribute_col: str = Form(...),

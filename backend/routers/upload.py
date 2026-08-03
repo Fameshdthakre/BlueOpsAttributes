@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-@router.post("/api/upload")
+@router.post("/api/py/upload")
 async def upload_file(file: UploadFile = File(...)):
     """
     Parse uploaded Excel file.

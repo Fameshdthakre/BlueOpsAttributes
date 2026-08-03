@@ -8,7 +8,7 @@ router = APIRouter()
 class ConfigPayload(BaseModel):
     config: Dict[str, Any]
 
-@router.get("/api/settings")
+@router.get("/api/py/settings")
 def get_settings(x_user_id: int = Header(...)):
     """Load configuration including decrypted API keys."""
     try:
@@ -17,7 +17,7 @@ def get_settings(x_user_id: int = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/api/settings")
+@router.post("/api/py/settings")
 def update_settings(payload: ConfigPayload, x_user_id: int = Header(...)):
     """Save configuration (encrypts API keys)."""
     try:
