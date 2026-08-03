@@ -55,6 +55,7 @@ export default function InputPage() {
     setJobsAndMap,
     totalJobsCount,
     limit,
+    setLimit,
     concurrency,
     setConcurrency,
     running,
