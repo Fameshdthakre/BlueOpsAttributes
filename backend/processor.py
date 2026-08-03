@@ -322,9 +322,30 @@ def process_single_asin(
             continue # Try next provider
             
     # All providers failed
+    failed_results = []
+    for attr_id in job.attributes:
+        val_entry = validation_map.get(attr_id)
+        val_pt = val_entry.product_type or "" if val_entry else ""
+        val_options = ""
+        if val_entry:
+            if val_entry.is_validation_list:
+                val_options = "|".join(val_entry.allowed_values)
+            else:
+                val_options = val_entry.tooltip or ""
+                
+        failed_results.append(AttributeResult(
+            attribute_id=attr_id,
+            raw_ai_value="",
+            final_value="FAILED",
+            match_status="Failed",
+            confidence=0.0,
+            validated_product_type=val_pt,
+            validated_allowed_options=val_options
+        ))
+
     return ProcessingResult(
         job=job,
-        attribute_results=[],
+        attribute_results=failed_results,
         provider_used="None",
         error_message=last_error or "All providers failed or missing API keys."
     )
