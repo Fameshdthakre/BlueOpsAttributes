@@ -831,8 +831,19 @@ export default function InputPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    {processedCount > 0 ? "Resume" : "Start Extraction"}
+                    {processedCount > 0 
+                      ? (processedCount >= targetLimit ? "Restart Extraction" : "Resume") 
+                      : "Start Extraction"}
                   </button>
+                  
+                  {processedCount > 0 && processedCount >= targetLimit && (
+                    <Link
+                      href="/history"
+                      className="flex-1 md:flex-none text-sm bg-bg-card hover:bg-bg-input text-text-main border border-primary/50 px-6 py-2.5 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+                    >
+                      View Results
+                    </Link>
+                  )}
                 ) : (
                   <>
                     {paused ? (
