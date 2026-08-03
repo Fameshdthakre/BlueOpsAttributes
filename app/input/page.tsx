@@ -52,8 +52,6 @@ export default function InputPage() {
     setMappings,
     valMappings,
     setValMappings,
-    setJobs,
-    setValidationMap,
   } = useApp();
 
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
