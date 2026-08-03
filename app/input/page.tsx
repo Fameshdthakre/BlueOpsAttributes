@@ -22,6 +22,7 @@ export default function InputPage() {
   const [validationFile, setValidationFile] = useState<File | null>(null);
   const [uploadId, setUploadId] = useState<string>("");
   const [valUploadId, setValUploadId] = useState<string>("");
+  const [logFilter, setLogFilter] = useState("All");
 
   // Auto-scroll logic variables for logs
   const logsEndRef = useRef<HTMLDivElement>(null);
