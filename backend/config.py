@@ -69,6 +69,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "top_p": 0.95,
             "enable_web_search": True,
         },
+        "Tavily": {
+            "enabled": True,
+            "api_key": "",
+            "search_depth": "advanced",
+            "max_results": 5,
+        },
     },
 }
 

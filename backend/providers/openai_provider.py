@@ -25,8 +25,9 @@ class OpenAIProvider(BaseProvider):
         self,
         job: Job,
         validation_map: dict[str, ValidationEntry | None],
+        research_context: str | None = None,
     ) -> ProviderResult:
-        prompt = self._build_prompt(job, validation_map)
+        prompt = self._build_prompt(job, validation_map, research_context)
         client = self._get_client()
 
         kwargs = {

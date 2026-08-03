@@ -1,3 +1,0 @@
-## 2026-07-27 - [O(n) Object Cloning & Deletion inside a Loop]
-**Learning:** Found a hot loop in `app/input/page.tsx` processing up to 50,000 rows where `{...row}` is used followed by `delete extra[c]` for 5 properties. `delete` deoptimizes JavaScript objects in V8, turning them into slower dictionary structures. Doing this inside a large synchronous loop freezes the main thread.
-**Action:** Instead of cloning and deleting, pre-compute the exact keys to keep before the loop, and construct the new object by assigning only those keys. This is vastly faster and avoids hidden class deoptimization.

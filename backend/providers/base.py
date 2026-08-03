@@ -38,6 +38,7 @@ class BaseProvider(ABC):
         self,
         job: Job,
         validation_map: dict[str, ValidationEntry | None],
+        research_context: str | None = None,
     ) -> ProviderResult:
         """Query the provider for ALL attributes of a single ASIN in one call."""
         ...
@@ -51,11 +52,20 @@ class BaseProvider(ABC):
         self,
         job: Job,
         validation_map: dict[str, ValidationEntry | None],
+        research_context: str | None = None,
     ) -> str:
         """Build a structured batched JSON prompt for the AI."""
         lines = []
         lines.append("You are an Amazon product data specialist.")
         lines.append("Search the web for information about this Amazon product and extract the requested attributes.\n")
+        
+        if research_context:
+            lines.append("=" * 60)
+            lines.append("DEEP RESEARCH CONTEXT:")
+            lines.append("=" * 60)
+            lines.append("Use the following gathered research to accurately extract the attributes:\n")
+            lines.append(research_context)
+            lines.append("\n")
         
         context = {
             "ASIN": job.asin,

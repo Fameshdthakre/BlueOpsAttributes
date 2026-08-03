@@ -25,10 +25,11 @@ class GeminiProvider(BaseProvider):
         self,
         job: Job,
         validation_map: dict[str, ValidationEntry | None],
+        research_context: str | None = None,
     ) -> ProviderResult:
         from google.genai import types
 
-        prompt = self._build_prompt(job, validation_map)
+        prompt = self._build_prompt(job, validation_map, research_context)
         client = self._get_client()
 
         tools = [types.Tool(google_search=types.GoogleSearch())] if self.enable_web_search else None

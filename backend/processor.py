@@ -65,6 +65,42 @@ def process_single_asin(
     
     last_error = None
     
+    # --- TAVILY RESEARCH STEP ---
+    research_context = None
+    tavily_cfg = config.get("providers", {}).get("Tavily", {})
+    if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
+        try:
+            from tavily import TavilyClient
+            client = TavilyClient(api_key=tavily_cfg.get("api_key"))
+            
+            query_parts = [job.asin]
+            if job.title: query_parts.append(job.title)
+            if job.brand: query_parts.append(job.brand)
+            if job.product_type: query_parts.append(job.product_type)
+            query_parts.append("specifications features")
+            search_query = " ".join(query_parts)
+            
+            logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
+            response = client.search(
+                query=search_query,
+                search_depth=tavily_cfg.get("search_depth", "advanced"),
+                include_raw_content="markdown",
+                max_results=tavily_cfg.get("max_results", 5)
+            )
+            
+            contexts = []
+            for res in response.get("results", []):
+                content = res.get("raw_content") or res.get("content")
+                if content:
+                    contexts.append(f"Source: {res.get('url')}\n{content}")
+            
+            if contexts:
+                research_context = "\n\n---\n\n".join(contexts)
+                logger.info(f"[Tavily] Gathered {len(contexts)} sources.")
+        except Exception as e:
+            logger.error(f"[Tavily] Search failed for {job.asin}: {e}")
+    # ----------------------------
+    
     for provider_name in attempts:
         provider_cls = PROVIDERS.get(provider_name)
         if not provider_cls:
@@ -96,7 +132,7 @@ def process_single_asin(
         # as an in-memory TokenBucket does not work across isolated Vercel serverless functions)
         
         try:
-            result = provider.query(job, validation_map)
+            result = provider.query(job, validation_map, research_context)
             
             logger.info(
                 f"[{provider_name}] Sent Prompt for ASIN {job.asin}:\n{result.prompt_sent}\n"
