@@ -713,11 +713,14 @@ function InputPage() {
           )}
 
         {/* --- Processing Dashboard merged below --- */}
-        {totalJobsCount > 0 && hasApiKeys === true && (
-          <div
-            id="processing-section"
-            className="space-y-8 pt-8 border-t border-bg-input mt-12 animate-in fade-in slide-in-from-bottom-4 duration-500"
-          >
+        <div
+          id="processing-section"
+          className={`space-y-8 pt-8 border-t border-bg-input mt-12 transition-opacity duration-500 ${
+            totalJobsCount > 0 && hasApiKeys === true
+              ? "opacity-100"
+              : "opacity-40 pointer-events-none"
+          }`}
+        >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
               <h2 className="text-2xl font-bold text-text-main flex items-center gap-2">
                 <span className="text-primary">3</span> Processing Dashboard{" "}
@@ -1037,8 +1040,7 @@ function InputPage() {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
     </div>
   );
 }
