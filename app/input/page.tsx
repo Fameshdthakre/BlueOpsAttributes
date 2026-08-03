@@ -74,6 +74,7 @@ export default function InputPage() {
   } = useApp();
 
   const targetLimit = typeof limit === 'number' && limit > 0 ? limit : totalJobsCount;
+  const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
   const { valAttrCol, valPtypeCol, valDdCol } = valMappings;
