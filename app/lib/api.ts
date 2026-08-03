@@ -77,11 +77,11 @@ export const api = {
     return res.json();
   },
 
-  createSession: async (inputFile: string) => {
+  createSession: async (inputFile: string, validationMap?: any) => {
     const res = await fetchWithAuth("/api/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input_file: inputFile }),
+      body: JSON.stringify({ input_file: inputFile, validation_map: validationMap }),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -184,6 +184,16 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  getFailedJobs: async (sessionId: string) => {
+    const res = await fetchWithAuth("/api/retry_failed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId }),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();

@@ -78,6 +78,21 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                             raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
                             input_tokens, output_tokens
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (session_id, asin, attribute_id) DO UPDATE SET
+                            product_type = EXCLUDED.product_type,
+                            brand = EXCLUDED.brand,
+                            title = EXCLUDED.title,
+                            final_value = EXCLUDED.final_value,
+                            match_status = EXCLUDED.match_status,
+                            provider_used = EXCLUDED.provider_used,
+                            confidence = EXCLUDED.confidence,
+                            raw_ai_value = EXCLUDED.raw_ai_value,
+                            extra_data = EXCLUDED.extra_data,
+                            validated_product_type = EXCLUDED.validated_product_type,
+                            validated_allowed_options = EXCLUDED.validated_allowed_options,
+                            input_tokens = EXCLUDED.input_tokens,
+                            output_tokens = EXCLUDED.output_tokens,
+                            created_at = NOW()
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
@@ -99,4 +114,33 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         
     except Exception as e:
         traceback.print_exc()
+        # Persist complete crashes as "Failed" rows so they can be retried
+        try:
+            conn = get_connection()
+            with conn.cursor() as cur:
+                db_extra_err = req.extra_data.copy()
+                if req.barcode: db_extra_err["barcode"] = req.barcode
+                if req.description: db_extra_err["description"] = req.description
+                for attr in req.attributes:
+                    cur.execute("""
+                        INSERT INTO job_results (
+                            session_id, asin, attribute_id, product_type, brand, title,
+                            final_value, match_status, provider_used, confidence,
+                            raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
+                            input_tokens, output_tokens
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (session_id, asin, attribute_id) DO UPDATE SET
+                            match_status = EXCLUDED.match_status,
+                            provider_used = EXCLUDED.provider_used,
+                            extra_data = EXCLUDED.extra_data,
+                            created_at = NOW()
+                    """, (
+                        req.session_id, req.asin, attr, req.product_type, req.brand, req.title,
+                        "", "Failed", "None", 0.0, "", json.dumps(db_extra_err), "", "", 0, 0
+                    ))
+            conn.commit()
+            conn.close()
+        except Exception as db_err:
+            logger.error(f"Failed to insert crash row into DB: {db_err}")
+            
         raise HTTPException(status_code=500, detail=str(e))

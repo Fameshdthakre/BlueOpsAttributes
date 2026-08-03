@@ -55,7 +55,7 @@ interface AppContextType {
   setEnableLogs: (enable: boolean) => void;
 
   // Actions
-  startProcessing: () => Promise<void>;
+  startProcessing: (existingSessionId?: string) => Promise<void>;
   pauseProcessing: () => void;
   resumeProcessing: () => void;
   cancelProcessing: () => Promise<void>;
@@ -109,6 +109,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const sessionIdRef = useRef<string | null>(null);
   const concurrencyRef = useRef(1);
   const enableLogsRef = useRef(true);
+  
+  // Throttling logic
+  const requestHistoryRef = useRef<number[]>([]);
+  const rpmLimitRef = useRef(15);
+  const isThrottledRef = useRef(false);
 
   // Sync refs
   useEffect(() => {
@@ -141,7 +146,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (
       !runningRef.current ||
       pausedRef.current ||
-      queueRef.current.length === 0
+      queueRef.current.length === 0 ||
+      isThrottledRef.current
     ) {
       return;
     }
@@ -149,6 +155,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (runningCountRef.current >= concurrencyRef.current) {
       return;
     }
+
+    // --- RPM Throttling Check ---
+    const now = Date.now();
+    requestHistoryRef.current = requestHistoryRef.current.filter(t => now - t < 60000);
+    if (requestHistoryRef.current.length >= rpmLimitRef.current) {
+      const oldest = requestHistoryRef.current[0];
+      const waitTime = 60000 - (now - oldest);
+      addLog("WARNING", `RPM Limit reached (${rpmLimitRef.current}/min). Pausing queue for ${Math.ceil(waitTime/1000)}s...`);
+      
+      isThrottledRef.current = true;
+      setTimeout(() => {
+        isThrottledRef.current = false;
+        // Resume queue
+        for (let i = runningCountRef.current; i < concurrencyRef.current; i++) {
+          processNext();
+        }
+      }, waitTime + 100);
+      
+      return;
+    }
+    
+    // Register the request
+    requestHistoryRef.current.push(now);
+    // ----------------------------
 
     const job = queueRef.current.shift();
     if (!job) return;
@@ -217,7 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const startProcessing = async () => {
+  const startProcessing = async (existingSessionId?: string) => {
     setRunning(true);
     setPaused(false);
     runningRef.current = true;
@@ -228,6 +258,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUnresolvedCount(0);
     setFailedCount(0);
     setLogs([]);
+    requestHistoryRef.current = [];
+    isThrottledRef.current = false;
+
+    // Fetch config to get RPM Limit
+    try {
+      const conf = await api.getSettings();
+      const primary = conf.primary_provider || "Gemini";
+      if (conf.providers && conf.providers[primary] && conf.providers[primary].rpm_limit) {
+        rpmLimitRef.current = conf.providers[primary].rpm_limit;
+      }
+    } catch(e) {
+      // ignore
+    }
 
     const savedJobs = await idbGet<Job[]>("blueops_jobs") || [];
     const numLimit = typeof limit === 'number' ? limit : 0;
@@ -239,24 +282,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await idbDel("blueops_jobs");
     await idbSet("blueops_jobs_queue", queueRef.current);
 
-    addLog("INFO", `Creating session for ${jobsToRun.length} jobs...`);
-
-    try {
-      const res = await api.createSession("WebUpload");
-      sessionIdRef.current = res.session_id;
-
+    if (existingSessionId) {
+      addLog("INFO", `Resuming existing session ${existingSessionId} for ${jobsToRun.length} jobs...`);
+      sessionIdRef.current = existingSessionId;
       addLog(
         "INFO",
-        `Session created: ${res.session_id}. Starting fan-out with concurrency ${concurrency}...`,
+        `Starting fan-out with concurrency ${concurrency}...`,
       );
-
       for (let i = 0; i < concurrency; i++) {
         processNext();
       }
-    } catch (err: any) {
-      addLog("ERROR", `Failed to create session: ${err.message}`);
-      setRunning(false);
-      runningRef.current = false;
+    } else {
+      addLog("INFO", `Creating session for ${jobsToRun.length} jobs...`);
+
+      try {
+        const res = await api.createSession("WebUpload", validationMap);
+        sessionIdRef.current = res.session_id;
+
+        addLog(
+          "INFO",
+          `Session created: ${res.session_id}. Starting fan-out with concurrency ${concurrency}...`,
+        );
+
+        for (let i = 0; i < concurrency; i++) {
+          processNext();
+        }
+      } catch (err: any) {
+        addLog("ERROR", `Failed to create session: ${err.message}`);
+        setRunning(false);
+        runningRef.current = false;
+      }
     }
   };
 

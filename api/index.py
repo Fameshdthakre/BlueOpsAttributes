@@ -14,7 +14,8 @@ from backend.routers import (
     templates,
     test_connection,
     update_result,
-    upload
+    upload,
+    retry_failed
 )
 
 app = FastAPI(title="BlueOps API", description="Consolidated API for Vercel")
@@ -41,6 +42,7 @@ app.include_router(templates.router)
 app.include_router(test_connection.router)
 app.include_router(update_result.router)
 app.include_router(upload.router)
+app.include_router(retry_failed.router)
 
 @app.get("/api/health")
 def health_check():

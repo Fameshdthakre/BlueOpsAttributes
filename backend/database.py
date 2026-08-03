@@ -107,7 +107,8 @@ def init_db():
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
         timestamp TIMESTAMPTZ DEFAULT NOW(),
         input_file TEXT,
-        status TEXT DEFAULT 'Running'
+        status TEXT DEFAULT 'Running',
+        validation_map JSONB
     );
     
     -- MIGRATIONS for existing tables
@@ -144,6 +145,11 @@ def init_db():
             ALTER TABLE job_results ADD COLUMN input_tokens INT DEFAULT 0;
             ALTER TABLE job_results ADD COLUMN output_tokens INT DEFAULT 0;
         END IF;
+
+        -- sessions validation_map
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='validation_map') THEN
+            ALTER TABLE sessions ADD COLUMN validation_map JSONB;
+        END IF;
     END $$;
 
     -- Individual attribute results
@@ -165,7 +171,8 @@ def init_db():
         validated_allowed_options TEXT,
         input_tokens INT DEFAULT 0,
         output_tokens INT DEFAULT 0,
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(session_id, asin, attribute_id)
     );
 
     -- Indexes
@@ -173,6 +180,17 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_job_results_session ON job_results(session_id);
     CREATE INDEX IF NOT EXISTS idx_job_results_status ON job_results(match_status);
+
+    -- Unique constraint for job_results
+    DO $$ 
+    BEGIN 
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint 
+            WHERE conname = 'job_results_session_id_asin_attribute_id_key'
+        ) THEN
+            ALTER TABLE job_results ADD CONSTRAINT job_results_session_id_asin_attribute_id_key UNIQUE (session_id, asin, attribute_id);
+        END IF;
+    END $$;
 
     -- Trigger Function for updated_at
     CREATE OR REPLACE FUNCTION update_updated_at_column()

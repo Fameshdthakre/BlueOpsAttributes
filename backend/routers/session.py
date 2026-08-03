@@ -6,8 +6,11 @@ from backend.database import get_connection
 
 router = APIRouter()
 
+import json
+
 class CreateSessionRequest(BaseModel):
     input_file: str
+    validation_map: Optional[dict] = None
 
 @router.post("/api/session")
 def create_session(req: CreateSessionRequest, x_user_id: int = Header(...)):
@@ -16,9 +19,10 @@ def create_session(req: CreateSessionRequest, x_user_id: int = Header(...)):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
+            val_map_json = json.dumps(req.validation_map) if req.validation_map else None
             cur.execute(
-                "INSERT INTO sessions (session_id, user_id, input_file, status) VALUES (%s, %s, %s, %s)",
-                (session_id, x_user_id, req.input_file, "Running")
+                "INSERT INTO sessions (session_id, user_id, input_file, status, validation_map) VALUES (%s, %s, %s, %s, %s)",
+                (session_id, x_user_id, req.input_file, "Running", val_map_json)
             )
         conn.commit()
         return {"session_id": session_id}

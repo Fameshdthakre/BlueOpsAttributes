@@ -2,17 +2,28 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/app/lib/api";
 import { useApp } from "@/app/lib/AppContext";
 import PageHeader from "@/app/components/PageHeader";
+import { Suspense } from "react";
 
 const findHeader = (headersLower: string[], ...keywords: string[]) => {
   return headersLower.find((h) => keywords.some((k) => h.includes(k)));
 };
 
-export default function InputPage() {
+export default function InputPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <InputPage />
+    </Suspense>
+  );
+}
+
+function InputPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const retrySessionId = searchParams.get("retry");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null);
@@ -73,6 +84,15 @@ export default function InputPage() {
     resumeProcessing,
     cancelProcessing,
   } = useApp();
+
+  // Handle auto-start if retry param is present and jobs are loaded
+  useEffect(() => {
+    if (retrySessionId && totalJobsCount > 0 && !running && !paused && processedCount === 0) {
+      // Clear the URL param so it doesn't auto-start again if they refresh
+      router.replace("/input");
+      startProcessing(retrySessionId);
+    }
+  }, [retrySessionId, totalJobsCount, running, paused, processedCount, router, startProcessing]);
 
   const targetLimit = typeof limit === 'number' && limit > 0 ? limit : totalJobsCount;
   const progressPercent = targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
@@ -711,7 +731,7 @@ export default function InputPage() {
                   <>
                     <button
                       id="tour-start-process"
-                    onClick={startProcessing}
+                    onClick={() => startProcessing()}
                     className="flex-1 md:flex-none text-sm bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105"
                   >
                     <svg

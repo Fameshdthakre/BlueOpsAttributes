@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
+import { useApp } from "@/app/lib/AppContext";
 import {
   SessionResult,
   DetailedSessionResult,
@@ -12,6 +14,9 @@ import { STATUS_COLORS } from "@/app/lib/constants";
 import PageHeader from "@/app/components/PageHeader";
 
 export default function HistoryPage() {
+  const router = useRouter();
+  const { setJobsAndMap, startProcessing } = useApp();
+  
   const [sessions, setSessions] = useState<SessionResult[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [sessionDetails, setSessionDetails] =
@@ -145,6 +150,37 @@ export default function HistoryPage() {
     }
   };
 
+  const handleRetryFailed = async () => {
+    if (!selectedSessionId || !sessionDetails) return;
+    
+    // Check if there are any failed jobs first
+    const hasFailed = sessionDetails.results.some(r => r.match_status === "Failed" || r.provider_used === "None");
+    if (!hasFailed) {
+      setError("No failed jobs to retry in this session.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.getFailedJobs(selectedSessionId);
+      if (!res.jobs || res.jobs.length === 0) {
+        setError("No failed jobs could be reconstructed.");
+        return;
+      }
+      
+      // Load jobs into context
+      await setJobsAndMap(res.jobs, res.validation_map || {});
+      
+      // Navigate to input (processing dashboard) and auto-start
+      // Pass ?retry=session_id so the dashboard knows to start immediately
+      router.push(`/input?retry=${selectedSessionId}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to prepare retry jobs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleSelection = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     const next = new Set(selectedForDeletion);
@@ -243,6 +279,20 @@ export default function HistoryPage() {
             />
           </svg>
           Export {viewMode === "wide" ? "Grouped" : "Detailed"}
+          </button>
+        </div>
+
+        <div id="tour-retry" className="inline-block relative ml-4">
+          <button
+            onClick={handleRetryFailed}
+            disabled={!selectedSessionId || !sessionDetails || !sessionDetails.results.some(r => r.match_status === "Failed" || r.provider_used === "None")}
+            className="bg-status-warning hover:bg-status-warning/90 text-bg-dark px-4 py-2 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+            title="Retry any Failed jobs in this session"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Retry Failed
           </button>
         </div>
       </PageHeader>

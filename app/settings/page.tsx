@@ -156,7 +156,7 @@ export default function SettingsPage() {
         if (cfg.providers[p].top_k === undefined) cfg.providers[p].top_k = 40;
         if (cfg.providers[p].top_p === undefined) cfg.providers[p].top_p = 0.95;
         if (cfg.providers[p].max_context_tokens === undefined) {
-          if (p === "Gemini") cfg.providers[p].max_context_tokens = 500000;
+          if (p === "Gemini") cfg.providers[p].max_context_tokens = 2000000;
           else if (p === "OpenAI") cfg.providers[p].max_context_tokens = 128000;
           else if (p === "Claude") cfg.providers[p].max_context_tokens = 200000;
           else cfg.providers[p].max_context_tokens = 8000;
