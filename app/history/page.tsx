@@ -60,20 +60,20 @@ export default function HistoryPage() {
   };
 
   const loadSessionDetails = async (id: string) => {
-    setLoadingSession(true);
+    setLoading(true);
     try {
       const details = await api.getSessionDetails(id);
       setSessionDetails(details);
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setLoadingSession(false);
+      setLoading(false);
     }
   };
 
   const handleSelectSession = async (session_id: string) => {
     try {
-      setLoadingSession(true);
+      setLoading(true);
       setError(null);
       const res = await api.getSessionDetails(session_id);
       setSelectedSessionId(session_id);
@@ -83,7 +83,7 @@ export default function HistoryPage() {
     } catch (err: any) {
       setError(err.message || "Failed to load session details.");
     } finally {
-      setLoadingSession(false);
+      setLoading(false);
     }
   };
 
