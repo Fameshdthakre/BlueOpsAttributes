@@ -53,7 +53,26 @@ export default function InputPage() {
     valMappings,
     setValMappings,
     setJobsAndMap,
+    totalJobsCount,
+    limit,
+    concurrency,
+    setConcurrency,
+    running,
+    paused,
+    processedCount,
+    validatedCount,
+    unresolvedCount,
+    failedCount,
+    logs,
+    enableLogs,
+    setEnableLogs,
+    startProcessing,
+    pauseProcessing,
+    resumeProcessing,
+    cancelProcessing,
   } = useApp();
+
+  const targetLimit = typeof limit === 'number' && limit > 0 ? limit : totalJobsCount;
 
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
   const { valAttrCol, valPtypeCol, valDdCol } = valMappings;
