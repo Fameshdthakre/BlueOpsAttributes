@@ -20,6 +20,12 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  
+  const [editingCell, setEditingCell] = useState<{ asin: string; attribute_id: string } | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedForDeletion, setSelectedForDeletion] = useState<Set<string>>(
     new Set(),
@@ -54,14 +60,55 @@ export default function HistoryPage() {
   };
 
   const loadSessionDetails = async (id: string) => {
-    setLoading(true);
+    setLoadingSession(true);
     try {
       const details = await api.getSessionDetails(id);
       setSessionDetails(details);
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      setLoadingSession(false);
+    }
+  };
+
+  const handleSelectSession = async (session_id: string) => {
+    try {
+      setLoadingSession(true);
+      setError(null);
+      const res = await api.getSessionDetails(session_id);
+      setSelectedSessionId(session_id);
+      setSessionDetails(res);
+      setStatusFilter("All");
+      setCurrentPage(1); // Reset to first page
+    } catch (err: any) {
+      setError(err.message || "Failed to load session details.");
+    } finally {
+      setLoadingSession(false);
+    }
+  };
+
+  const handleSaveCell = async () => {
+    if (!editingCell || !selectedSessionId) return;
+    try {
+      await api.updateResult({
+        session_id: selectedSessionId,
+        asin: editingCell.asin,
+        attribute_id: editingCell.attribute_id,
+        final_value: editingValue
+      });
+      // Re-fetch to update
+      await handleSelectSession(selectedSessionId);
+    } catch(err: any) {
+      setError(err.message || "Failed to update result.");
+    }
+    setEditingCell(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveCell();
+    } else if (e.key === "Escape") {
+      setEditingCell(null);
     }
   };
 
@@ -157,6 +204,12 @@ export default function HistoryPage() {
     
     return { wideRows: Object.values(grouped), wideCols: Array.from(cols) };
   }, [filteredResults, sessionDetails, viewMode]);
+
+  const paginatedResults = filteredResults.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedWideRows = wideRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = viewMode === "wide" 
+    ? Math.max(1, Math.ceil(wideRows.length / pageSize))
+    : Math.max(1, Math.ceil(filteredResults.length / pageSize));
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">
@@ -279,7 +332,7 @@ export default function HistoryPage() {
                 {sessions.map((s) => (
                   <div
                     key={s.session_id}
-                    onClick={() => setSelectedSessionId(s.session_id)}
+                    onClick={() => handleSelectSession(s.session_id)}
                     className={`p-3 rounded-lg cursor-pointer border transition-colors flex gap-3 ${
                       selectedSessionId === s.session_id
                         ? "bg-primary/10 border-primary text-primary"
@@ -374,8 +427,22 @@ export default function HistoryPage() {
                     Grouped (Pivot)
                   </button>
                 </div>
-                <div className="text-sm text-text-muted">
-                  Showing {filteredResults.length} records &bull; {wideRows.length} unique ASINs
+                <div className="flex gap-2 items-center text-sm text-text-muted mt-4 lg:mt-0">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className="px-2 py-1 rounded bg-bg-input disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className="px-2 py-1 rounded bg-bg-input disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
 
@@ -399,7 +466,7 @@ export default function HistoryPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-bg-input">
-                      {wideRows.map((r, i) => (
+                      {paginatedWideRows.map((r, i) => (
                         <tr key={i} className="hover:bg-bg-input/50 transition-colors">
                           <td className="p-4 font-mono text-xs">{r.asin}</td>
                           <td className="p-4 text-xs text-text-muted">{r.product_type}</td>
@@ -408,8 +475,27 @@ export default function HistoryPage() {
                           <td className="p-4 text-xs text-text-muted">{r.barcode}</td>
                           <td className="p-4 text-xs text-text-muted truncate max-w-[150px]" title={r.description}>{r.description}</td>
                           {wideCols.map(c => (
-                            <td key={c} className="p-4 text-xs font-semibold text-primary max-w-[200px] truncate" title={r[c] || ""}>
-                              {r[c] || ""}
+                            <td 
+                              key={c} 
+                              className="p-4 text-xs font-semibold text-primary max-w-[200px] truncate cursor-pointer hover:bg-primary/10" 
+                              title="Double click to edit"
+                              onDoubleClick={() => {
+                                setEditingCell({ asin: r.asin, attribute_id: c });
+                                setEditingValue(r[c] || "");
+                              }}
+                            >
+                              {editingCell?.asin === r.asin && editingCell?.attribute_id === c ? (
+                                <input 
+                                  autoFocus
+                                  value={editingValue}
+                                  onChange={e => setEditingValue(e.target.value)}
+                                  onBlur={handleSaveCell}
+                                  onKeyDown={handleKeyDown}
+                                  className="w-full bg-bg-dark border border-primary px-2 py-1 rounded text-text-main"
+                                />
+                              ) : (
+                                r[c] || ""
+                              )}
                             </td>
                           ))}
                         </tr>
@@ -475,7 +561,7 @@ export default function HistoryPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-bg-input">
-                    {filteredResults.map((r, i) => {
+                    {paginatedResults.map((r, i) => {
                       let parsedExtra: any = {};
                       if (r.extra_data) {
                         try {
@@ -518,10 +604,25 @@ export default function HistoryPage() {
                             {r.validated_allowed_options}
                           </td>
                           <td
-                            className="p-4 font-semibold text-primary max-w-[200px] truncate"
-                            title={r.final_value}
+                            className="p-4 font-bold text-primary max-w-[300px] truncate cursor-pointer hover:bg-primary/10"
+                            title="Double click to edit"
+                            onDoubleClick={() => {
+                              setEditingCell({ asin: r.asin, attribute_id: r.attribute_id });
+                              setEditingValue(r.final_value);
+                            }}
                           >
-                            {r.final_value}
+                            {editingCell?.asin === r.asin && editingCell?.attribute_id === r.attribute_id ? (
+                              <input 
+                                autoFocus
+                                value={editingValue}
+                                onChange={e => setEditingValue(e.target.value)}
+                                onBlur={handleSaveCell}
+                                onKeyDown={handleKeyDown}
+                                className="w-full bg-bg-dark border border-primary px-2 py-1 rounded text-text-main"
+                              />
+                            ) : (
+                              r.final_value
+                            )}
                           </td>
                           <td className="p-4">
                             <span

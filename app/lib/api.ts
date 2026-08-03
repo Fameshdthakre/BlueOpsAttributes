@@ -160,4 +160,14 @@ export const api = {
   downloadTemplatesUrl: () => {
     return `/api/templates`;
   },
+
+  updateResult: async (payload: any) => {
+    const res = await fetchWithAuth("/api/update_result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };

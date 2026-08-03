@@ -75,12 +75,14 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                         INSERT INTO job_results (
                             session_id, asin, attribute_id, product_type, brand, title,
                             final_value, match_status, provider_used, confidence,
-                            raw_ai_value, extra_data, validated_product_type, validated_allowed_options
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
+                            input_tokens, output_tokens
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
-                        ar.raw_ai_value, json.dumps(db_extra), ar.validated_product_type, ar.validated_allowed_options
+                        ar.raw_ai_value, json.dumps(db_extra), ar.validated_product_type, ar.validated_allowed_options,
+                        result.input_tokens, result.output_tokens
                     ))
             conn.commit()
         finally:

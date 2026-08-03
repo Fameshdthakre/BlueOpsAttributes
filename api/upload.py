@@ -1,5 +1,7 @@
 import io
 import pandas as pd
+import os
+import uuid
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -27,14 +29,20 @@ async def upload_file(file: UploadFile = File(...)):
         # Take first 10 rows for preview
         preview = df.head(10).to_dict(orient="records")
         
-        # Return all rows for the client to hold in state
-        all_rows = df.to_dict(orient="records")
+        # Write to temporary file for the build_jobs endpoint to pick up
+        upload_id = str(uuid.uuid4())
+        tmp_dir = "/tmp"
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+        parquet_path = os.path.join(tmp_dir, f"{upload_id}.parquet")
+        df.to_parquet(parquet_path)
         
         return JSONResponse({
+            "upload_id": upload_id,
             "headers": headers,
             "preview": preview,
-            "row_count": len(df),
-            "data": all_rows
+            "row_count": len(df)
         })
         
     except Exception as e:

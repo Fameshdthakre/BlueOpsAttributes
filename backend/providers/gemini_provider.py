@@ -59,12 +59,20 @@ class GeminiProvider(BaseProvider):
                     contents=prompt,
                     config=config,
                 )
-                raw = (response.text or "").strip()
+                raw_text = (response.text or "").strip()
+                input_tokens = 0
+                output_tokens = 0
+                if response.usage_metadata:
+                    input_tokens = getattr(response.usage_metadata, "prompt_token_count", 0)
+                    output_tokens = getattr(response.usage_metadata, "candidates_token_count", 0)
+                
                 return ProviderResult(
-                    raw_json=raw,
+                    raw_json=raw_text,
                     provider_name=self.name,
-                    confidence=0.85 if raw else 0.0,
+                    confidence=0.85 if raw_text else 0.0,
                     prompt_sent=prompt,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens
                 )
 
     def test_connection(self) -> tuple[bool, str]:

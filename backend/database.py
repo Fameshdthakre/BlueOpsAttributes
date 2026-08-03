@@ -138,6 +138,12 @@ def init_db():
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='user_id') THEN
             ALTER TABLE sessions ADD COLUMN user_id INT REFERENCES users(id) ON DELETE CASCADE;
         END IF;
+
+        -- job_results (Tokens)
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_results' AND column_name='input_tokens') THEN
+            ALTER TABLE job_results ADD COLUMN input_tokens INT DEFAULT 0;
+            ALTER TABLE job_results ADD COLUMN output_tokens INT DEFAULT 0;
+        END IF;
     END $$;
 
     -- Individual attribute results
@@ -157,6 +163,8 @@ def init_db():
         extra_data JSONB,
         validated_product_type TEXT,
         validated_allowed_options TEXT,
+        input_tokens INT DEFAULT 0,
+        output_tokens INT DEFAULT 0,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
 

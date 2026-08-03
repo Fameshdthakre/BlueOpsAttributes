@@ -63,11 +63,19 @@ class ClaudeProvider(BaseProvider):
                         raw_parts.append(block.text)
                 raw = " ".join(raw_parts).strip()
 
+                input_tokens = 0
+                output_tokens = 0
+                if hasattr(response, "usage") and response.usage:
+                    input_tokens = getattr(response.usage, "input_tokens", 0)
+                    output_tokens = getattr(response.usage, "output_tokens", 0)
+                
                 return ProviderResult(
                     raw_json=raw,
                     provider_name=self.name,
                     confidence=0.85 if raw else 0.0,
                     prompt_sent=prompt,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
                 )
 
     def test_connection(self) -> tuple[bool, str]:

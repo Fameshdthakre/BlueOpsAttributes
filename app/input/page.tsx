@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
 import { useApp } from "@/app/lib/AppContext";
 import PageHeader from "@/app/components/PageHeader";
@@ -11,13 +12,19 @@ const findHeader = (headersLower: string[], ...keywords: string[]) => {
 };
 
 export default function InputPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKeys, setHasApiKeys] = useState<boolean | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [asinFile, setAsinFile] = useState<File | null>(null);
+  const [validationFile, setValidationFile] = useState<File | null>(null);
+  const [uploadId, setUploadId] = useState<string>("");
+  const [valUploadId, setValUploadId] = useState<string>("");
 
   // Auto-scroll logic variables for logs
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const [logFilter, setLogFilter] = useState("All");
   const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
@@ -30,7 +37,6 @@ export default function InputPage() {
           conf.providers?.Claude?.api_key;
         setHasApiKeys(!!hasKey);
       } catch (err) {
-        // If settings fail to load, default to true to not block the user unexpectedly
         setHasApiKeys(true);
       }
     };
@@ -46,30 +52,8 @@ export default function InputPage() {
     setMappings,
     valMappings,
     setValMappings,
-    asinFile,
-    setAsinFile,
-    validationFile,
-    setValidationFile,
-    setJobsAndMap,
-    jobs,
-    totalJobsCount,
-    limit,
-    setLimit,
-    concurrency,
-    setConcurrency,
-    running,
-    paused,
-    processedCount,
-    validatedCount,
-    unresolvedCount,
-    failedCount,
-    logs,
-    enableLogs,
-    setEnableLogs,
-    startProcessing,
-    pauseProcessing,
-    resumeProcessing,
-    cancelProcessing,
+    setJobs,
+    setValidationMap,
   } = useApp();
 
   const { asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol } = mappings;
@@ -82,8 +66,8 @@ export default function InputPage() {
     try {
       const res = await api.uploadFile(f);
       setAsinHeaders(res.headers);
+      setUploadId(res.upload_id);
 
-      // Auto-detect mappings
       const h_lower = res.headers.map((h: string) => h.toLowerCase());
 
       const asinMatch = findHeader(h_lower, "asin");
@@ -105,9 +89,6 @@ export default function InputPage() {
         descCol: descMatch ? res.headers[h_lower.indexOf(descMatch)] : "",
         urlsCol: urlsMatch ? res.headers[h_lower.indexOf(urlsMatch)] : "",
       });
-
-      // Store raw data in session storage for the process page
-      sessionStorage.setItem("blueops_jobs_raw", JSON.stringify(res.data));
     } catch (err: any) {
       setError(err.message);
     }
@@ -120,8 +101,9 @@ export default function InputPage() {
     const f = e.target.files[0];
     setValidationFile(f);
     try {
-      const res = await api.uploadFile(f); // Just to get headers for mapping
+      const res = await api.uploadFile(f);
       setValidationHeaders(res.headers);
+      setValUploadId(res.upload_id);
 
       const h_lower = res.headers.map((h: string) => h.toLowerCase());
 
@@ -138,163 +120,41 @@ export default function InputPage() {
           : "",
         valDdCol: valDdMatch ? res.headers[h_lower.indexOf(valDdMatch)] : "",
       });
-
-      sessionStorage.setItem("blueops_val_raw", JSON.stringify(res.data));
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  // Auto-load jobs when all requirements are met
-  useEffect(() => {
-    if (hasApiKeys !== true || !asinCol || !attrCol) {
-      // Requirements not met or still checking, don't load yet
-      return;
-    }
-
-    if (!validationFile || !valAttrCol || !valDdCol) {
-      // Validation file and columns are mandatory, wait for it
-      return;
-    }
+  const startProcessing = async () => {
+    if (!asinCol || !attrCol || !uploadId) return;
 
     try {
-      const asinDataStr = sessionStorage.getItem("blueops_jobs_raw");
-      const valDataStr = sessionStorage.getItem("blueops_val_raw");
-
-      if (!asinDataStr) return;
-
-      const asinData = JSON.parse(asinDataStr);
-
-      let validationMapToUse: Record<string, any[]> | null = null;
-      if (validationFile && valDataStr) {
-        const valData = JSON.parse(valDataStr);
-        validationMapToUse = {};
-        valData.forEach((row: any) => {
-          const aId = row[valAttrCol]?.toString().trim() || "";
-          const pType = valPtypeCol
-            ? row[valPtypeCol]?.toString().trim() || ""
-            : "";
-          
-          const rawVal = row[valDdCol]?.toString().trim() || "";
-          let isFreeText = false;
-          let tooltip = "";
-          let allowedValues: string[] = [];
-
-          if (rawVal.toLowerCase().startsWith("tooltip:") || rawVal.toLowerCase().startsWith("example:")) {
-            isFreeText = true;
-            tooltip = rawVal;
-          } else {
-            allowedValues = rawVal
-              .split("|")
-              .map((v: string) => v.trim())
-              .filter(Boolean);
-          }
-
-          if (aId) {
-            const key = aId.toLowerCase();
-            if (!validationMapToUse![key]) {
-              validationMapToUse![key] = [];
-            }
-            validationMapToUse![key].push({
-              attribute_id: aId,
-              product_type: pType,
-              allowed_values: allowedValues,
-              is_free_text: isFreeText,
-              tooltip: tooltip
-            });
-          }
-        });
-      }
-
-      const jobMap: Record<string, any> = {};
+      setIsProcessing(true);
+      const payload = {
+        upload_id: uploadId,
+        mappings: mappings,
+        val_upload_id: valUploadId || null,
+        val_attr_col: valAttrCol,
+        val_ptype_col: valPtypeCol,
+        val_dd_col: valDdCol
+      };
       
-      // PRE-COMPUTE: Find exactly which columns are "extra" to avoid `{...row}` and `delete` inside the loop (which is O(N) and deoptimizes V8 hidden classes)
-      const excludeCols = new Set([asinCol, attrCol, ptypeCol, brandCol, titleCol, barcodeCol, descCol, urlsCol].filter(Boolean));
-      const allCols = asinData.length > 0 ? Object.keys(asinData[0]) : [];
-      const extraCols = allCols.filter(c => !excludeCols.has(c));
-
-      asinData.forEach((row: any) => {
-        const rowAsin = row[asinCol]?.toString().trim() || "";
-        const rowAttr = row[attrCol]?.toString().trim() || "";
-        if (!rowAsin || !rowAttr) return;
-
-        const key = rowAsin;
-
-        if (!jobMap[key]) {
-          const extra: Record<string, any> = {};
-          for (let i = 0; i < extraCols.length; i++) {
-            const col = extraCols[i];
-            if (row[col] !== undefined) {
-              extra[col] = row[col];
-            }
-          }
-
-          jobMap[key] = {
-            asin: rowAsin,
-            attributes: [],
-            product_type: ptypeCol ? row[ptypeCol]?.toString().trim() : "",
-            brand: brandCol ? row[brandCol]?.toString().trim() : "",
-            title: titleCol ? row[titleCol]?.toString().trim() : "",
-            barcode: barcodeCol ? row[barcodeCol]?.toString().trim() : "",
-            description: descCol ? row[descCol]?.toString().trim() : "",
-            custom_urls: urlsCol && row[urlsCol] ? row[urlsCol].toString().split("|").map((u: string) => u.trim()).filter(Boolean) : undefined,
-            extra_data: extra,
-          };
-        }
-        
-        const attrs = rowAttr.split("|").map((a: string) => a.trim()).filter(Boolean);
-        attrs.forEach((a: string) => {
-          if (!jobMap[key].attributes.includes(a)) {
-            jobMap[key].attributes.push(a);
-          }
-        });
-      });
-
-      setTimeout(() => {
-        setJobsAndMap(Object.values(jobMap), validationMapToUse);
-        setError(null);
-      }, 0);
+      const res = await api.buildJobs(payload);
+      
+      if (!res.jobs || res.jobs.length === 0) {
+        setError("No valid jobs found to process based on mapping.");
+        setIsProcessing(false);
+        return;
+      }
+      
+      setJobs(res.jobs);
+      setValidationMap(res.validation_map || {});
+      router.push("/process");
     } catch (err: any) {
-      setTimeout(() => setError(err.message), 0);
+      setError(err.message || "Failed to build jobs server-side.");
+      setIsProcessing(false);
     }
-  }, [
-    hasApiKeys,
-    asinCol,
-    attrCol,
-    ptypeCol,
-    brandCol,
-    titleCol,
-    valAttrCol,
-    valPtypeCol,
-    valDdCol,
-    validationFile,
-    setJobsAndMap,
-  ]);
-
-  // Log scrolling
-  useEffect(() => {
-    if (autoScroll) {
-      logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs, autoScroll]);
-
-  const handleDownloadLogs = () => {
-    const text = logs
-      .map((l) => `[${l.time}] [${l.level}] ${l.message}`)
-      .join("\n");
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `blueops_logs_${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
-
-  const numLimit = typeof limit === 'number' ? limit : 0;
-  const targetLimit = numLimit > 0 ? numLimit : totalJobsCount;
-  const progressPercent =
-    targetLimit > 0 ? Math.round((processedCount / targetLimit) * 100) : 0;
 
   return (
     <div className="animate-in fade-in flex flex-col h-full">
@@ -337,7 +197,6 @@ export default function InputPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* ASIN Card */}
           <div
             className="bg-bg-card p-6 rounded-xl border border-bg-input"
             id="tour-asin-upload"
@@ -372,8 +231,8 @@ export default function InputPage() {
                 onClick={() => { 
                   setAsinFile(null); 
                   setAsinHeaders([]); 
-                  setMappings({asinCol: "", attrCol: "", ptypeCol: "", brandCol: "", titleCol: "", barcodeCol: "", descCol: ""}); 
-                  sessionStorage.removeItem("blueops_jobs_raw"); 
+                  setMappings({asinCol: "", attrCol: "", ptypeCol: "", brandCol: "", titleCol: "", barcodeCol: "", descCol: "", urlsCol: ""}); 
+                  setUploadId(""); 
                 }} 
                 className="text-status-error hover:underline text-sm font-medium ml-4"
               >
@@ -598,7 +457,6 @@ export default function InputPage() {
             )}
           </div>
 
-          {/* Validation Card */}
           <div
             className="bg-bg-card p-6 rounded-xl border border-bg-input"
             id="tour-validation-upload"
@@ -634,6 +492,7 @@ export default function InputPage() {
                   setValidationFile(null); 
                   setValidationHeaders([]); 
                   setValMappings({valAttrCol: "", valPtypeCol: "", valDdCol: ""}); 
+                  setValUploadId("");
                 }} 
                 className="text-status-error hover:underline text-sm font-medium ml-4"
               >

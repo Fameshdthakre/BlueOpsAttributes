@@ -49,11 +49,19 @@ class OpenAIProvider(BaseProvider):
             with attempt:
                 response = client.responses.create(**kwargs)
                 raw = (response.output_text or "").strip()
+                input_tokens = 0
+                output_tokens = 0
+                if response.usage:
+                    input_tokens = getattr(response.usage, "prompt_tokens", 0)
+                    output_tokens = getattr(response.usage, "completion_tokens", 0)
+                
                 return ProviderResult(
                     raw_json=raw,
                     provider_name=self.name,
                     confidence=0.85 if raw else 0.0,
                     prompt_sent=prompt,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
                 )
 
     def test_connection(self) -> tuple[bool, str]:

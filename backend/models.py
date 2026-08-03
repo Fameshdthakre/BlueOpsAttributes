@@ -48,6 +48,8 @@ class ProviderResult:
     provider_name: str
     confidence: float = 1.0     # overall confidence (used for free-text)
     prompt_sent: str = ""       # the exact prompt string sent to the AI
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass
@@ -69,6 +71,8 @@ class ProcessingResult:
     attribute_results: list[AttributeResult]
     provider_used: str
     error_message: Optional[str] = None
+    input_tokens: int = 0
+    output_tokens: int = 0
 
     @property
     def asin(self) -> str:
