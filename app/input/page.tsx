@@ -143,7 +143,7 @@ export default function InputPage() {
     }
   };
 
-  const startProcessing = async () => {
+  const handleStartProcessing = async () => {
     if (!asinCol || !attrCol || !uploadId) return;
 
     try {
@@ -693,12 +693,6 @@ export default function InputPage() {
                   <>
                     <button
                       id="tour-start-process"
-                    onClick={startProcessing}
-                    className="flex-1 md:flex-none text-sm bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
                       viewBox="0 0 20 20"
                       xmlns="http://www.w3.org/2000/svg"
                     >
