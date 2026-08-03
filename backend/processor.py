@@ -79,7 +79,7 @@ def process_single_asin(
     last_error = None
     
     # --- TAVILY RESEARCH STEP ---
-    research_context = None
+    raw_contexts = []
     tavily_cfg = config.get("providers", {}).get("Tavily", {})
     if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
         try:
@@ -101,8 +101,6 @@ def process_single_asin(
             attr_str = " | ".join(attr_details)
             product_desc = f"{job.asin}; {job.title or job.brand or ''}"
             search_query = f'Find detailed specifications and missing attributes for product: {product_desc}.\nTarget attributes to find: {attr_str}'
-            
-            raw_contexts = []
             urls = []
             
             tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
