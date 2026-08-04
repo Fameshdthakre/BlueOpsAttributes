@@ -234,6 +234,10 @@ export default function HistoryPage() {
           barcode: parsedExtra["barcode"] || "",
           description: parsedExtra["description"] || "",
         };
+        // Add all dynamic extra columns to the grouped row
+        extraColsArray.forEach(c => {
+          grouped[r.asin][c] = parsedExtra[c];
+        });
       }
       grouped[r.asin][r.attribute_id] = r.final_value;
       
@@ -524,6 +528,11 @@ export default function HistoryPage() {
                             {c}
                           </th>
                         ))}
+                        {extraColsArray.map(c => (
+                          <th key={c} className="p-4 font-semibold border-b border-bg-input text-primary/70">
+                            {c}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-bg-input">
@@ -568,6 +577,23 @@ export default function HistoryPage() {
                                       🔗
                                     </a>
                                   )}
+                                </div>
+                              )}
+                            </td>
+                          ))}
+                          {extraColsArray.map((c) => (
+                            <td key={c} className="p-4 text-xs text-text-muted">
+                              {Array.isArray(r[c]) ? (
+                                <div className="flex flex-col gap-1 max-w-[300px]">
+                                  {r[c].map((url: string, idx: number) => (
+                                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" title={url}>
+                                      {url}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="max-w-[200px] truncate" title={String(r[c] || "")}>
+                                  {String(r[c] || "")}
                                 </div>
                               )}
                             </td>
@@ -624,9 +650,7 @@ export default function HistoryPage() {
                       <th className="p-4 font-semibold border-b border-bg-input">
                         Confidence
                       </th>
-                      <th className="p-4 font-semibold border-b border-bg-input">
-                        Sources
-                      </th>
+
                       {extraColsArray.map((c) => (
                         <th
                           key={c}
@@ -719,7 +743,19 @@ export default function HistoryPage() {
                           </td>
                           {extraColsArray.map((c) => (
                             <td key={c} className="p-4 text-xs text-text-muted">
-                              {parsedExtra[c] || ""}
+                              {Array.isArray(parsedExtra[c]) ? (
+                                <div className="flex flex-col gap-1 max-w-[300px]">
+                                  {parsedExtra[c].map((url: string, idx: number) => (
+                                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" title={url}>
+                                      {url}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="max-w-[200px] truncate" title={String(parsedExtra[c] || "")}>
+                                  {String(parsedExtra[c] || "")}
+                                </div>
+                              )}
                             </td>
                           ))}
                         </tr>

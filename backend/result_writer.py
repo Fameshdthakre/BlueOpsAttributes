@@ -61,7 +61,10 @@ def generate_excel_from_session(session_id: str) -> bytes:
         # Add any remaining extra columns
         for k, v in extra_dict.items():
             if k not in row and k not in ("barcode", "description"):
-                row[k] = v
+                if isinstance(v, list):
+                    row[k] = "\n".join(str(item) for item in v)
+                else:
+                    row[k] = v
                 
         rows.append(row)
 
@@ -140,7 +143,10 @@ def generate_wide_excel_from_session(session_id: str) -> bytes:
             # Add remaining extra cols
             for k, v in extra_dict.items():
                 if k not in base_row and k not in ("barcode", "description"):
-                    base_row[k] = v
+                    if isinstance(v, list):
+                        base_row[k] = "\n".join(str(item) for item in v)
+                    else:
+                        base_row[k] = v
                     
             grouped[asin] = base_row
             

@@ -166,7 +166,7 @@ async def process_single_asin(
                             break # Standard error, do not burn other keys
 
                 if gathered_urls:
-                    job.extra_data["searched_urls"] = "\n".join(gathered_urls)
+                    job.extra_data["searched_urls"] = gathered_urls
                             
                 logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks and {len(gathered_urls)} URLs for {job.asin}.")
             except Exception as e:
