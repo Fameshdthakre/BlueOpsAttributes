@@ -1,5 +1,7 @@
 import json
 import traceback
+import asyncio
+from loguru import logger
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
@@ -24,7 +26,7 @@ class ProcessRequest(BaseModel):
     validation_map: Dict[str, Any] = {}
 
 @router.post("/api/py/process_asin")
-def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
+async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
     """
     Process a single ASIN and store the result in Postgres.
     Called concurrently by the Next.js frontend (Fan-out model).
@@ -58,7 +60,7 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         config = load_config(x_user_id)
         
         # Execute AI processing
-        result = process_single_asin(job, val_map, config)
+        result = await process_single_asin(job, val_map, config)
         
         # Merge explicit fields back into extra_data for storage in the DB JSONB column
         db_extra = job.extra_data.copy()
@@ -67,16 +69,17 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         if job.description:
             db_extra["description"] = job.description
 
-        conn = get_connection()
-        try:
-            with conn.cursor() as cur:
-                for ar in result.attribute_results:
-                    attr_extra = db_extra.copy()
-                    if hasattr(ar, 'source_links') and ar.source_links:
-                        attr_extra["source_links"] = ar.source_links
-                        
-                    cur.execute("""
-                        INSERT INTO job_results (
+        def _db_insert():
+            conn = get_connection()
+            try:
+                with conn.cursor() as cur:
+                    for ar in result.attribute_results:
+                        attr_extra = db_extra.copy()
+                        if hasattr(ar, 'source_links') and ar.source_links:
+                            attr_extra["source_links"] = ar.source_links
+                            
+                        cur.execute("""
+                            INSERT INTO job_results (
                             session_id, asin, attribute_id, product_type, brand, title,
                             final_value, match_status, provider_used, confidence,
                             raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
@@ -100,12 +103,22 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
-                        ar.raw_ai_value, json.dumps(attr_extra), ar.validated_product_type, ar.validated_allowed_options,
-                        result.input_tokens, result.output_tokens
+                        ar.raw_ai_value, json.dumps(attr_extra) if attr_extra else "{}",
+                        ar.validated_product_type,
+                        ar.validated_allowed_options,
+                        result.input_tokens if result else 0,
+                        result.output_tokens if result else 0
                     ))
-            conn.commit()
-        finally:
-            conn.close()
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                from backend.database import db_pool
+                if db_pool:
+                    db_pool.putconn(conn)
+
+        await asyncio.to_thread(_db_insert)
 
         # Return simplified payload to UI
         return {
@@ -119,32 +132,42 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
     except Exception as e:
         traceback.print_exc()
         # Persist complete crashes as "Failed" rows so they can be retried
-        try:
+        def _db_insert_error():
             conn = get_connection()
-            with conn.cursor() as cur:
-                db_extra_err = req.extra_data.copy()
-                if req.barcode: db_extra_err["barcode"] = req.barcode
-                if req.description: db_extra_err["description"] = req.description
-                for attr in req.attributes:
-                    cur.execute("""
-                        INSERT INTO job_results (
-                            session_id, asin, attribute_id, product_type, brand, title,
-                            final_value, match_status, provider_used, confidence,
-                            raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
-                            input_tokens, output_tokens
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (session_id, asin, attribute_id) DO UPDATE SET
-                            match_status = EXCLUDED.match_status,
-                            provider_used = EXCLUDED.provider_used,
-                            extra_data = EXCLUDED.extra_data,
-                            created_at = NOW()
-                    """, (
-                        req.session_id, req.asin, attr, req.product_type, req.brand, req.title,
-                        "", "Failed", "None", 0.0, "", json.dumps(db_extra_err), "", "", 0, 0
-                    ))
-            conn.commit()
-            conn.close()
-        except Exception as db_err:
-            logger.error(f"Failed to insert crash row into DB: {db_err}")
+            try:
+                with conn.cursor() as cur:
+                    db_extra_err = req.extra_data.copy()
+                    if req.barcode: db_extra_err["barcode"] = req.barcode
+                    if req.description: db_extra_err["description"] = req.description
+                    for attr in req.attributes:
+                        cur.execute("""
+                            INSERT INTO job_results (
+                                session_id, asin, attribute_id, product_type, brand, title,
+                                final_value, match_status, provider_used, confidence,
+                                raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
+                                input_tokens, output_tokens
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (session_id, asin, attribute_id) DO UPDATE SET
+                                match_status = EXCLUDED.match_status,
+                                provider_used = EXCLUDED.provider_used,
+                                extra_data = EXCLUDED.extra_data,
+                                created_at = NOW()
+                        """, (
+                            req.session_id, req.asin, attr, req.product_type, req.brand, req.title,
+                            "", "Failed", "None", 0.0, "", json.dumps(db_extra_err), "", "", 0, 0
+                        ))
+                conn.commit()
+            except Exception as db_err:
+                conn.rollback()
+                logger.error(f"Failed to insert crash row into DB: {db_err}")
+            finally:
+                from backend.database import db_pool
+                if db_pool:
+                    db_pool.putconn(conn)
+                    
+        try:
+            await asyncio.to_thread(_db_insert_error)
+        except Exception as fallback_err:
+            logger.error(f"Fatal fallback error: {fallback_err}")
             
         raise HTTPException(status_code=500, detail=str(e))

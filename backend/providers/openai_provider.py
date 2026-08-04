@@ -27,17 +27,23 @@ class OpenAIProvider(BaseProvider):
         validation_map: dict[str, ValidationEntry | None],
         research_context: str | None = None,
     ) -> ProviderResult:
-        prompt = self._build_prompt(job, validation_map, research_context)
+        prompt, json_schema = self._build_prompt(job, validation_map, research_context)
         client = self._get_client()
 
         kwargs = {
             "model": self.model,
-            "input": prompt,
+            "messages": [{"role": "user", "content": prompt}],
             "temperature": self.temperature,
             "top_p": self.top_p,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "attributes",
+                    "schema": json_schema,
+                    "strict": True
+                }
+            }
         }
-        if self.enable_web_search:
-            kwargs["tools"] = [{"type": "web_search_preview"}]
 
         from tenacity import Retrying, stop_after_attempt, wait_exponential
 
@@ -47,8 +53,8 @@ class OpenAIProvider(BaseProvider):
             reraise=True
         ):
             with attempt:
-                response = client.responses.create(**kwargs)
-                raw = (response.output_text or "").strip()
+                response = client.chat.completions.create(**kwargs)
+                raw = (response.choices[0].message.content or "").strip()
                 input_tokens = 0
                 output_tokens = 0
                 if response.usage:
@@ -67,11 +73,11 @@ class OpenAIProvider(BaseProvider):
     def test_connection(self) -> tuple[bool, str]:
         try:
             client = self._get_client()
-            response = client.responses.create(
+            response = client.chat.completions.create(
                 model=self.model,
-                input="Say 'OK' in one word.",
+                messages=[{"role": "user", "content": "Say 'OK' in one word."}],
             )
-            text = (response.output_text or "").strip()
+            text = (response.choices[0].message.content or "").strip()
             return (True, f"Connected — model responded: '{text[:50]}'")
         except Exception as exc:
             return (False, str(exc))

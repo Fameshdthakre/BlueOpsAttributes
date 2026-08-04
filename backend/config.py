@@ -74,9 +74,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "Tavily": {
             "enabled": True,
             "api_key": "",
-            "search_depth": "advanced",
+            "search_depth": "basic",
             "max_results": 5,
-            "extract_depth": "advanced",
+            "extract_depth": "basic",
             "enable_extract": True,
             "enable_search": True,
             "tavily_format": "markdown",

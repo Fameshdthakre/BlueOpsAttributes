@@ -29,7 +29,7 @@ class GeminiProvider(BaseProvider):
     ) -> ProviderResult:
         from google.genai import types
 
-        prompt = self._build_prompt(job, validation_map, research_context)
+        prompt, json_schema = self._build_prompt(job, validation_map, research_context)
         client = self._get_client()
 
         tools = [types.Tool(google_search=types.GoogleSearch())] if self.enable_web_search else None
@@ -41,8 +41,9 @@ class GeminiProvider(BaseProvider):
         }
         if tools:
             config_kwargs["tools"] = tools
-        else:
-            config_kwargs["response_mime_type"] = "application/json"
+            
+        config_kwargs["response_mime_type"] = "application/json"
+        config_kwargs["response_schema"] = json_schema
             
         config = types.GenerateContentConfig(**config_kwargs)
 

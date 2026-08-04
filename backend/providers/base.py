@@ -33,7 +33,6 @@ class BaseProvider(ABC):
         self.top_k             = top_k
         self.top_p             = top_p
 
-    @abstractmethod
     def query(
         self,
         job: Job,
@@ -53,8 +52,8 @@ class BaseProvider(ABC):
         job: Job,
         validation_map: dict[str, ValidationEntry | None],
         research_context: str | None = None,
-    ) -> str:
-        """Build a structured batched JSON prompt for the AI."""
+    ) -> tuple[str, dict]:
+        """Build a structured batched JSON prompt and its JSON schema."""
         lines = []
         lines.append("You are an Amazon product data specialist.")
         lines.append("Search the web for information about this Amazon product and extract the requested attributes.\n")
@@ -135,14 +134,23 @@ class BaseProvider(ABC):
             )
             schema["_extracted_title"] = "<free text title>"
 
-        lines.append("")
-        lines.append("=" * 60)
-        lines.append("OUTPUT FORMAT (STRICT JSON — NO MARKDOWN, NO EXPLANATION):")
-        lines.append("=" * 60)
-        lines.append(
-            "Return ONLY a valid JSON object with exactly these keys. "
-            "Do not include any text before or after the JSON.\n"
-        )
-        lines.append(json.dumps(schema, indent=2, ensure_ascii=False))
+        schema_props = {}
+        required_fields = []
+        for k, v in schema.items():
+            if isinstance(v, list):
+                schema_props[k] = {
+                    "type": "array",
+                    "items": {"type": "string"}
+                }
+            else:
+                schema_props[k] = {"type": "string"}
+            required_fields.append(k)
 
-        return "\n".join(lines)
+        json_schema = {
+            "type": "object",
+            "properties": schema_props,
+            "required": required_fields,
+            "additionalProperties": False
+        }
+
+        return "\n".join(lines), json_schema

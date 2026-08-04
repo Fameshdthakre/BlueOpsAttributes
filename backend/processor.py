@@ -41,7 +41,7 @@ def _parse_json(text: str) -> dict:
     except Exception:
         raise ValueError("Could not parse JSON from AI response.")
 
-def process_single_asin(
+async def process_single_asin(
     job: Job, 
     validation_map_raw: dict[str, list[ValidationEntry]], 
     config: dict
@@ -83,13 +83,11 @@ def process_single_asin(
     tavily_cfg = config.get("providers", {}).get("Tavily", {})
     if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
         try:
-            from tavily import TavilyClient
-            import concurrent.futures
+            from tavily import AsyncTavilyClient
+            import asyncio
             
-            client = TavilyClient(
-                api_key=tavily_cfg.get("api_key"),
-                project_id=job.product_type if job.product_type else "General",
-                client_name="BlueOpsAttributes"
+            client = AsyncTavilyClient(
+                api_key=tavily_cfg.get("api_key")
             )
             
             tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
@@ -102,67 +100,57 @@ def process_single_asin(
                     if cu and cu not in gathered_urls:
                         gathered_urls.append(cu)
 
-            # 1. Custom URL extraction (General context)
+            # 1. Custom URL extraction
             if job.custom_urls and tavily_cfg.get("enable_extract", True):
                 try:
                     logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
-                    extract_res = client.extract(
+                    extract_res = await client.extract(
                         urls=job.custom_urls[:3],
                         extract_depth=tavily_cfg.get("extract_depth", "advanced"),
                         format=tavily_fmt
                     )
                     for ext in extract_res.get("results", []):
                         if ext.get("raw_content"):
-                            raw_contexts.append(f"[GENERAL] Extracted Custom URL ({ext.get('url')}):\n{ext.get('raw_content')}")
+                            # Fix Wikipedia Problem: truncate to 3000 chars
+                            content = ext.get('raw_content')[:3000]
+                            raw_contexts.append(f"[GENERAL] Extracted Custom URL ({ext.get('url')}):\n{content}")
                 except Exception as ext_err:
                     logger.warning(f"[Tavily] Custom URL extraction failed: {ext_err}")
 
-            # 2. Parallel Attribute-Specific Searches
-            def _fetch_for_attribute(attr_id):
-                try:
-                    search_query = f'Find exact "{attr_id.replace("_", " ")}" specification for product: {product_desc}.'
-                    if tavily_mode == "fast":
-                        ans = client.qna_search(query=search_query, search_depth=tavily_cfg.get("search_depth", "advanced"))
-                        if isinstance(ans, str):
-                            return f"[{attr_id}] TAVILY DIRECT ANSWER:\n{ans}", []
-                    else:
-                        response = client.search(
-                            query=search_query,
-                            include_answer="advanced",
-                            search_depth=tavily_cfg.get("search_depth", "advanced"),
-                            include_raw_content=tavily_fmt,
-                            chunks_per_source=3,
-                            max_results=tavily_cfg.get("max_results", 3)
-                        )
-                        ctxs = []
-                        found_urls = []
-                        if response.get("answer"):
-                            ctxs.append(f"[{attr_id}] TAVILY ANSWER: {response['answer']}")
-                        for res in response.get("results", []):
-                            if res.get("url"):
-                                found_urls.append(res.get("url"))
-                            content = res.get("raw_content") or res.get("content")
-                            if content:
-                                ctxs.append(f"[{attr_id}] Source: {res.get('url')}\n{content}")
-                        return "\n---\n".join(ctxs), found_urls
-                except Exception as e:
-                    logger.warning(f"[Tavily] Search failed for {attr_id}: {e}")
-                return "", []
-
+            # 2. Consolidated Attribute Search (Fixing N+1)
             if tavily_cfg.get("enable_search", True) and job.attributes:
-                logger.info(f"[Tavily] Launching parallel searches for {len(job.attributes)} attributes on ASIN {job.asin}...")
-                with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, len(job.attributes))) as executor:
-                    results = list(executor.map(_fetch_for_attribute, job.attributes))
+                try:
+                    logger.info(f"[Tavily] Launching ONE consolidated search for {len(job.attributes)} attributes on ASIN {job.asin}...")
                     
-                for res in results:
-                    if res:
-                        ctx_str, urls = res
-                        if ctx_str:
-                            raw_contexts.append(ctx_str)
-                        for u in urls:
-                            if u not in gathered_urls:
-                                gathered_urls.append(u)
+                    attributes_list = ", ".join(job.attributes)
+                    search_query = f'Find exact specifications for product: {product_desc}. Looking for: {attributes_list}'
+                    
+                    response = await client.search(
+                        query=search_query,
+                        include_answer=False, # Fixing redundant AI
+                        search_depth=tavily_cfg.get("search_depth", "basic"),
+                        include_raw_content=True,
+                        max_results=tavily_cfg.get("max_results", 5)
+                    )
+                    
+                    ctxs = []
+                    for res in response.get("results", []):
+                        if res.get("url"):
+                            if res.get("url") not in gathered_urls:
+                                gathered_urls.append(res.get("url"))
                                 
+                        content = res.get("raw_content") or res.get("content")
+                        if content:
+                            # Fix Wikipedia Problem: truncate per source
+                            truncated_content = content[:3000]
+                            ctxs.append(f"Source: {res.get('url')}\n{truncated_content}")
+                            
+                    if ctxs:
+                        raw_contexts.append("\n---\n".join(ctxs))
+                        
+                except Exception as e:
+                    logger.warning(f"[Tavily] Search failed: {e}")
+
             if gathered_urls:
                 job.extra_data["searched_urls"] = "\n".join(gathered_urls)
                         
@@ -199,7 +187,7 @@ def process_single_asin(
         )
         
         # Assemble smart context fitting the provider's token limit
-        max_tokens = p_cfg.get("max_context_tokens", 8000)
+        max_tokens = p_cfg.get("max_context_tokens", 25000)
         research_context = None
         if raw_contexts:
             current_tokens = 0
@@ -214,7 +202,8 @@ def process_single_asin(
                 research_context = "\n\n---\n\n".join(selected_contexts)
         
         try:
-            result = provider.query(job, validation_map, research_context)
+            import asyncio
+            result = await asyncio.to_thread(provider.query, job, validation_map, research_context)
             
             logger.info(
                 f"[{provider_name}] Sent Prompt for ASIN {job.asin}:\n{result.prompt_sent}\n"

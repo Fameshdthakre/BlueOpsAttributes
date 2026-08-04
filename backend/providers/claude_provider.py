@@ -27,25 +27,28 @@ class ClaudeProvider(BaseProvider):
         validation_map: dict[str, ValidationEntry | None],
         research_context: str | None = None,
     ) -> ProviderResult:
-        prompt = self._build_prompt(job, validation_map, research_context)
+        import json
+        prompt, json_schema = self._build_prompt(job, validation_map, research_context)
         client = self._get_client()
 
         max_tokens = min(200 * len(job.attributes) + 512, 4096)
 
+        tools = [
+            {
+                "name": "extract_attributes",
+                "description": "Extract the product attributes into the required format.",
+                "input_schema": json_schema
+            }
+        ]
+
         kwargs = {
             "model": self.model,
             "max_tokens": max_tokens,
-            "system": "You are an automated data extraction tool. You must ONLY output a valid JSON object. Do not include any thinking, conversational text, markdown wrapping, or explanations.",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": self.temperature,
+            "tools": tools,
+            "tool_choice": {"type": "tool", "name": "extract_attributes"}
         }
-        
-        if self.enable_web_search:
-            kwargs["tools"] = [{
-                "type": "web_search_20250305",
-                "name": "web_search",
-                "max_uses": 5,
-            }]
 
         from tenacity import Retrying, stop_after_attempt, wait_exponential
 
@@ -57,11 +60,14 @@ class ClaudeProvider(BaseProvider):
             with attempt:
                 response = client.messages.create(**kwargs)
 
-                raw_parts = []
+                raw = ""
                 for block in response.content:
-                    if hasattr(block, "text"):
-                        raw_parts.append(block.text)
-                raw = " ".join(raw_parts).strip()
+                    if block.type == "tool_use" and block.name == "extract_attributes":
+                        raw = json.dumps(block.input)
+                        break
+                    elif hasattr(block, "text") and not raw:
+                        # Fallback if it didn't call the tool properly
+                        raw = block.text.strip()
 
                 input_tokens = 0
                 output_tokens = 0
