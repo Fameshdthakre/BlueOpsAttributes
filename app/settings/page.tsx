@@ -32,7 +32,6 @@ interface AppConfig {
       enable_extract?: boolean;
       enable_search?: boolean;
       tavily_format?: string;
-      tavily_mode?: string;
     }
   >;
 }
@@ -173,7 +172,6 @@ export default function SettingsPage() {
           enable_extract: true,
           enable_search: true,
           tavily_format: "markdown",
-          tavily_mode: "deep",
         };
       }
 
@@ -988,28 +986,6 @@ export default function SettingsPage() {
                   Deep Research & Extraction Options
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-                  <div>
-                    <label className="block text-xs text-text-muted mb-1">
-                      Tavily Mode
-                    </label>
-                    <select
-                      value={tCfg.tavily_mode || "deep"}
-                      onChange={(e) =>
-                        updateConfig({
-                          ...config,
-                          providers: {
-                            ...config.providers,
-                            Tavily: { ...tCfg, tavily_mode: e.target.value },
-                          },
-                        })
-                      }
-                      className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
-                    >
-                      <option value="deep">Deep (Search + Extract)</option>
-                      <option value="fast">Fast (Q&A Only)</option>
-                      <option value="research">Pro (Agentic Research)</option>
-                    </select>
-                  </div>
                   <div>
                     <label className="block text-xs text-text-muted mb-1">
                       Content Format
