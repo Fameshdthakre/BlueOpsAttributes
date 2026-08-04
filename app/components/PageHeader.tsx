@@ -19,7 +19,7 @@ export default function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="flex h-16 shrink-0 items-center justify-between border-b border-bg-input bg-bg-dark px-6">
+    <div className="flex h-16 shrink-0 items-center justify-between border-b border-bg-input bg-bg-dark/80 backdrop-blur-md px-6 sticky top-0 z-10">
       <div className="flex items-center gap-3">
         <h1 className="text-[22px] font-normal text-text-main tracking-tight whitespace-nowrap">
           {title}

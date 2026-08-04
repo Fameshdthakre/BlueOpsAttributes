@@ -17,17 +17,15 @@
   --color-status-error: #ef4444; /* Red 500 */
 }
 
-html {
-  font-size: 80%; /* Reduce base scale by 20% for a compact UI */
-}
-
 /* Base resets for a dark theme app */
 body {
   background-color: var(--color-bg-dark);
+  /* Apply a subtle dark gradient instead of a flat background */
+  background: linear-gradient(135deg, var(--color-bg-dark) 0%, #090e17 100%);
   color: var(--color-text-main);
-  font-family: Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
 /* Custom Scrollbar for dark theme */

@@ -803,7 +803,7 @@ function InputPage() {
                     {paused ? (
                       <button
                         onClick={resumeProcessing}
-                        className="flex-1 md:flex-none text-sm bg-primary hover:bg-primary-hover text-white px-6 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all"
+                        className="flex-1 md:flex-none text-sm bg-primary hover:bg-primary-hover hover:scale-105 active:scale-95 text-white px-6 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all-ease shadow-lg hover:shadow-primary/30"
                       >
                         <svg
                           className="w-5 h-5"
@@ -822,7 +822,7 @@ function InputPage() {
                     ) : (
                       <button
                         onClick={pauseProcessing}
-                        className="flex-1 md:flex-none text-sm bg-status-warning hover:bg-status-warning/80 text-bg-dark px-6 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all"
+                        className="flex-1 md:flex-none text-sm bg-status-warning hover:bg-status-warning/80 hover:scale-105 active:scale-95 text-bg-dark px-6 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all-ease shadow-lg hover:shadow-status-warning/30"
                       >
                         <svg
                           className="w-5 h-5"
@@ -841,7 +841,7 @@ function InputPage() {
                     )}
                     <button
                       onClick={cancelProcessing}
-                      className="flex-1 md:flex-none text-sm bg-status-error/10 hover:bg-status-error text-status-error hover:text-white border border-status-error/30 hover:border-status-error px-4 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                      className="flex-1 md:flex-none text-sm bg-status-error/10 hover:bg-status-error hover:scale-105 active:scale-95 text-status-error hover:text-white border border-status-error/30 hover:border-status-error px-4 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all-ease shadow-lg hover:shadow-status-error/20"
                     >
                       <svg
                         className="w-5 h-5"
@@ -864,7 +864,7 @@ function InputPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Controls */}
-              <div className="bg-bg-card p-6 rounded-xl border border-bg-input space-y-4">
+              <div className="bg-bg-card/40 backdrop-blur-md p-6 rounded-xl border border-bg-input space-y-4 hover:border-text-muted/30 transition-all-ease group">
                 <h3 className="font-semibold text-text-main mb-4">
                   Configuration
                 </h3>
@@ -903,7 +903,7 @@ function InputPage() {
               </div>
 
               {/* Stats */}
-              <div className="md:col-span-2 bg-bg-card p-6 rounded-xl border border-bg-input">
+              <div className="md:col-span-2 bg-bg-card/40 backdrop-blur-md p-6 rounded-xl border border-bg-input hover:border-text-muted/30 transition-all-ease group">
                 <h3 className="font-semibold text-text-main mb-4">
                   Live Progress
                 </h3>
@@ -951,7 +951,7 @@ function InputPage() {
             </div>
 
             {/* Live Log */}
-            <div className="bg-[#090C10] rounded-xl border border-bg-input shadow-inner flex flex-col h-[500px]">
+            <div className="bg-[#090C10]/80 backdrop-blur-md rounded-xl border border-bg-input shadow-inner flex flex-col h-[500px] transition-all-ease hover:border-text-muted/20">
               {/* Log Header / Toolbar */}
               <div className="p-3 border-b border-bg-input flex flex-col md:flex-row justify-between items-center gap-4 bg-bg-dark rounded-t-xl">
                 <div className="flex gap-2">
