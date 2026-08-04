@@ -1,7 +1,7 @@
 import io
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import PatternFill, Font
+from openpyxl.styles import PatternFill, Font, Alignment
 from backend.database import get_connection
 import json
 
@@ -84,6 +84,10 @@ def generate_excel_from_session(session_id: str) -> bytes:
     for col in ws.columns:
         max_len = max((len(str(cell.value or "")) for cell in col), default=0)
         ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 60)
+        # Apply text wrapping to all data cells
+        for cell in col:
+            if cell.row > 1:  # Skip header
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
 
     final_output = io.BytesIO()
     wb.save(final_output)
@@ -163,6 +167,10 @@ def generate_wide_excel_from_session(session_id: str) -> bytes:
     for col in ws.columns:
         max_len = max((len(str(cell.value or "")) for cell in col), default=0)
         ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 60)
+        # Apply text wrapping to all data cells
+        for cell in col:
+            if cell.row > 1:  # Skip header
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
 
     final_output = io.BytesIO()
     wb.save(final_output)
