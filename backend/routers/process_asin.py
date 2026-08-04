@@ -114,9 +114,8 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                 conn.rollback()
                 raise
             finally:
-                from backend.database import db_pool
-                if db_pool:
-                    db_pool.putconn(conn)
+                if conn:
+                    conn.close()
 
         await asyncio.to_thread(_db_insert)
 
@@ -161,10 +160,8 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                 conn.rollback()
                 logger.error(f"Failed to insert crash row into DB: {db_err}")
             finally:
-                from backend.database import db_pool
-                if db_pool:
-                    db_pool.putconn(conn)
-                    
+                if conn:
+                    conn.close()
         try:
             await asyncio.to_thread(_db_insert_error)
         except Exception as fallback_err:
