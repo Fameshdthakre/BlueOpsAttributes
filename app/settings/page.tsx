@@ -375,6 +375,11 @@ export default function SettingsPage() {
     updateConfig({ ...config, fallback_order: newFb.filter((x) => x !== "") });
   };
 
+  const getKeysCount = (keyStr: string | undefined) => {
+    if (!keyStr) return 0;
+    return keyStr.split(/[\n,]+/).filter((k) => k.trim().length > 0).length;
+  };
+
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
@@ -599,13 +604,6 @@ export default function SettingsPage() {
             The primary provider is queried first. Fallbacks are used on failure
             or unresolved results.
           </p>
-          {(() => {
-            const getKeysCount = (keyStr: string | undefined) => {
-              if (!keyStr) return 0;
-              return keyStr.split(/[\n,]+/).filter((k) => k.trim().length > 0).length;
-            };
-            return (
-              <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm text-text-muted mb-2">
@@ -1214,9 +1212,7 @@ export default function SettingsPage() {
             </div>
           );
         })()}
-              </>
-            );
-          })()}
+        </>
         )}
       </div>
     </div>
