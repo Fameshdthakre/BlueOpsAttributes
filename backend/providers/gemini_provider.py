@@ -45,17 +45,18 @@ class GeminiProvider(BaseProvider):
             
         config = types.GenerateContentConfig(**config_kwargs)
 
-        from tenacity import Retrying, stop_after_attempt, wait_exponential
+        from tenacity import Retrying, stop_after_attempt, wait_exponential, retry_if_not_exception_type
 
         for attempt in Retrying(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=2, max=10),
+            retry=retry_if_not_exception_type(ValueError),
             reraise=True
         ):
             with attempt:
                 active_key = key_manager.get_active_key(self.name, self.api_keys)
                 if not active_key:
-                    raise RuntimeError(f"[{self.name}] No active API keys available (all on cooldown).")
+                    raise ValueError(f"[{self.name}] No active API keys available (all on cooldown).")
                     
                 client = self._get_client(active_key)
                 try:

@@ -30,7 +30,7 @@ class APIKeyPoolManager:
             logger.warning(f"[{provider_name}] ALL {len(keys)} API keys are currently on cooldown!")
             return None
 
-    def mark_key_exhausted(self, provider_name: str, key: str, keys_list: List[str] = None, cooldown_seconds: int = 600):
+    def mark_key_exhausted(self, provider_name: str, key: str, keys_list: List[str] = None, cooldown_seconds: int = 65):
         """Mark a key as exhausted (e.g. 429 / Quota Error) and place it on cooldown."""
         if not key:
             return
