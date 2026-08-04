@@ -201,6 +201,19 @@ async def process_single_asin(
             if selected_contexts:
                 research_context = "\n\n---\n\n".join(selected_contexts)
         
+        # 1. Mutual Exclusion: If Tavily research context was gathered, disable native LLM web search
+        if research_context:
+            provider.enable_web_search = False
+
+        # 2. RPM Rate Limiting: Acquire token slot for this provider
+        try:
+            from backend.rate_limiter import get_rate_limiter
+            rpm = p_cfg.get("rpm_limit", 60)
+            limiter = await get_rate_limiter(f"provider:{provider_name}", rpm)
+            await limiter.acquire()
+        except Exception as lim_err:
+            logger.warning(f"Rate limiter error for {provider_name}: {lim_err}")
+
         try:
             import asyncio
             result = await asyncio.to_thread(provider.query, job, validation_map, research_context)
