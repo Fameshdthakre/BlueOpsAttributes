@@ -208,8 +208,8 @@ export default function HistoryPage() {
       } catch (e) {}
     }
   });
-  // Exclude barcode and description from the catch-all extra columns since they are explicit
-  const extraColsArray = Array.from(extraColumns).filter(c => c !== "barcode" && c !== "description");
+  // Exclude barcode, description and source_links from the catch-all extra columns since they are explicit
+  const extraColsArray = Array.from(extraColumns).filter(c => c !== "barcode" && c !== "description" && c !== "source_links");
 
   // Group results for wide view (and to count unique ASINs)
   const { wideRows, wideCols } = useMemo(() => {
@@ -219,6 +219,7 @@ export default function HistoryPage() {
     
     filteredResults.forEach(r => {
       if (!grouped[r.asin]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let parsedExtra: any = {};
         if (r.extra_data) {
           try {
@@ -235,6 +236,16 @@ export default function HistoryPage() {
         };
       }
       grouped[r.asin][r.attribute_id] = r.final_value;
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let parsedExtraForSources: any = {};
+      if (r.extra_data) {
+        try { parsedExtraForSources = typeof r.extra_data === "string" ? JSON.parse(r.extra_data) : r.extra_data; } catch (e) {}
+      }
+      if (parsedExtraForSources.source_links) {
+        grouped[r.asin][`${r.attribute_id}_sources`] = parsedExtraForSources.source_links;
+      }
+      
       cols.add(r.attribute_id);
     });
     
@@ -544,7 +555,20 @@ export default function HistoryPage() {
                                   className="w-full bg-bg-dark border border-primary px-2 py-1 rounded text-text-main"
                                 />
                               ) : (
-                                r[c] || ""
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{r[c] || ""}</span>
+                                  {r[`${c}_sources`] && r[`${c}_sources`].length > 0 && (
+                                    <a 
+                                      href={r[`${c}_sources`][0]} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="text-primary hover:text-primary/70 shrink-0" 
+                                      title={r[`${c}_sources`].join("\n")}
+                                    >
+                                      🔗
+                                    </a>
+                                  )}
+                                </div>
                               )}
                             </td>
                           ))}
@@ -600,6 +624,9 @@ export default function HistoryPage() {
                       <th className="p-4 font-semibold border-b border-bg-input">
                         Confidence
                       </th>
+                      <th className="p-4 font-semibold border-b border-bg-input">
+                        Sources
+                      </th>
                       {extraColsArray.map((c) => (
                         <th
                           key={c}
@@ -612,6 +639,7 @@ export default function HistoryPage() {
                   </thead>
                   <tbody className="divide-y divide-bg-input">
                     {paginatedResults.map((r, i) => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       let parsedExtra: any = {};
                       if (r.extra_data) {
                         try {
