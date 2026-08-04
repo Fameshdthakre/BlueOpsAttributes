@@ -84,115 +84,74 @@ def process_single_asin(
     if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
         try:
             from tavily import TavilyClient
+            import concurrent.futures
+            
             client = TavilyClient(
                 api_key=tavily_cfg.get("api_key"),
                 project_id=job.product_type if job.product_type else "General",
                 client_name="BlueOpsAttributes"
             )
             
-            attr_details = []
-            for attr_id in job.attributes:
-                val_entry = validation_map.get(attr_id)
-                if val_entry and val_entry.is_validation_list and val_entry.allowed_values:
-                    opts = val_entry.allowed_values[:10]
-                    opts_str = ", ".join(opts) + (", ..." if len(val_entry.allowed_values) > 10 else "")
-                    attr_details.append(f"{attr_id} (Allowed: {opts_str})")
-                elif val_entry and val_entry.tooltip:
-                    attr_details.append(f"{attr_id} (Info: {val_entry.tooltip})")
-                else:
-                    attr_details.append(attr_id)
-                    
-            attr_str = " | ".join(attr_details)
-            product_desc = f"{job.asin}; {job.title or job.brand or ''}"
-            search_query = f'Find detailed specifications and missing attributes for product: {product_desc}.\nTarget attributes to find: {attr_str}'
-            urls = []
-            
             tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
             tavily_mode = tavily_cfg.get("tavily_mode", "deep")
+            product_desc = f"{job.asin}; {job.title or job.brand or ''}"
             
-            if job.custom_urls:
-                for cu in job.custom_urls:
-                    if cu and cu not in urls:
-                        urls.append(cu)
-            
-            if tavily_mode == "fast":
-                logger.info(f"[Tavily] Performing Fast Q&A search for ASIN {job.asin}...")
-                answer = client.qna_search(
-                    query=search_query,
-                    search_depth=tavily_cfg.get("search_depth", "advanced")
-                )
-                if isinstance(answer, str):
-                    raw_contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
-                    
-            elif tavily_mode == "research":
-                logger.info(f"[Tavily] Starting Agentic Research for ASIN {job.asin}...")
-                res_resp = client.research(
-                    input=search_query,
-                    model="pro",
-                    citation_format="none"
-                )
-                request_id = res_resp.get("request_id")
-                if request_id:
-                    import time
-                    retries = 30
-                    while retries > 0:
-                        time.sleep(5)
-                        status_resp = client.get_research(request_id)
-                        if status_resp.get("status") == "completed":
-                            content = status_resp.get("content")
-                            if content:
-                                raw_contexts.append(f"TAVILY RESEARCH REPORT:\n{content}")
-                            break
-                        elif status_resp.get("status") == "failed":
-                            logger.error("[Tavily] Agentic research failed.")
-                            break
-                        retries -= 1
-                        
-            else:
-                # Deep Mode (Default)
-                if tavily_cfg.get("enable_search", True):
-                    logger.info(f"[Tavily] Deep researching ASIN {job.asin}...")
-                    response = client.search(
-                        query=search_query,
-                        include_answer="advanced",
-                        search_depth=tavily_cfg.get("search_depth", "advanced"),
-                        include_raw_content=tavily_fmt,
-                        chunks_per_source=4,
-                        max_results=tavily_cfg.get("max_results", 5)
+            # 1. Custom URL extraction (General context)
+            if job.custom_urls and tavily_cfg.get("enable_extract", True):
+                try:
+                    logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
+                    extract_res = client.extract(
+                        urls=job.custom_urls[:3],
+                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
+                        format=tavily_fmt
                     )
-                    
-                    answer = response.get("answer")
-                    if answer:
-                        raw_contexts.append(f"TAVILY DIRECT ANSWER:\n{answer}")
-                    
-                    for res in response.get("results", []):
-                        url = res.get("url")
-                        if url and url not in urls:
-                            urls.append(url)
-                        content = res.get("raw_content") or res.get("content")
-                        if content:
-                            raw_contexts.append(f"Source: {url}\nTitle: {res.get('title', '')}\n{content}")
-    
-                if urls and tavily_cfg.get("enable_extract", True):
-                    try:
-                        logger.info(f"[Tavily] Performing deep URL extraction on {len(urls[:3])} sources...")
-                        extract_res = client.extract(
-                            urls=urls[:3],
+                    for ext in extract_res.get("results", []):
+                        if ext.get("raw_content"):
+                            raw_contexts.append(f"[GENERAL] Extracted Custom URL ({ext.get('url')}):\n{ext.get('raw_content')}")
+                except Exception as ext_err:
+                    logger.warning(f"[Tavily] Custom URL extraction failed: {ext_err}")
+
+            # 2. Parallel Attribute-Specific Searches
+            def _fetch_for_attribute(attr_id):
+                try:
+                    search_query = f'Find exact "{attr_id.replace("_", " ")}" specification for product: {product_desc}.'
+                    if tavily_mode == "fast":
+                        ans = client.qna_search(query=search_query, search_depth=tavily_cfg.get("search_depth", "advanced"))
+                        if isinstance(ans, str):
+                            return f"[{attr_id}] TAVILY DIRECT ANSWER:\n{ans}"
+                    else:
+                        response = client.search(
                             query=search_query,
-                            chunks_per_source=4,
-                            extract_depth=tavily_cfg.get("extract_depth", "advanced"),
-                            format=tavily_fmt
+                            include_answer="advanced",
+                            search_depth=tavily_cfg.get("search_depth", "advanced"),
+                            include_raw_content=tavily_fmt,
+                            chunks_per_source=3,
+                            max_results=tavily_cfg.get("max_results", 3)
                         )
-                        for ext in extract_res.get("results", []):
-                            raw_ext = ext.get("raw_content")
-                            if raw_ext:
-                                raw_contexts.append(f"Extracted Deep Content ({ext.get('url')}):\n{raw_ext}")
-                    except Exception as ext_err:
-                        logger.warning(f"[Tavily] URL extraction skipped/failed: {ext_err}")
-            
+                        ctxs = []
+                        if response.get("answer"):
+                            ctxs.append(f"[{attr_id}] TAVILY ANSWER: {response['answer']}")
+                        for res in response.get("results", []):
+                            content = res.get("raw_content") or res.get("content")
+                            if content:
+                                ctxs.append(f"[{attr_id}] Source: {res.get('url')}\n{content}")
+                        return "\n---\n".join(ctxs)
+                except Exception as e:
+                    logger.warning(f"[Tavily] Search failed for {attr_id}: {e}")
+                return ""
+
+            if tavily_cfg.get("enable_search", True) and job.attributes:
+                logger.info(f"[Tavily] Launching parallel searches for {len(job.attributes)} attributes on ASIN {job.asin}...")
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, len(job.attributes))) as executor:
+                    results = list(executor.map(_fetch_for_attribute, job.attributes))
+                    
+                for res in results:
+                    if res:
+                        raw_contexts.append(res)
+                        
             logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks for {job.asin}.")
         except Exception as e:
-            logger.error(f"[Tavily] Search failed for {job.asin}: {e}")
+            logger.error(f"[Tavily] Fatal search failure for {job.asin}: {e}")
     # ----------------------------
     
     for provider_name in attempts:
@@ -255,6 +214,10 @@ def process_single_asin(
             attribute_results = []
             for attr_id in job.attributes:
                 raw_val = str(parsed_json.get(attr_id, "")).strip()
+                source_links = parsed_json.get(f"{attr_id}_sources", [])
+                if not isinstance(source_links, list):
+                    source_links = []
+                
                 val_entry = validation_map.get(attr_id)
                 
                 # Fetch validation info for export
@@ -266,7 +229,7 @@ def process_single_asin(
                     else:
                         val_options = val_entry.tooltip or ""
                 
-                if not raw_val or raw_val.lower() in ("none", "null", "n/a"):
+                if not raw_val or raw_val.lower() in ("none", "null", "n/a", "unresolved"):
                     attribute_results.append(AttributeResult(
                         attribute_id=attr_id,
                         raw_ai_value="",
@@ -274,7 +237,8 @@ def process_single_asin(
                         match_status="Unresolved",
                         confidence=0.0,
                         validated_product_type=val_pt,
-                        validated_allowed_options=val_options
+                        validated_allowed_options=val_options,
+                        source_links=source_links
                     ))
                     continue
                     
@@ -297,7 +261,8 @@ def process_single_asin(
                     match_status=status,
                     confidence=confidence,
                     validated_product_type=val_pt,
-                    validated_allowed_options=val_options
+                    validated_allowed_options=val_options,
+                    source_links=source_links
                 ))
             
             return ProcessingResult(

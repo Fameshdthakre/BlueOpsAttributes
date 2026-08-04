@@ -101,11 +101,13 @@ class BaseProvider(ABC):
                 lines.append(
                     f"\n[{attr_id}]\n"
                     f"  Type: DROPDOWN\n"
-                    f"  Instruction: You MUST pick EXACTLY ONE value from this list (case-sensitive). "
-                    f"Do NOT invent values outside the list.\n"
-                    f"  Allowed Values: {allowed_json}"
+                    f"  Instruction: You MUST pick EXACTLY ONE value from this list (case-sensitive) based on the research context. "
+                    f"Do NOT invent values outside the list. If no logical match exists, return null or empty string.\n"
+                    f"  Allowed Values: {allowed_json}\n"
+                    f"  Sources: Provide an array of URLs from the research context that justify this value."
                 )
                 schema[attr_id] = "<one value from Allowed Values>"
+                schema[f"{attr_id}_sources"] = ["<url1>", "<url2>"]
 
             elif entry and entry.is_free_text:
                 guidance = entry.tooltip if entry.tooltip else f"Provide the {label} for this product."
@@ -113,17 +115,21 @@ class BaseProvider(ABC):
                     f"\n[{attr_id}]\n"
                     f"  Type: FREE TEXT\n"
                     f"  Instruction: {guidance}\n"
-                    f"  Respond with a concise value — one short phrase or sentence maximum."
+                    f"  Respond with a concise value — one short phrase or sentence maximum based on the research context.\n"
+                    f"  Sources: Provide an array of URLs from the research context that justify this value."
                 )
                 schema[attr_id] = "<free text value>"
+                schema[f"{attr_id}_sources"] = ["<url1>", "<url2>"]
 
             else:
                 lines.append(
                     f"\n[{attr_id}]\n"
                     f"  Type: FREE TEXT\n"
-                    f"  Instruction: Provide the {label} for this product."
+                    f"  Instruction: Provide the {label} for this product based on the research context.\n"
+                    f"  Sources: Provide an array of URLs from the research context that justify this value."
                 )
                 schema[attr_id] = "<free text value>"
+                schema[f"{attr_id}_sources"] = ["<url1>", "<url2>"]
 
         if not job.title:
             lines.append(

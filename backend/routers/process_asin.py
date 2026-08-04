@@ -71,6 +71,10 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         try:
             with conn.cursor() as cur:
                 for ar in result.attribute_results:
+                    attr_extra = db_extra.copy()
+                    if hasattr(ar, 'source_links') and ar.source_links:
+                        attr_extra["source_links"] = ar.source_links
+                        
                     cur.execute("""
                         INSERT INTO job_results (
                             session_id, asin, attribute_id, product_type, brand, title,
@@ -96,7 +100,7 @@ def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
                         ar.final_value, ar.match_status, result.provider_used, ar.confidence,
-                        ar.raw_ai_value, json.dumps(db_extra), ar.validated_product_type, ar.validated_allowed_options,
+                        ar.raw_ai_value, json.dumps(attr_extra), ar.validated_product_type, ar.validated_allowed_options,
                         result.input_tokens, result.output_tokens
                     ))
             conn.commit()

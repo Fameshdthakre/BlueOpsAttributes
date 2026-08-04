@@ -62,6 +62,7 @@ class AttributeResult:
     confidence: float
     validated_product_type: str = ""
     validated_allowed_options: str = ""
+    source_links: list[str] = field(default_factory=list)
 
 
 @dataclass
