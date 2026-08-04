@@ -13,13 +13,10 @@ class GeminiProvider(BaseProvider):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._client = None
 
-    def _get_client(self):
-        if self._client is None:
-            from google import genai
-            self._client = genai.Client(api_key=self.api_key)
-        return self._client
+    def _get_client(self, api_key: str):
+        from google import genai
+        return genai.Client(api_key=api_key)
 
     def query(
         self,
@@ -27,10 +24,11 @@ class GeminiProvider(BaseProvider):
         validation_map: dict[str, ValidationEntry | None],
         research_context: str | None = None,
     ) -> ProviderResult:
+        from backend.key_manager import key_manager
+        from loguru import logger
         from google.genai import types
 
         prompt, json_schema = self._build_prompt(job, validation_map, research_context)
-        client = self._get_client()
 
         tools = [types.Tool(google_search=types.GoogleSearch())] if self.enable_web_search else None
         
@@ -55,11 +53,23 @@ class GeminiProvider(BaseProvider):
             reraise=True
         ):
             with attempt:
-                response = client.models.generate_content(
-                    model=self.model,
-                    contents=prompt,
-                    config=config,
-                )
+                active_key = key_manager.get_active_key(self.name, self.api_keys)
+                if not active_key:
+                    raise RuntimeError(f"[{self.name}] No active API keys available (all on cooldown).")
+                    
+                client = self._get_client(active_key)
+                try:
+                    response = client.models.generate_content(
+                        model=self.model,
+                        contents=prompt,
+                        config=config,
+                    )
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if any(k in err_str for k in ["429", "quota", "exhausted", "rate limit", "403"]):
+                        logger.warning(f"[{self.name}] Quota/Auth error with key: {e}. Rotating...")
+                        key_manager.mark_key_exhausted(self.name, active_key)
+                    raise e
                 raw_text = (response.text or "").strip()
                 input_tokens = 0
                 output_tokens = 0
@@ -79,7 +89,12 @@ class GeminiProvider(BaseProvider):
     def test_connection(self) -> tuple[bool, str]:
         try:
             from google.genai import types
-            client = self._get_client()
+            from backend.key_manager import key_manager
+            active_key = key_manager.get_active_key(self.name, self.api_keys)
+            if not active_key:
+                return (False, "No active API keys available.")
+            
+            client = self._get_client(active_key)
             response = client.models.generate_content(
                 model=self.model,
                 contents="Say 'OK' in one word.",

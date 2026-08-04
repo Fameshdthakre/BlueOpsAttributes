@@ -81,82 +81,97 @@ async def process_single_asin(
     # --- TAVILY RESEARCH STEP ---
     raw_contexts = []
     tavily_cfg = config.get("providers", {}).get("Tavily", {})
-    if tavily_cfg.get("enabled") and tavily_cfg.get("api_key"):
-        try:
-            from tavily import AsyncTavilyClient
-            import asyncio
+    if tavily_cfg.get("enabled"):
+        tavily_keys = tavily_cfg.get("api_keys", [])
+        if not tavily_keys and tavily_cfg.get("api_key"):
+            tavily_keys = [tavily_cfg.get("api_key")]
             
-            client = AsyncTavilyClient(
-                api_key=tavily_cfg.get("api_key")
-            )
-            
-            tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
-            tavily_mode = tavily_cfg.get("tavily_mode", "deep")
-            product_desc = f"{job.asin}; {job.title or job.brand or ''}"
-            
-            gathered_urls = []
-            if job.custom_urls:
-                for cu in job.custom_urls:
-                    if cu and cu not in gathered_urls:
-                        gathered_urls.append(cu)
+        if tavily_keys:
+            try:
+                from tavily import AsyncTavilyClient
+                from backend.key_manager import key_manager
+                import asyncio
+                
+                tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
+                product_desc = f"{job.asin}; {job.title or job.brand or ''}"
+                gathered_urls = []
+                if job.custom_urls:
+                    for cu in job.custom_urls:
+                        if cu and cu not in gathered_urls:
+                            gathered_urls.append(cu)
 
-            # 1. Custom URL extraction
-            if job.custom_urls and tavily_cfg.get("enable_extract", True):
-                try:
-                    logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
-                    extract_res = await client.extract(
-                        urls=job.custom_urls[:3],
-                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
-                        format=tavily_fmt
-                    )
-                    for ext in extract_res.get("results", []):
-                        if ext.get("raw_content"):
-                            # Fix Wikipedia Problem: truncate to 3000 chars
-                            content = ext.get('raw_content')[:3000]
-                            raw_contexts.append(f"[GENERAL] Extracted Custom URL ({ext.get('url')}):\n{content}")
-                except Exception as ext_err:
-                    logger.warning(f"[Tavily] Custom URL extraction failed: {ext_err}")
+                for attempt in range(len(tavily_keys)):
+                    tavily_key = key_manager.get_active_key("Tavily", tavily_keys)
+                    if not tavily_key:
+                        logger.warning(f"[Tavily] No active API keys available for ASIN {job.asin}.")
+                        break
+                        
+                    client = AsyncTavilyClient(api_key=tavily_key)
+                    try:
+                        # 1. Custom URL extraction
+                        if job.custom_urls and tavily_cfg.get("enable_extract", True):
+                            try:
+                                logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
+                                extract_res = await client.extract(
+                                    urls=job.custom_urls[:3],
+                                    extract_depth=tavily_cfg.get("extract_depth", "advanced"),
+                                    format=tavily_fmt
+                                )
+                                for ext in extract_res.get("results", []):
+                                    if ext.get("raw_content"):
+                                        content = ext.get('raw_content')[:3000]
+                                        raw_contexts.append(f"[GENERAL] Extracted Custom URL ({ext.get('url')}):\n{content}")
+                            except Exception as ext_err:
+                                logger.warning(f"[Tavily] Custom URL extraction failed: {ext_err}")
 
-            # 2. Consolidated Attribute Search (Fixing N+1)
-            if tavily_cfg.get("enable_search", True) and job.attributes:
-                try:
-                    logger.info(f"[Tavily] Launching ONE consolidated search for {len(job.attributes)} attributes on ASIN {job.asin}...")
-                    
-                    attributes_list = ", ".join(job.attributes)
-                    search_query = f'Find exact specifications for product: {product_desc}. Looking for: {attributes_list}'
-                    
-                    response = await client.search(
-                        query=search_query,
-                        include_answer=False, # Fixing redundant AI
-                        search_depth=tavily_cfg.get("search_depth", "basic"),
-                        include_raw_content=True,
-                        max_results=tavily_cfg.get("max_results", 5)
-                    )
-                    
-                    ctxs = []
-                    for res in response.get("results", []):
-                        if res.get("url"):
-                            if res.get("url") not in gathered_urls:
-                                gathered_urls.append(res.get("url"))
-                                
-                        content = res.get("raw_content") or res.get("content")
-                        if content:
-                            # Fix Wikipedia Problem: truncate per source
-                            truncated_content = content[:3000]
-                            ctxs.append(f"Source: {res.get('url')}\n{truncated_content}")
+                        # 2. Consolidated Attribute Search
+                        if tavily_cfg.get("enable_search", True) and job.attributes:
+                            logger.info(f"[Tavily] Launching ONE consolidated search for {len(job.attributes)} attributes on ASIN {job.asin}...")
+                            attributes_list = ", ".join(job.attributes)
+                            search_query = f'Find exact specifications for product: {product_desc}. Looking for: {attributes_list}'
                             
-                    if ctxs:
-                        raw_contexts.append("\n---\n".join(ctxs))
+                            response = await client.search(
+                                query=search_query,
+                                include_answer=False,
+                                search_depth=tavily_cfg.get("search_depth", "basic"),
+                                include_raw_content=True,
+                                max_results=tavily_cfg.get("max_results", 5)
+                            )
+                            
+                            ctxs = []
+                            for res in response.get("results", []):
+                                if res.get("url"):
+                                    if res.get("url") not in gathered_urls:
+                                        gathered_urls.append(res.get("url"))
+                                        
+                                content = res.get("raw_content") or res.get("content")
+                                if content:
+                                    truncated_content = content[:3000]
+                                    ctxs.append(f"Source: {res.get('url')}\n{truncated_content}")
+                                    
+                            if ctxs:
+                                raw_contexts.append("\n---\n".join(ctxs))
                         
-                except Exception as e:
-                    logger.warning(f"[Tavily] Search failed: {e}")
+                        # Break out of key loop on success!
+                        break
+                        
+                    except Exception as e:
+                        err_str = str(e).lower()
+                        if any(k in err_str for k in ["429", "quota", "rate limit", "unauthorized", "401", "403", "limit exceeded"]):
+                            logger.warning(f"[Tavily] Key failed with quota/auth error: {e}. Rotating key...")
+                            key_manager.mark_key_exhausted("Tavily", tavily_key)
+                            continue # Try next key in loop
+                        else:
+                            logger.warning(f"[Tavily] Search failed with non-quota error: {e}")
+                            break # Standard error, do not burn other keys
 
-            if gathered_urls:
-                job.extra_data["searched_urls"] = "\n".join(gathered_urls)
-                        
-            logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks and {len(gathered_urls)} URLs for {job.asin}.")
-        except Exception as e:
-            logger.error(f"[Tavily] Fatal search failure for {job.asin}: {e}")
+                if gathered_urls:
+                    job.extra_data["searched_urls"] = "\n".join(gathered_urls)
+                            
+                logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks and {len(gathered_urls)} URLs for {job.asin}.")
+            except Exception as e:
+                logger.error(f"[Tavily] Fatal search failure for {job.asin}: {e}")
+    # ----------------------------
     # ----------------------------
     
     for provider_name in attempts:
@@ -169,14 +184,14 @@ async def process_single_asin(
             logger.info(f"Skipping {provider_name} (disabled).")
             continue
             
-        api_key = p_cfg.get("api_key")
+        api_keys = p_cfg.get("api_keys", [])
         
-        if not api_key:
-            logger.warning(f"Skipping {provider_name} (no API key).")
+        if not api_keys:
+            logger.warning(f"Skipping {provider_name} (no API keys).")
             continue
             
         provider = provider_cls(
-            api_key=api_key,
+            api_keys=api_keys,
             model=p_cfg.get("model", ""),
             timeout=p_cfg.get("timeout", 60),
             max_retries=p_cfg.get("max_retries", 3),

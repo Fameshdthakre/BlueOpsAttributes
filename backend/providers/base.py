@@ -15,7 +15,7 @@ class BaseProvider(ABC):
 
     def __init__(
         self,
-        api_key: str,
+        api_keys: list[str],
         model: str,
         timeout: int = 60,
         max_retries: int = 3,
@@ -24,7 +24,7 @@ class BaseProvider(ABC):
         top_k: int = 40,
         top_p: float = 0.95,
     ) -> None:
-        self.api_key           = api_key
+        self.api_keys          = api_keys
         self.model             = model
         self.timeout           = timeout
         self.max_retries       = max_retries

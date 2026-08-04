@@ -13,13 +13,10 @@ class ClaudeProvider(BaseProvider):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._client = None
 
-    def _get_client(self):
-        if self._client is None:
-            import anthropic
-            self._client = anthropic.Anthropic(api_key=self.api_key, timeout=self.timeout)
-        return self._client
+    def _get_client(self, api_key: str):
+        import anthropic
+        return anthropic.Anthropic(api_key=api_key, timeout=self.timeout)
 
     def query(
         self,
@@ -27,9 +24,11 @@ class ClaudeProvider(BaseProvider):
         validation_map: dict[str, ValidationEntry | None],
         research_context: str | None = None,
     ) -> ProviderResult:
+        from backend.key_manager import key_manager
+        from loguru import logger
         import json
+        
         prompt, json_schema = self._build_prompt(job, validation_map, research_context)
-        client = self._get_client()
 
         max_tokens = min(200 * len(job.attributes) + 512, 4096)
 
@@ -58,7 +57,19 @@ class ClaudeProvider(BaseProvider):
             reraise=True
         ):
             with attempt:
-                response = client.messages.create(**kwargs)
+                active_key = key_manager.get_active_key(self.name, self.api_keys)
+                if not active_key:
+                    raise RuntimeError(f"[{self.name}] No active API keys available (all on cooldown).")
+                    
+                client = self._get_client(active_key)
+                try:
+                    response = client.messages.create(**kwargs)
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if any(k in err_str for k in ["429", "quota", "exhausted", "rate limit", "403", "credit"]):
+                        logger.warning(f"[{self.name}] Quota/Auth error with key: {e}. Rotating...")
+                        key_manager.mark_key_exhausted(self.name, active_key)
+                    raise e
 
                 raw = ""
                 for block in response.content:
@@ -86,7 +97,12 @@ class ClaudeProvider(BaseProvider):
 
     def test_connection(self) -> tuple[bool, str]:
         try:
-            client = self._get_client()
+            from backend.key_manager import key_manager
+            active_key = key_manager.get_active_key(self.name, self.api_keys)
+            if not active_key:
+                return (False, "No active API keys available.")
+                
+            client = self._get_client(active_key)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=10,

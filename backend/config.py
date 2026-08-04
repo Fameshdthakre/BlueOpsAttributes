@@ -12,6 +12,18 @@ from dotenv import load_dotenv
 
 from backend.database import get_connection
 
+def parse_api_keys(api_key_raw: str | list) -> list[str]:
+    if isinstance(api_key_raw, list):
+        return [k.strip() for k in api_key_raw if k and k.strip()]
+    if not api_key_raw:
+        return []
+    keys = []
+    for line in api_key_raw.replace(",", "\n").split("\n"):
+        k = line.strip()
+        if k:
+            keys.append(k)
+    return keys
+
 load_dotenv()
 
 # The encryption key MUST be stored as an environment variable in Vercel.
@@ -107,6 +119,7 @@ def load_config(user_id: int) -> dict[str, Any]:
                     try:
                         plaintext_key = f.decrypt(bytes(p_row["encrypted_key"])).decode('utf-8')
                         cfg["providers"][provider]["api_key"] = plaintext_key
+                        cfg["providers"][provider]["api_keys"] = parse_api_keys(plaintext_key)
                     except Exception as e:
                         logger.error(f"Failed to decrypt API key for {provider}: {e}")
 
@@ -119,10 +132,18 @@ def load_config(user_id: int) -> dict[str, Any]:
                     if model not in cfg["custom_models"][provider]:
                         cfg["custom_models"][provider].append(model)
                         
+        # Ensure all providers have an api_keys array even if missing from DB
+        for p, p_cfg in cfg.get("providers", {}).items():
+            if "api_keys" not in p_cfg:
+                p_cfg["api_keys"] = parse_api_keys(p_cfg.get("api_key", ""))
+                
         return cfg
     except Exception as exc:
         logger.warning(f"Error loading config from DB ({exc}) — using defaults.")
-        return _deep_copy(DEFAULT_CONFIG)
+        res = _deep_copy(DEFAULT_CONFIG)
+        for p, p_cfg in res.get("providers", {}).items():
+            p_cfg["api_keys"] = []
+        return res
     finally:
         if conn:
             conn.close()
