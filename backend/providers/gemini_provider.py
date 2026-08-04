@@ -16,7 +16,7 @@ class GeminiProvider(BaseProvider):
 
     def _get_client(self, api_key: str):
         from google import genai
-        return genai.Client(api_key=api_key)
+        return genai.Client(api_key=api_key, http_options={'timeout': self.timeout})
 
     def query(
         self,
@@ -68,7 +68,7 @@ class GeminiProvider(BaseProvider):
                     err_str = str(e).lower()
                     if any(k in err_str for k in ["429", "quota", "exhausted", "rate limit", "403"]):
                         logger.warning(f"[{self.name}] Quota/Auth error with key: {e}. Rotating...")
-                        key_manager.mark_key_exhausted(self.name, active_key)
+                        key_manager.mark_key_exhausted(self.name, active_key, self.api_keys)
                     raise e
                 raw_text = (response.text or "").strip()
                 input_tokens = 0

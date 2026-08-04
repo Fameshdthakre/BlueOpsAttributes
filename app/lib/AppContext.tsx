@@ -216,10 +216,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUnresolvedCount((prev) => prev + u);
       setFailedCount((prev) => prev + f);
 
-      if (result.provider_used === "None") {
+      if (result.provider_used.startsWith("None") || v === 0) {
+        const parts = [];
+        if (v > 0) parts.push(`${v} Resolved`);
+        if (u > 0) parts.push(`${u} Unresolved`);
+        if (f > 0) parts.push(`${f} Failed`);
+        const countsStr = parts.length > 0 ? parts.join(", ") : "All Failed";
         addLog(
           "ERROR",
-          `Failed ASIN ${job.asin}: ${result.error || "All providers failed or missing API keys."}`,
+          `Failed ASIN ${job.asin} via ${result.provider_used}: ${result.error || countsStr}`,
         );
       } else {
         const parts = [];

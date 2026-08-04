@@ -64,7 +64,7 @@ class OpenAIProvider(BaseProvider):
                     err_str = str(e).lower()
                     if any(k in err_str for k in ["429", "quota", "exhausted", "rate limit", "403"]):
                         logger.warning(f"[{self.name}] Quota/Auth error with key: {e}. Rotating...")
-                        key_manager.mark_key_exhausted(self.name, active_key)
+                        key_manager.mark_key_exhausted(self.name, active_key, self.api_keys)
                     raise e
                     
                 raw = (response.choices[0].message.content or "").strip()

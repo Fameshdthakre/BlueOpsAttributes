@@ -112,10 +112,13 @@ async def process_single_asin(
                         if job.custom_urls and tavily_cfg.get("enable_extract", True):
                             try:
                                 logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
-                                extract_res = await client.extract(
-                                    urls=job.custom_urls[:3],
-                                    extract_depth=tavily_cfg.get("extract_depth", "advanced"),
-                                    format=tavily_fmt
+                                extract_res = await asyncio.wait_for(
+                                    client.extract(
+                                        urls=job.custom_urls[:3],
+                                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
+                                        format=tavily_fmt
+                                    ),
+                                    timeout=45.0
                                 )
                                 for ext in extract_res.get("results", []):
                                     if ext.get("raw_content"):
@@ -130,12 +133,15 @@ async def process_single_asin(
                             attributes_list = ", ".join(job.attributes)
                             search_query = f'Find exact specifications for product: {product_desc}. Looking for: {attributes_list}'
                             
-                            response = await client.search(
-                                query=search_query,
-                                include_answer=False,
-                                search_depth=tavily_cfg.get("search_depth", "basic"),
-                                include_raw_content=True,
-                                max_results=tavily_cfg.get("max_results", 5)
+                            response = await asyncio.wait_for(
+                                client.search(
+                                    query=search_query,
+                                    include_answer=False,
+                                    search_depth=tavily_cfg.get("search_depth", "basic"),
+                                    include_raw_content=True,
+                                    max_results=tavily_cfg.get("max_results", 5)
+                                ),
+                                timeout=45.0
                             )
                             
                             ctxs = []
@@ -159,7 +165,7 @@ async def process_single_asin(
                         err_str = str(e).lower()
                         if any(k in err_str for k in ["429", "quota", "rate limit", "unauthorized", "401", "403", "limit exceeded"]):
                             logger.warning(f"[Tavily] Key failed with quota/auth error: {e}. Rotating key...")
-                            key_manager.mark_key_exhausted("Tavily", tavily_key)
+                            key_manager.mark_key_exhausted("Tavily", tavily_key, tavily_keys)
                             continue # Try next key in loop
                         else:
                             logger.warning(f"[Tavily] Search failed with non-quota error: {e}")
@@ -231,7 +237,10 @@ async def process_single_asin(
 
         try:
             import asyncio
-            result = await asyncio.to_thread(provider.query, job, validation_map, research_context)
+            result = await asyncio.wait_for(
+                asyncio.to_thread(provider.query, job, validation_map, research_context),
+                timeout=p_cfg.get("timeout", 60) + 5  # Give the internal timeout 5 seconds buffer
+            )
             
             logger.info(
                 f"[{provider_name}] Sent Prompt for ASIN {job.asin}:\n{result.prompt_sent}\n"
