@@ -149,8 +149,7 @@ class BaseProvider(ABC):
         json_schema = {
             "type": "object",
             "properties": schema_props,
-            "required": required_fields,
-            "additionalProperties": False
+            "required": required_fields
         }
 
         return "\n".join(lines), json_schema

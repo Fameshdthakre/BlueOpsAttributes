@@ -28,7 +28,8 @@ class OpenAIProvider(BaseProvider):
         from loguru import logger
         
         prompt, json_schema = self._build_prompt(job, validation_map, research_context)
-
+        json_schema["additionalProperties"] = False
+        
         kwargs = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
