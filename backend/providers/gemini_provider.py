@@ -39,9 +39,9 @@ class GeminiProvider(BaseProvider):
         }
         if tools:
             config_kwargs["tools"] = tools
-            
-        config_kwargs["response_mime_type"] = "application/json"
-        config_kwargs["response_schema"] = json_schema
+        else:
+            config_kwargs["response_mime_type"] = "application/json"
+            config_kwargs["response_schema"] = json_schema
             
         config = types.GenerateContentConfig(**config_kwargs)
 

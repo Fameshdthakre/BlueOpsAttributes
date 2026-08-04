@@ -48,7 +48,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "Gemini": {
             "enabled": True,
             "api_key": "",
-            "model": "gemini-2.5-flash",
+            "model": "gemini-1.5-flash",
             "max_retries": 3,
             "timeout": 60,
             "rpm_limit": 15,
