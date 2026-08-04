@@ -1,4 +1,4 @@
-# BlueOps | ASIN Attributes Master
+# BlueOps | ASIN Attributes Master by Famesh Thakre
 
 An AI-powered orchestration tool designed to automatically extract and validate Amazon Standard Identification Number (ASIN) attributes. By leveraging cutting-edge LLMs (OpenAI, Gemini, Claude), this application can parse product pages or raw data, extract specific attributes, and validate them against predefined taxonomy rules.
 
