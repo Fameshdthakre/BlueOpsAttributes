@@ -308,7 +308,8 @@ async def process_single_asin(
                 provider_used=provider_name,
                 error_message=None,
                 input_tokens=result.input_tokens if hasattr(result, 'input_tokens') else 0,
-                output_tokens=result.output_tokens if hasattr(result, 'output_tokens') else 0
+                output_tokens=result.output_tokens if hasattr(result, 'output_tokens') else 0,
+                tavily_used=bool(raw_contexts)
             )
             
         except Exception as e:
@@ -349,5 +350,6 @@ async def process_single_asin(
         job=job,
         attribute_results=failed_results,
         provider_used="None",
-        error_message=last_error or "All providers failed or missing API keys."
+        error_message=last_error or "All providers failed or missing API keys.",
+        tavily_used=bool(raw_contexts)
     )

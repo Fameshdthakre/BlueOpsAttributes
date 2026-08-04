@@ -74,6 +74,7 @@ class ProcessingResult:
     error_message: Optional[str] = None
     input_tokens: int = 0
     output_tokens: int = 0
+    tavily_used: bool = False
 
     @property
     def asin(self) -> str:

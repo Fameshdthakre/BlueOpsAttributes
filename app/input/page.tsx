@@ -210,6 +210,17 @@ function InputPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleCopyLogs = () => {
+    if (logs.length === 0) return;
+    const content = logs.map(l => `[${l.time}] [${l.level}] ${l.message}`).join("\n");
+    navigator.clipboard.writeText(content).then(() => {
+      alert("Logs copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy logs:", err);
+      alert("Failed to copy logs.");
+    });
+  };
+
   return (
     <div className="animate-in fade-in flex flex-col h-full">
       <PageHeader
@@ -988,6 +999,26 @@ function InputPage() {
                       />
                     </svg>
                     Download
+                  </button>
+                  <button
+                    onClick={handleCopyLogs}
+                    className="bg-bg-dark border border-bg-input hover:bg-surface-2 px-3 py-1.5 rounded text-xs text-text-main font-medium transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4 inline-block mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                      />
+                    </svg>
+                    Copy All
                   </button>
                 </div>
               </div>

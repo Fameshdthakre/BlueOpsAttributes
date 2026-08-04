@@ -123,7 +123,7 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         return {
             "asin": job.asin,
             "status": result.match_status,
-            "provider_used": result.provider_used,
+            "provider_used": f"{result.provider_used}{' + Tavily' if getattr(result, 'tavily_used', False) else ''}",
             "error": result.error_message,
             "results": [{"attribute_id": ar.attribute_id, "status": ar.match_status, "value": ar.final_value} for ar in result.attribute_results]
         }
