@@ -96,6 +96,12 @@ def process_single_asin(
             tavily_mode = tavily_cfg.get("tavily_mode", "deep")
             product_desc = f"{job.asin}; {job.title or job.brand or ''}"
             
+            gathered_urls = []
+            if job.custom_urls:
+                for cu in job.custom_urls:
+                    if cu and cu not in gathered_urls:
+                        gathered_urls.append(cu)
+
             # 1. Custom URL extraction (General context)
             if job.custom_urls and tavily_cfg.get("enable_extract", True):
                 try:
@@ -118,7 +124,7 @@ def process_single_asin(
                     if tavily_mode == "fast":
                         ans = client.qna_search(query=search_query, search_depth=tavily_cfg.get("search_depth", "advanced"))
                         if isinstance(ans, str):
-                            return f"[{attr_id}] TAVILY DIRECT ANSWER:\n{ans}"
+                            return f"[{attr_id}] TAVILY DIRECT ANSWER:\n{ans}", []
                     else:
                         response = client.search(
                             query=search_query,
@@ -129,16 +135,19 @@ def process_single_asin(
                             max_results=tavily_cfg.get("max_results", 3)
                         )
                         ctxs = []
+                        found_urls = []
                         if response.get("answer"):
                             ctxs.append(f"[{attr_id}] TAVILY ANSWER: {response['answer']}")
                         for res in response.get("results", []):
+                            if res.get("url"):
+                                found_urls.append(res.get("url"))
                             content = res.get("raw_content") or res.get("content")
                             if content:
                                 ctxs.append(f"[{attr_id}] Source: {res.get('url')}\n{content}")
-                        return "\n---\n".join(ctxs)
+                        return "\n---\n".join(ctxs), found_urls
                 except Exception as e:
                     logger.warning(f"[Tavily] Search failed for {attr_id}: {e}")
-                return ""
+                return "", []
 
             if tavily_cfg.get("enable_search", True) and job.attributes:
                 logger.info(f"[Tavily] Launching parallel searches for {len(job.attributes)} attributes on ASIN {job.asin}...")
@@ -147,9 +156,17 @@ def process_single_asin(
                     
                 for res in results:
                     if res:
-                        raw_contexts.append(res)
+                        ctx_str, urls = res
+                        if ctx_str:
+                            raw_contexts.append(ctx_str)
+                        for u in urls:
+                            if u not in gathered_urls:
+                                gathered_urls.append(u)
+                                
+            if gathered_urls:
+                job.extra_data["searched_urls"] = "\n".join(gathered_urls)
                         
-            logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks for {job.asin}.")
+            logger.info(f"[Tavily] Gathered {len(raw_contexts)} context blocks and {len(gathered_urls)} URLs for {job.asin}.")
         except Exception as e:
             logger.error(f"[Tavily] Fatal search failure for {job.asin}: {e}")
     # ----------------------------
@@ -214,9 +231,6 @@ def process_single_asin(
             attribute_results = []
             for attr_id in job.attributes:
                 raw_val = str(parsed_json.get(attr_id, "")).strip()
-                source_links = parsed_json.get(f"{attr_id}_sources", [])
-                if not isinstance(source_links, list):
-                    source_links = []
                 
                 val_entry = validation_map.get(attr_id)
                 
@@ -238,7 +252,7 @@ def process_single_asin(
                         confidence=0.0,
                         validated_product_type=val_pt,
                         validated_allowed_options=val_options,
-                        source_links=source_links
+                        source_links=[]
                     ))
                     continue
                     
@@ -248,22 +262,28 @@ def process_single_asin(
                         status = "Unresolved"
                     else:
                         status = "Validated"
+                    attribute_results.append(AttributeResult(
+                        attribute_id=attr_id,
+                        raw_ai_value=raw_val,
+                        final_value=final_value,
+                        match_status=status,
+                        confidence=confidence,
+                        validated_product_type=val_pt,
+                        validated_allowed_options=val_options,
+                        source_links=[]
+                    ))
                 else:
                     # Free-text or unknown attribute
-                    final_value = raw_val
-                    confidence = result.confidence if hasattr(result, 'confidence') else 0.85
-                    status = "Free Text"
-                
-                attribute_results.append(AttributeResult(
-                    attribute_id=attr_id,
-                    raw_ai_value=raw_val,
-                    final_value=final_value,
-                    match_status=status,
-                    confidence=confidence,
-                    validated_product_type=val_pt,
-                    validated_allowed_options=val_options,
-                    source_links=source_links
-                ))
+                    attribute_results.append(AttributeResult(
+                        attribute_id=attr_id,
+                        raw_ai_value=raw_val,
+                        final_value=raw_val,
+                        match_status="Free Text",
+                        confidence=result.confidence if hasattr(result, 'confidence') else 0.85,
+                        validated_product_type=val_pt,
+                        validated_allowed_options=val_options,
+                        source_links=[]
+                    ))
             
             return ProcessingResult(
                 job=job,

@@ -116,20 +116,16 @@ class BaseProvider(ABC):
                     f"  Type: FREE TEXT\n"
                     f"  Instruction: {guidance}\n"
                     f"  Respond with a concise value — one short phrase or sentence maximum based on the research context.\n"
-                    f"  Sources: Provide an array of URLs from the research context that justify this value."
                 )
                 schema[attr_id] = "<free text value>"
-                schema[f"{attr_id}_sources"] = ["<url1>", "<url2>"]
 
             else:
                 lines.append(
                     f"\n[{attr_id}]\n"
                     f"  Type: FREE TEXT\n"
                     f"  Instruction: Provide the {label} for this product based on the research context.\n"
-                    f"  Sources: Provide an array of URLs from the research context that justify this value."
                 )
                 schema[attr_id] = "<free text value>"
-                schema[f"{attr_id}_sources"] = ["<url1>", "<url2>"]
 
         if not job.title:
             lines.append(
