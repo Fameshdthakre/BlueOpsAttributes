@@ -61,7 +61,8 @@ const KeyVaultSection = ({
   const handleBulkAdd = () => {
     const newK = bulkInput.replace(/,/g, "\n").split("\n").map(k => k.trim()).filter(k => k);
     if (newK.length > 0) {
-      onChange([...keys, ...newK].join("\n"));
+      const combined = Array.from(new Set([...keys, ...newK]));
+      onChange(combined.join("\n"));
       setBulkInput("");
     }
   };
