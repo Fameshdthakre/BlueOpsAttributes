@@ -385,7 +385,7 @@ export default function SettingsPage() {
           { label: "Settings" },
         ]}
       >
-        {activeTab === "general" && (
+        {(activeTab === "general" || activeTab === "keyvault") && (
           <button
             onClick={handleSave}
             disabled={saving}
