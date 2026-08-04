@@ -112,12 +112,16 @@ async def process_single_asin(
                         if job.custom_urls and tavily_cfg.get("enable_extract", True):
                             try:
                                 logger.info(f"[Tavily] Extracting {len(job.custom_urls)} custom URLs for {job.asin}...")
+                                extract_kwargs = {
+                                    "urls": job.custom_urls[:3],
+                                    "format": tavily_fmt
+                                }
+                                ext_depth = tavily_cfg.get("extract_depth", "basic")
+                                if ext_depth == "advanced":
+                                    extract_kwargs["extract_depth"] = "advanced"
+
                                 extract_res = await asyncio.wait_for(
-                                    client.extract(
-                                        urls=job.custom_urls[:3],
-                                        extract_depth=tavily_cfg.get("extract_depth", "advanced"),
-                                        format=tavily_fmt
-                                    ),
+                                    client.extract(**extract_kwargs),
                                     timeout=45.0
                                 )
                                 for ext in extract_res.get("results", []):
