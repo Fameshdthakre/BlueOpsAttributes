@@ -67,15 +67,16 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         if job.barcode:
             db_extra["barcode"] = job.barcode
         if job.description:
-            db_extra["description"] = job.description
-
         def _db_insert():
             conn = get_connection()
             try:
                 with conn.cursor() as cur:
-                    for ar in result.attribute_results:
-                        attr_extra = db_extra.copy()
-                        if hasattr(ar, 'source_links') and ar.source_links:
+                    for idx, ar in enumerate(result.attribute_results):
+                        # We might want to pass through extra columns verbatim
+                        attr_extra = req.extra_data.copy()
+                        if req.barcode: attr_extra["barcode"] = req.barcode
+                        if req.description: attr_extra["description"] = req.description
+                        if hasattr(ar, 'source_links') and ar.source_links: 
                             attr_extra["source_links"] = ar.source_links
                             
                         cur.execute("""
@@ -83,8 +84,8 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                             session_id, asin, attribute_id, product_type, brand, title,
                             final_value, match_status, provider_used, confidence,
                             raw_ai_value, extra_data, validated_product_type, validated_allowed_options,
-                            input_tokens, output_tokens
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            input_tokens, output_tokens, tavily_credits
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (session_id, asin, attribute_id) DO UPDATE SET
                             product_type = EXCLUDED.product_type,
                             brand = EXCLUDED.brand,
@@ -99,6 +100,7 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                             validated_allowed_options = EXCLUDED.validated_allowed_options,
                             input_tokens = EXCLUDED.input_tokens,
                             output_tokens = EXCLUDED.output_tokens,
+                            tavily_credits = EXCLUDED.tavily_credits,
                             created_at = NOW()
                     """, (
                         req.session_id, job.asin, ar.attribute_id, job.product_type, job.brand, job.title,
@@ -106,8 +108,9 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
                         ar.raw_ai_value, json.dumps(attr_extra) if attr_extra else "{}",
                         ar.validated_product_type,
                         ar.validated_allowed_options,
-                        result.input_tokens if result else 0,
-                        result.output_tokens if result else 0
+                        result.input_tokens if (idx == 0 and result) else 0,
+                        result.output_tokens if (idx == 0 and result) else 0,
+                        getattr(result, 'tavily_credits', 0) if (idx == 0 and result) else 0
                     ))
                 conn.commit()
             except Exception:

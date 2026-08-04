@@ -95,6 +95,7 @@ async def process_single_asin(
                 tavily_fmt = tavily_cfg.get("tavily_format", "markdown")
                 product_desc = f"{job.asin}; {job.title or job.brand or ''}"
                 gathered_urls = []
+                tavily_credits_used = 0
                 if job.custom_urls:
                     for cu in job.custom_urls:
                         if cu and cu not in gathered_urls:
@@ -124,6 +125,7 @@ async def process_single_asin(
                                     client.extract(**extract_kwargs),
                                     timeout=45.0
                                 )
+                                tavily_credits_used += len(extract_kwargs["urls"]) * (2 if ext_depth == "advanced" else 1)
                                 for ext in extract_res.get("results", []):
                                     if ext.get("raw_content"):
                                         content = ext.get('raw_content')[:3000]
@@ -137,16 +139,18 @@ async def process_single_asin(
                             attributes_list = ", ".join(job.attributes)
                             search_query = f'Find exact specifications for product: {product_desc}. Looking for: {attributes_list}'
                             
+                            search_depth = tavily_cfg.get("search_depth", "basic")
                             response = await asyncio.wait_for(
                                 client.search(
                                     query=search_query,
                                     include_answer=False,
-                                    search_depth=tavily_cfg.get("search_depth", "basic"),
+                                    search_depth=search_depth,
                                     include_raw_content=True,
                                     max_results=tavily_cfg.get("max_results", 5)
                                 ),
                                 timeout=45.0
                             )
+                            tavily_credits_used += 2 if search_depth == "advanced" else 1
                             
                             ctxs = []
                             for res in response.get("results", []):
@@ -322,7 +326,8 @@ async def process_single_asin(
                 error_message=None,
                 input_tokens=result.input_tokens if hasattr(result, 'input_tokens') else 0,
                 output_tokens=result.output_tokens if hasattr(result, 'output_tokens') else 0,
-                tavily_used=bool(raw_contexts)
+                tavily_used=bool(raw_contexts),
+                tavily_credits=tavily_credits_used if 'tavily_credits_used' in locals() else 0
             )
             
         except Exception as e:
@@ -364,5 +369,6 @@ async def process_single_asin(
         attribute_results=failed_results,
         provider_used="None",
         error_message=last_error or "All providers failed or missing API keys.",
-        tavily_used=bool(raw_contexts)
+        tavily_used=bool(raw_contexts),
+        tavily_credits=tavily_credits_used
     )

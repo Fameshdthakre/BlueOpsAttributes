@@ -28,7 +28,8 @@ def get_dashboard_stats(x_user_id: int = Header(...)):
                         COUNT(DISTINCT jr.asin) as total_asins,
                         SUM(COALESCE(jr.input_tokens, 0)) as total_input,
                         SUM(COALESCE(jr.output_tokens, 0)) as total_output,
-                        COUNT(jr.id) as total_attributes
+                        COUNT(jr.id) as total_attributes,
+                        SUM(COALESCE(jr.tavily_credits, 0)) as total_tavily_credits
                     FROM sessions s
                     LEFT JOIN job_results jr ON s.session_id = jr.session_id
                     WHERE s.user_id = %s
@@ -79,7 +80,8 @@ def get_dashboard_stats(x_user_id: int = Header(...)):
                 "total_asins": overall["total_asins"] or 0,
                 "total_input_tokens": overall["total_input"] or 0,
                 "total_output_tokens": overall["total_output"] or 0,
-                "total_attributes": overall["total_attributes"] or 0
+                "total_attributes": overall["total_attributes"] or 0,
+                "total_tavily_credits": overall["total_tavily_credits"] or 0
             },
             "provider_stats": provider_stats,
             "recent_sessions": recent_sessions

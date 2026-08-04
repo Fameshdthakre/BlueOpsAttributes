@@ -75,6 +75,7 @@ class ProcessingResult:
     input_tokens: int = 0
     output_tokens: int = 0
     tavily_used: bool = False
+    tavily_credits: float = 0.0
 
     @property
     def asin(self) -> str:
