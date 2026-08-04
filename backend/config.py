@@ -139,11 +139,8 @@ def load_config(user_id: int) -> dict[str, Any]:
                 
         return cfg
     except Exception as exc:
-        logger.warning(f"Error loading config from DB ({exc}) — using defaults.")
-        res = _deep_copy(DEFAULT_CONFIG)
-        for p, p_cfg in res.get("providers", {}).items():
-            p_cfg["api_keys"] = []
-        return res
+        logger.error(f"Error loading config from DB ({exc}).")
+        raise RuntimeError(f"Failed to load configuration from database: {exc}")
     finally:
         if conn:
             conn.close()
