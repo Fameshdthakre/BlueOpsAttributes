@@ -17,6 +17,10 @@
   --color-status-error: #ef4444; /* Red 500 */
 }
 
+html {
+  font-size: 80%; /* Reduce base scale by 20% for a compact UI */
+}
+
 /* Base resets for a dark theme app */
 body {
   background-color: var(--color-bg-dark);
