@@ -599,6 +599,13 @@ export default function SettingsPage() {
             The primary provider is queried first. Fallbacks are used on failure
             or unresolved results.
           </p>
+          {(() => {
+            const getKeysCount = (keyStr: string | undefined) => {
+              if (!keyStr) return 0;
+              return keyStr.split(/[\n,]+/).filter((k) => k.trim().length > 0).length;
+            };
+            return (
+              <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm text-text-muted mb-2">
@@ -671,6 +678,9 @@ export default function SettingsPage() {
                     {provider}
                   </h2>
                   <div className="flex items-center gap-4">
+                    <span className="text-xs font-medium text-accent bg-accent/10 px-3 py-1.5 rounded border border-accent/20">
+                      {getKeysCount(pCfg.api_key)} Keys in Vault
+                    </span>
                     <button
                       onClick={() => handleTest(provider)}
                       className="text-sm bg-bg-dark border border-bg-input hover:bg-slate-700 px-4 py-2 rounded transition-colors"
@@ -1007,6 +1017,9 @@ export default function SettingsPage() {
                   Tavily AI (Deep Research & Extraction)
                 </h2>
                 <div className="flex items-center gap-4">
+                  <span className="text-xs font-medium text-accent bg-accent/10 px-3 py-1.5 rounded border border-accent/20">
+                    {getKeysCount(tCfg.api_key)} Keys in Vault
+                  </span>
                   <button
                     onClick={() => handleTest("Tavily")}
                     className="text-sm bg-bg-dark border border-purple-500/30 hover:bg-purple-900/20 text-purple-300 px-4 py-2 rounded transition-colors"
@@ -1201,7 +1214,9 @@ export default function SettingsPage() {
             </div>
           );
         })()}
-          </>
+              </>
+            );
+          })()}
         )}
       </div>
     </div>
