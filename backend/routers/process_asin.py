@@ -62,11 +62,6 @@ async def process_asin(req: ProcessRequest, x_user_id: int = Header(...)):
         # Execute AI processing
         result = await process_single_asin(job, val_map, config)
         
-        # Merge explicit fields back into extra_data for storage in the DB JSONB column
-        db_extra = job.extra_data.copy()
-        if job.barcode:
-            db_extra["barcode"] = job.barcode
-        if job.description:
         def _db_insert():
             conn = get_connection()
             try:
