@@ -16,7 +16,7 @@ class GeminiProvider(BaseProvider):
 
     def _get_client(self, api_key: str):
         from google import genai
-        return genai.Client(api_key=api_key, http_options={'timeout': self.timeout})
+        return genai.Client(api_key=api_key, http_options={'timeout': self.timeout * 1000})
 
     def query(
         self,
