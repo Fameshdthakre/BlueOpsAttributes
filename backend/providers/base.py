@@ -114,7 +114,7 @@ class BaseProvider(ABC):
                     f"\n[{attr_id}]\n"
                     f"  Type: FREE TEXT\n"
                     f"  Instruction: {guidance}\n"
-                    f"  Respond with a concise value — one short phrase or sentence maximum based on the research context.\n"
+                    f"  Respond with a concise value with mentioned units. If no units are mentioned, return without any unit."
                 )
                 schema[attr_id] = "<free text value>"
 
