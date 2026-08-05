@@ -290,6 +290,7 @@ async def process_single_asin(
     
     # --- TAVILY RESEARCH STEP ---
     raw_contexts = []
+    tavily_credits_used = 0
     tavily_cfg = config.get("providers", {}).get("Tavily", {})
     if tavily_cfg.get("enabled"):
         tavily_keys = tavily_cfg.get("api_keys", [])
