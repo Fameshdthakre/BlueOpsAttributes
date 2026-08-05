@@ -12,7 +12,7 @@ def test_gemini():
         
     client = genai.Client(api_key=api_key)
 
-    model = "gemini-2.5-flash"
+    model = "gemini-3.1-flash-lite"
     contents = [
         types.Content(
             role="user",
@@ -38,7 +38,7 @@ def test_gemini():
     ]
     generate_content_config = types.GenerateContentConfig(
         max_output_tokens=65530,
-        thinking_config=types.ThinkingConfig(include_thoughts=True),
+        thinking_config=types.ThinkingConfig(thinking_level="MEDIUM"),
         tools=tools,
         response_mime_type="application/json",
         response_schema={

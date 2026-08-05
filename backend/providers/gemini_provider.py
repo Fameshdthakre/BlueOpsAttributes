@@ -68,16 +68,17 @@ class GeminiProvider(BaseProvider):
             "top_k": self.top_k,
             "top_p": self.top_p,
             "max_output_tokens": 65530,
-            "response_mime_type": "application/json",
-            "response_schema": self._dict_to_genai_schema(json_schema),
             "system_instruction": [types.Part.from_text(text="You are an expert product researcher. Your goal is to match the product data to the allowed schema values strictly.")]
         }
         
         if tools:
             config_kwargs["tools"] = tools
+        else:
+            config_kwargs["response_mime_type"] = "application/json"
+            config_kwargs["response_schema"] = self._dict_to_genai_schema(json_schema)
             
         if "3.5" in self.model or "2.0" in self.model:
-            config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
+            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_level="MEDIUM")
             
         config = types.GenerateContentConfig(**config_kwargs)
 
