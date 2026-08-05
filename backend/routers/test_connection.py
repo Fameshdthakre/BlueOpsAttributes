@@ -37,8 +37,13 @@ def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
         raise HTTPException(status_code=400, detail="Unknown provider")
         
     try:
+        import re
+        keys = [k.strip() for k in re.split(r'[\n,]+', req.api_key) if k.strip()]
+        if not keys:
+            raise HTTPException(status_code=400, detail="No API key provided")
+            
         provider = provider_cls(
-            api_keys=[req.api_key],
+            api_keys=keys,
             model=req.model,
             timeout=10,
             max_retries=1
