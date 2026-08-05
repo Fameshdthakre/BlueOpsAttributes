@@ -83,7 +83,19 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
     product_desc = f"ASIN: {job.asin}"
     if job.title: product_desc += f", Title: {job.title}"
     if job.brand: product_desc += f", Brand: {job.brand}"
-    input_prompt = f"Find the most accurate result for product: {product_desc}. Get information for missing attributes: {', '.join(job.attributes)}."
+    input_prompt = (
+        "You are an expert product researcher. Your goal is to strictly match the product data to the allowed schema values.\n\n"
+        "--- FEW-SHOT EXAMPLE ---\n"
+        "Input: Find the most accurate result for ASIN: B07P6TWLGS, Title: Geepas Combo Gesl3142P-3Pcs White.\n"
+        "Missing Attributes: white_brightness, number_of_items\n"
+        'Expected Output Mapping (JSON):\n{\n  "white_brightness": "All Purpose",\n  "number_of_items": 3\n}\n\n'
+        "--- ACTUAL TASK ---\n"
+        f"Input: Find the most accurate result for product: {product_desc}.\n"
+        f"Missing Attributes: {', '.join(job.attributes)}\n\n"
+        "IMPORTANT:\n"
+        "1. ONLY return a JSON object matching the requested schema.\n"
+        "2. If an attribute cannot be found or does not strictly match an allowed list value, omit it. DO NOT hallucinate words like 'None', 'N/A', or 'Unknown'."
+    )
 
     import urllib.parse
     research_kwargs = {}
