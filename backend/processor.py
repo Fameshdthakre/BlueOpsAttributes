@@ -113,15 +113,26 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
         client = AsyncTavilyClient(api_key=tavily_key)
         try:
             logger.info(f"[Tavily Research] Launching research for {job.asin}...")
-            response = await asyncio.wait_for(
-                client.research(
+            async def run_research_with_polling():
+                resp = await client.research(
                     input=input_prompt, 
                     model=research_model, 
                     output_schema=schema,
                     output_length=research_output_length,
                     **research_kwargs
-                ), timeout=180.0
-            )
+                )
+                if isinstance(resp, dict) and resp.get("status") == "pending" and "request_id" in resp:
+                    req_id = resp["request_id"]
+                    logger.info(f"[Tavily Research] Polling for request_id: {req_id}")
+                    while True:
+                        await asyncio.sleep(5)
+                        resp = await client.get_research(req_id)
+                        status = resp.get("status")
+                        if status in ["completed", "failed", "error"]:
+                            break
+                return resp
+            
+            response = await asyncio.wait_for(run_research_with_polling(), timeout=300.0)
             
             logger.info(f"[Tavily Research] Received response for ASIN {job.asin}:\n{json.dumps(response, indent=2) if isinstance(response, dict) else str(response)}\n{'-'*60}")
             
@@ -141,7 +152,11 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
                 job.extra_data["searched_urls"] = gathered_urls
 
             if isinstance(response, dict):
-                if "answer" in response and isinstance(response["answer"], str):
+                if "content" in response and isinstance(response["content"], dict):
+                    parsed_json = response["content"]
+                elif "content" in response and isinstance(response["content"], str):
+                    parsed_json = _parse_json(response["content"])
+                elif "answer" in response and isinstance(response["answer"], str):
                     parsed_json = _parse_json(response["answer"])
                 else:
                     parsed_json = _parse_json(json.dumps(response))
