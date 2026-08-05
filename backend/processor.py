@@ -67,7 +67,6 @@ def build_tavily_research_schema(job: Job, validation_map: dict[str, ValidationE
         }
         
     return {
-        "type": "object",
         "properties": properties,
         "required": required
     }
