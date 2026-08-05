@@ -78,7 +78,7 @@ class GeminiProvider(BaseProvider):
             config_kwargs["response_schema"] = self._dict_to_genai_schema(json_schema)
             
         if "3.5" in self.model or "2.0" in self.model:
-            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_level="MEDIUM")
+            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_level="LOW")
             
         config = types.GenerateContentConfig(**config_kwargs)
 
