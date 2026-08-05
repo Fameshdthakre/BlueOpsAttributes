@@ -1089,9 +1089,9 @@ export default function SettingsPage() {
               </div>
 
               {/* Advanced Configurations */}
-              <div>
+              <div className={`transition-opacity ${tCfg.enable_research ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                 <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
-                  Deep Research & Extraction Options
+                  Search & Extraction Options (Standard LLMs)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
                   <div>

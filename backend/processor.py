@@ -86,6 +86,24 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
     if job.brand: product_desc += f", Brand: {job.brand}"
     input_prompt = f"Find the most accurate result for product: {product_desc}. Get information for missing attributes: {', '.join(job.attributes)}."
 
+    import urllib.parse
+    research_kwargs = {}
+    if job.custom_urls:
+        domains = []
+        for url in job.custom_urls:
+            try:
+                parsed_uri = urllib.parse.urlparse(url)
+                domain = '{uri.netloc}'.format(uri=parsed_uri)
+                if domain:
+                    if domain.startswith("www."):
+                        domain = domain[4:]
+                    if domain not in domains:
+                        domains.append(domain)
+            except Exception:
+                pass
+        if domains:
+            research_kwargs["include_domains"] = domains
+
     for attempt in range(len(tavily_keys)):
         tavily_key = key_manager.get_active_key("Tavily", tavily_keys)
         if not tavily_key:
@@ -100,12 +118,28 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
                     input=input_prompt, 
                     model=research_model, 
                     output_schema=schema,
-                    output_length=research_output_length
+                    output_length=research_output_length,
+                    **research_kwargs
                 ), timeout=180.0
             )
             
             logger.info(f"[Tavily Research] Received response for ASIN {job.asin}:\n{json.dumps(response, indent=2) if isinstance(response, dict) else str(response)}\n{'-'*60}")
             
+            gathered_urls = []
+            if isinstance(response, dict):
+                if "sources" in response and isinstance(response["sources"], list):
+                    for src in response["sources"]:
+                        if isinstance(src, dict) and "url" in src:
+                            gathered_urls.append(src["url"])
+                        elif isinstance(src, str) and src.startswith("http"):
+                            gathered_urls.append(src)
+                if "results" in response and isinstance(response["results"], list):
+                    for res in response["results"]:
+                        if isinstance(res, dict) and "url" in res:
+                            gathered_urls.append(res["url"])
+            if gathered_urls:
+                job.extra_data["searched_urls"] = gathered_urls
+
             if isinstance(response, dict):
                 if "answer" in response and isinstance(response["answer"], str):
                     parsed_json = _parse_json(response["answer"])
@@ -139,7 +173,7 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
                         confidence=0.0,
                         validated_product_type=val_pt,
                         validated_allowed_options=val_options,
-                        source_links=[]
+                        source_links=gathered_urls
                     ))
                     continue
                     
@@ -154,7 +188,7 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
                         confidence=confidence,
                         validated_product_type=val_pt,
                         validated_allowed_options=val_options,
-                        source_links=[]
+                        source_links=gathered_urls
                     ))
                 else:
                     attribute_results.append(AttributeResult(
@@ -165,7 +199,7 @@ async def execute_tavily_research(job: Job, validation_map: dict[str, Validation
                         confidence=0.85,
                         validated_product_type=val_pt,
                         validated_allowed_options=val_options,
-                        source_links=[]
+                        source_links=gathered_urls
                     ))
             
             return ProcessingResult(
