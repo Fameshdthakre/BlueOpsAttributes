@@ -38,7 +38,7 @@ def test_connection(req: TestConnectionRequest, x_user_id: int = Header(...)):
         
     try:
         provider = provider_cls(
-            api_key=req.api_key,
+            api_keys=[req.api_key],
             model=req.model,
             timeout=10,
             max_retries=1
