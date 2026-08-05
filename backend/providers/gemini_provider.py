@@ -54,16 +54,7 @@ class GeminiProvider(BaseProvider):
 
         prompt, json_schema = self._build_prompt(job, validation_map, research_context)
         
-        # Build multi-turn few-shot contents
         contents = [
-            types.Content(
-                role="user",
-                parts=[types.Part.from_text(text="Find the most accurate result for the ASIN: B07P6TWLGS, SKU: Gesl3142P, Title: Geepas Combo Gesl3142P-3Pcs White. And get me the information about the following missing attributes: white_brightness, and number_of_items in a structured format from the allowed list or as per the tool tip.")]
-            ),
-            types.Content(
-                role="model",
-                parts=[types.Part.from_text(text='{\n  "white_brightness": "All Purpose",\n  "number_of_items": 3,\n  "white_brightness_sources": ["https://example.com/geepas"]\n}')]
-            ),
             types.Content(
                 role="user",
                 parts=[types.Part.from_text(text=prompt)]
@@ -76,13 +67,14 @@ class GeminiProvider(BaseProvider):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
+            "max_output_tokens": 65530,
+            "response_mime_type": "application/json",
+            "response_schema": self._dict_to_genai_schema(json_schema),
+            "system_instruction": [types.Part.from_text(text="You are an expert product researcher. Your goal is to match the product data to the allowed schema values strictly.")]
         }
         
         if tools:
             config_kwargs["tools"] = tools
-        else:
-            config_kwargs["response_mime_type"] = "application/json"
-            config_kwargs["response_schema"] = self._dict_to_genai_schema(json_schema)
             
         if "3.5" in self.model or "2.0" in self.model:
             config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
