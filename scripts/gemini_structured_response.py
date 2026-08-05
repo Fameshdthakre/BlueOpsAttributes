@@ -16,21 +16,6 @@ def generate():
         types.Content(
             role="user",
             parts=[
-                types.Part.from_text(text="""Find the most accurate result for the ASIN: B07P6TWLGS, SKU: Gesl3142P,  Title: Geepas Combo Gesl3142P-3Pcs White\" And get me the information about the following missing attributes: white_brightness, and number_of_items in a structured format from the allowed list or as per the tool tip."""),
-            ],
-        ),
-        types.Content(
-            role="model",
-            parts=[
-                types.Part.from_text(text="""{
-  \"white_brightness\": \"All Purpose\",
-  \"number_of_items\": 3
-}"""),
-            ],
-        ),
-        types.Content(
-            role="user",
-            parts=[
                 types.Part.from_text(text="""INSERT_INPUT_HERE"""),
             ],
         ),
@@ -40,8 +25,9 @@ def generate():
         )),
     ]
     generate_content_config = types.GenerateContentConfig(
+        max_output_tokens=65530,
         thinking_config=types.ThinkingConfig(
-            thinking_level="LOW",
+            thinking_level="MEDIUM",
         ),
         tools=tools,
         response_mime_type="application/json",
@@ -59,6 +45,9 @@ def generate():
                 ),
             },
         ),
+        system_instruction=[
+            types.Part.from_text(text="""You are an expert product researcher. Your goal is to match the product data to the allowed schema values strictly."""),
+        ],
     )
 
     for chunk in client.models.generate_content_stream(

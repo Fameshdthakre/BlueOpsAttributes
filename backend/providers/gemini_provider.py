@@ -76,12 +76,13 @@ class GeminiProvider(BaseProvider):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "response_mime_type": "application/json",
-            "response_schema": self._dict_to_genai_schema(json_schema)
         }
         
         if tools:
             config_kwargs["tools"] = tools
+        else:
+            config_kwargs["response_mime_type"] = "application/json"
+            config_kwargs["response_schema"] = self._dict_to_genai_schema(json_schema)
             
         if "3.5" in self.model or "2.0" in self.model:
             config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
@@ -135,10 +136,12 @@ class GeminiProvider(BaseProvider):
                     logger.warning(f"[{self.name}] Failed to extract grounding urls: {ex}")
                     
                 import json
+                import re
                 # Safely inject grounding urls into the returned JSON so processor.py can pick them up
                 if grounding_urls and raw_text:
                     try:
-                        parsed_json = json.loads(raw_text)
+                        clean_json = re.sub(r"```[^\n]*\n|```", "", raw_text).strip()
+                        parsed_json = json.loads(clean_json)
                         for attr in job.attributes:
                             sources_key = f"{attr}_sources"
                             if sources_key in parsed_json and not parsed_json[sources_key]:
