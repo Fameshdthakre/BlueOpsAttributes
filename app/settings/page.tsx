@@ -32,6 +32,10 @@ interface AppConfig {
       enable_extract?: boolean;
       enable_search?: boolean;
       tavily_format?: string;
+      enable_research?: boolean;
+      research_model?: string;
+      research_output_length?: string;
+      research_fallback?: boolean;
     }
   >;
 }
@@ -1205,6 +1209,121 @@ export default function SettingsPage() {
                       <span className="text-sm text-text-main font-medium">
                         Enable URL Extraction
                       </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tavily Research Agent Configurations */}
+              <div className="mt-8 pt-6 border-t border-bg-input">
+                <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                  Tavily Research Agent
+                </h3>
+                
+                <div className="mb-6 bg-purple-500/10 border border-purple-500/20 p-4 rounded-lg">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={tCfg.enable_research ?? false}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: {
+                              ...tCfg,
+                              enable_research: e.target.checked,
+                            },
+                          },
+                        })
+                      }
+                      className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-text-main font-semibold">
+                        Enable Tavily Research Agent
+                      </span>
+                      <span className="text-xs text-text-muted mt-1">
+                        When enabled, uses Tavily's dedicated research endpoint to dynamically extract all attributes. Bypasses standard LLM processing.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity ${tCfg.enable_research ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                  <div>
+                    <label className="block text-xs text-text-muted mb-1">
+                      Research Model
+                    </label>
+                    <select
+                      value={tCfg.research_model || "mini"}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: { ...tCfg, research_model: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
+                    >
+                      <option value="mini">Mini (Fast, Targeted)</option>
+                      <option value="pro">Pro (Deep, Multi-angle)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-text-muted mb-1">
+                      Output Length
+                    </label>
+                    <select
+                      value={tCfg.research_output_length || "short"}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...config,
+                          providers: {
+                            ...config.providers,
+                            Tavily: { ...tCfg, research_output_length: e.target.value },
+                          },
+                        })
+                      }
+                      className="w-full bg-bg-dark border border-bg-input rounded p-2 text-sm text-accent font-bold"
+                    >
+                      <option value="short">Short (Attribute Extraction)</option>
+                      <option value="standard">Standard</option>
+                      <option value="long">Long</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={tCfg.research_fallback ?? true}
+                        onChange={(e) =>
+                          updateConfig({
+                            ...config,
+                            providers: {
+                              ...config.providers,
+                              Tavily: {
+                                ...tCfg,
+                                research_fallback: e.target.checked,
+                              },
+                            },
+                          })
+                        }
+                        className="w-5 h-5 accent-purple-500 rounded cursor-pointer"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm text-text-main font-medium">
+                          Standard LLM Fallback
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          Automatically fallback if Tavily fails
+                        </span>
+                      </div>
                     </label>
                   </div>
                 </div>

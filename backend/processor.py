@@ -41,6 +41,156 @@ def _parse_json(text: str) -> dict:
     except Exception:
         raise ValueError("Could not parse JSON from AI response.")
 
+def build_tavily_research_schema(job: Job, validation_map: dict[str, ValidationEntry | None]) -> dict:
+    properties = {}
+    required = []
+    
+    for attr in job.attributes:
+        val_entry = validation_map.get(attr)
+        desc = f"Provide the most accurate value for {attr}."
+        if val_entry:
+            if val_entry.is_validation_list:
+                desc = f"Strictly one word from the following Allowed List: {', '.join(val_entry.allowed_values)}"
+            elif val_entry.tooltip:
+                desc = f"Value Criteria Tooltip: {val_entry.tooltip}"
+                
+        properties[attr] = {
+            "type": "string",
+            "description": desc
+        }
+        required.append(attr)
+        
+    if not job.title:
+        properties["_extracted_title"] = {
+            "type": "string",
+            "description": "The exact full title of the product."
+        }
+        
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required
+    }
+
+async def execute_tavily_research(job: Job, validation_map: dict[str, ValidationEntry | None], tavily_cfg: dict, tavily_keys: list[str]) -> ProcessingResult | None:
+    from tavily import AsyncTavilyClient
+    from backend.key_manager import key_manager
+    import asyncio
+    
+    research_model = tavily_cfg.get("research_model", "mini")
+    research_output_length = tavily_cfg.get("research_output_length", "short")
+    
+    schema = build_tavily_research_schema(job, validation_map)
+    product_desc = f"ASIN: {job.asin}"
+    if job.title: product_desc += f", Title: {job.title}"
+    if job.brand: product_desc += f", Brand: {job.brand}"
+    input_prompt = f"Find the most accurate result for product: {product_desc}. Get information for missing attributes: {', '.join(job.attributes)}."
+
+    for attempt in range(len(tavily_keys)):
+        tavily_key = key_manager.get_active_key("Tavily", tavily_keys)
+        if not tavily_key:
+            logger.warning(f"[Tavily Research] No active API keys available for ASIN {job.asin}.")
+            break
+            
+        client = AsyncTavilyClient(api_key=tavily_key)
+        try:
+            logger.info(f"[Tavily Research] Launching research for {job.asin}...")
+            response = await asyncio.wait_for(
+                client.research(
+                    input=input_prompt, 
+                    model=research_model, 
+                    output_schema=schema,
+                    output_length=research_output_length
+                ), timeout=180.0
+            )
+            
+            logger.info(f"[Tavily Research] Received response for ASIN {job.asin}:\n{json.dumps(response, indent=2) if isinstance(response, dict) else str(response)}\n{'-'*60}")
+            
+            if isinstance(response, dict):
+                if "answer" in response and isinstance(response["answer"], str):
+                    parsed_json = _parse_json(response["answer"])
+                else:
+                    parsed_json = _parse_json(json.dumps(response))
+            else:
+                parsed_json = _parse_json(str(response))
+            
+            if not job.title and "_extracted_title" in parsed_json:
+                job.title = str(parsed_json["_extracted_title"]).strip()
+            
+            # Map back to attributes
+            attribute_results = []
+            for attr_id in job.attributes:
+                raw_val = str(parsed_json.get(attr_id, "")).strip()
+                val_entry = validation_map.get(attr_id)
+                val_pt = val_entry.product_type or "" if val_entry else ""
+                val_options = ""
+                if val_entry:
+                    if val_entry.is_validation_list:
+                        val_options = "|".join(val_entry.allowed_values)
+                    else:
+                        val_options = val_entry.tooltip or ""
+                
+                if not raw_val or raw_val.lower() in ("none", "null", "n/a", "unresolved"):
+                    attribute_results.append(AttributeResult(
+                        attribute_id=attr_id,
+                        raw_ai_value="",
+                        final_value="UNRESOLVED",
+                        match_status="Unresolved",
+                        confidence=0.0,
+                        validated_product_type=val_pt,
+                        validated_allowed_options=val_options,
+                        source_links=[]
+                    ))
+                    continue
+                    
+                if val_entry and val_entry.is_validation_list:
+                    final_value, confidence = fuzzy_match_value(raw_val, val_entry.allowed_values)
+                    status = "Unresolved" if final_value == "UNRESOLVED" else "Validated"
+                    attribute_results.append(AttributeResult(
+                        attribute_id=attr_id,
+                        raw_ai_value=raw_val,
+                        final_value=final_value,
+                        match_status=status,
+                        confidence=confidence,
+                        validated_product_type=val_pt,
+                        validated_allowed_options=val_options,
+                        source_links=[]
+                    ))
+                else:
+                    attribute_results.append(AttributeResult(
+                        attribute_id=attr_id,
+                        raw_ai_value=raw_val,
+                        final_value=raw_val,
+                        match_status="Free Text",
+                        confidence=0.85,
+                        validated_product_type=val_pt,
+                        validated_allowed_options=val_options,
+                        source_links=[]
+                    ))
+            
+            return ProcessingResult(
+                job=job,
+                attribute_results=attribute_results,
+                provider_used="Tavily Research",
+                error_message=None,
+                input_tokens=0,
+                output_tokens=0,
+                tavily_used=True,
+                tavily_credits=1
+            )
+            
+        except Exception as e:
+            err_str = str(e).lower()
+            if any(k in err_str for k in ["429", "quota", "rate limit", "unauthorized", "401", "403", "limit exceeded"]):
+                logger.warning(f"[Tavily Research] Key failed with quota/auth error: {e}. Rotating key...")
+                key_manager.mark_key_exhausted("Tavily", tavily_key, tavily_keys)
+                continue
+            else:
+                logger.warning(f"[Tavily Research] Research failed: {e}")
+                break
+
+    return None
+
 async def process_single_asin(
     job: Job, 
     validation_map_raw: dict[str, list[ValidationEntry]], 
@@ -87,6 +237,22 @@ async def process_single_asin(
             tavily_keys = [tavily_cfg.get("api_key")]
             
         if tavily_keys:
+            if tavily_cfg.get("enable_research"):
+                research_res = await execute_tavily_research(job, validation_map, tavily_cfg, tavily_keys)
+                if research_res:
+                    return research_res
+                elif tavily_cfg.get("research_fallback"):
+                    logger.info(f"[Tavily Research] Falling back to standard LLM processing for {job.asin}...")
+                else:
+                    logger.error(f"[Tavily Research] Failed and fallback is disabled for {job.asin}.")
+                    return ProcessingResult(
+                        job=job,
+                        attribute_results=[],
+                        provider_used="Tavily Research",
+                        error_message="Tavily Research failed and fallback is disabled.",
+                        tavily_used=True,
+                        tavily_credits=0
+                    )
             try:
                 from tavily import AsyncTavilyClient
                 from backend.key_manager import key_manager

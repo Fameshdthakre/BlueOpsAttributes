@@ -93,6 +93,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "enable_search": True,
             "tavily_format": "markdown",
             "tavily_mode": "deep",
+            "enable_research": False,
+            "research_model": "mini",
+            "research_output_length": "short",
+            "research_fallback": True,
         },
     },
 }
