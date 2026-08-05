@@ -18,6 +18,30 @@ class GeminiProvider(BaseProvider):
         from google import genai
         return genai.Client(api_key=api_key, http_options={'timeout': self.timeout * 1000})
 
+    def _dict_to_genai_schema(self, schema_dict: dict):
+        from google.genai import types
+        t = schema_dict.get("type", "string").upper()
+        genai_type = getattr(types.Type, t, types.Type.STRING)
+        
+        properties = None
+        if "properties" in schema_dict:
+            properties = {
+                k: self._dict_to_genai_schema(v) 
+                for k, v in schema_dict["properties"].items()
+            }
+            
+        items = None
+        if "items" in schema_dict:
+            items = self._dict_to_genai_schema(schema_dict["items"])
+            
+        return types.Schema(
+            type=genai_type,
+            description=schema_dict.get("description"),
+            properties=properties,
+            required=schema_dict.get("required"),
+            items=items
+        )
+
     def query(
         self,
         job: Job,
@@ -29,6 +53,22 @@ class GeminiProvider(BaseProvider):
         from google.genai import types
 
         prompt, json_schema = self._build_prompt(job, validation_map, research_context)
+        
+        # Build multi-turn few-shot contents
+        contents = [
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text="Find the most accurate result for the ASIN: B07P6TWLGS, SKU: Gesl3142P, Title: Geepas Combo Gesl3142P-3Pcs White. And get me the information about the following missing attributes: white_brightness, and number_of_items in a structured format from the allowed list or as per the tool tip.")]
+            ),
+            types.Content(
+                role="model",
+                parts=[types.Part.from_text(text='{\n  "white_brightness": "All Purpose",\n  "number_of_items": 3,\n  "white_brightness_sources": ["https://example.com/geepas"]\n}')]
+            ),
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=prompt)]
+            )
+        ]
 
         tools = [types.Tool(google_search=types.GoogleSearch())] if self.enable_web_search else None
         
@@ -36,12 +76,15 @@ class GeminiProvider(BaseProvider):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
+            "response_mime_type": "application/json",
+            "response_schema": self._dict_to_genai_schema(json_schema)
         }
+        
         if tools:
             config_kwargs["tools"] = tools
-        else:
-            config_kwargs["response_mime_type"] = "application/json"
-            config_kwargs["response_schema"] = json_schema
+            
+        if "3.5" in self.model or "2.0" in self.model:
+            config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
             
         config = types.GenerateContentConfig(**config_kwargs)
 
@@ -62,7 +105,7 @@ class GeminiProvider(BaseProvider):
                 try:
                     response = client.models.generate_content(
                         model=self.model,
-                        contents=prompt,
+                        contents=contents,
                         config=config,
                     )
                 except Exception as e:
@@ -71,12 +114,38 @@ class GeminiProvider(BaseProvider):
                         logger.warning(f"[{self.name}] Quota/Auth error with key: {e}. Rotating...")
                         key_manager.mark_key_exhausted(self.name, active_key, self.api_keys)
                     raise e
+                    
                 raw_text = (response.text or "").strip()
                 input_tokens = 0
                 output_tokens = 0
                 if response.usage_metadata:
                     input_tokens = getattr(response.usage_metadata, "prompt_token_count", 0)
                     output_tokens = getattr(response.usage_metadata, "candidates_token_count", 0)
+                    
+                # Extract grounding links if available
+                grounding_urls = []
+                try:
+                    if response.candidates and response.candidates[0].grounding_metadata:
+                        gm = response.candidates[0].grounding_metadata
+                        if hasattr(gm, "grounding_chunks"):
+                            for chunk in gm.grounding_chunks:
+                                if hasattr(chunk, "web") and chunk.web and hasattr(chunk.web, "uri"):
+                                    grounding_urls.append(chunk.web.uri)
+                except Exception as ex:
+                    logger.warning(f"[{self.name}] Failed to extract grounding urls: {ex}")
+                    
+                import json
+                # Safely inject grounding urls into the returned JSON so processor.py can pick them up
+                if grounding_urls and raw_text:
+                    try:
+                        parsed_json = json.loads(raw_text)
+                        for attr in job.attributes:
+                            sources_key = f"{attr}_sources"
+                            if sources_key in parsed_json and not parsed_json[sources_key]:
+                                parsed_json[sources_key] = grounding_urls
+                        raw_text = json.dumps(parsed_json)
+                    except:
+                        pass
                 
                 return ProviderResult(
                     raw_json=raw_text,
